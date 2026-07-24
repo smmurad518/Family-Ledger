@@ -215,7 +215,7 @@ export async function connectFirebase(config, onSyncStateChange) {
     if (onSyncStateChange) onSyncStateChange('connecting');
 
     // Sync current local storage to Firestore (First time upload or merger)
-    await uploadLocalDataToCloud();
+    uploadLocalDataToCloud().catch(e => console.error('Upload local data to cloud failed:', e));
 
     // Set up listeners for the collections
     setupCollectionListener('shopping_list', KEYS.SHOPPING, onSyncStateChange);
