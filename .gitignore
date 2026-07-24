@@ -1,0 +1,13 @@
+# Databases (Contains private ledger data)
+db_store.json
+
+# Binaries
+cloudflared.exe
+
+# IDE / System files
+.gemini/
+.idea/
+.vscode/
+*.log
+Thumbs.db
+.DS_Store

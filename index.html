@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description"
+    content="A private dual-user family management mobile application for husband and wife to track daily household activities, shopping lists, expenses, and dues.">
+  <title>M&M - Family Ledger</title>
+
+  <!-- Manifest & Web App Mobile Tags -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#FAF6F0">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+
+  <!-- Main Styling -->
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+
+<body>
+
+  <!-- Offline status indicator -->
+  <div id="offline-indicator" class="offline-banner">
+    ⚠️ Offline Mode - Saving to Local Storage
+  </div>
+
+  <div id="app-container">
+
+    <!-- Top Header -->
+    <header>
+      <h1 id="app-logo"><span class="logo-m">M</span><span class="logo-and">&amp;</span><span class="logo-m">M</span>
+      </h1>
+      <div class="syncing-indicator" id="sync-status" title="Sync Status">
+        <span class="sync-dot disconnected" id="sync-dot"></span>
+        <span id="sync-text">Local Mode</span>
+      </div>
+      <button id="theme-toggle-btn" class="theme-toggle" aria-label="Toggle Theme" title="Toggle Light/Dark Mode">
+        <svg viewBox="0 0 24 24" id="theme-toggle-icon"></svg>
+      </button>
+      <div class="profile-badge" id="profile-btn" aria-label="Open Settings">
+        <span id="profile-avatar">🧔</span>
+        <span id="profile-name">Husband</span>
+      </div>
+      <button id="drawer-toggle-btn" class="drawer-toggle" aria-label="Open Menu" title="Open Menu">
+        <svg viewBox="0 0 24 24">
+          <line x1="3" y1="12" x2="21" y2="12" />
+          <line x1="3" y1="6" x2="21" y2="6" />
+          <line x1="3" y1="18" x2="21" y2="18" />
+        </svg>
+      </button>
+    </header>
+
+    <!-- Main Screens Container -->
+    <main>
+
+      <!-- SCREEN 1: DASHBOARD -->
+      <section id="screen-dashboard" class="screen active">
+        <div class="welcome-banner">
+          <h2>Hello, <span id="welcome-user">Husband</span>!</h2>
+          <p>Welcome back to your family ledger. Let's see what's happening today.</p>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-box secondary" id="stat-pending-bajar">
+            <span class="stat-label">Bajar List</span>
+            <span class="stat-value" id="dash-bajar-pending">0</span>
+            <span class="stat-subtext">Pending Items</span>
+          </div>
+          <div class="stat-box secondary" id="stat-net-balance">
+            <span class="stat-label">Pawna</span>
+            <span class="stat-value" id="dash-pending-take">৳ 0</span>
+            <span class="stat-subtext">Receivables</span>
+          </div>
+          <div class="stat-box accent" id="stat-pending-dues">
+            <span class="stat-label">Dena</span>
+            <span class="stat-value" id="dash-pending-give">৳ 0</span>
+            <span class="stat-subtext">Payables</span>
+          </div>
+          <div class="stat-box primary" id="stat-monthly-expenses">
+            <span class="stat-label">Needs</span>
+            <span class="stat-value" id="dash-monthly-expenses">৳ 0</span>
+            <span class="stat-subtext">Total Needed</span>
+          </div>
+        </div>
+
+        <h3 class="card-title">Quick Actions</h3>
+        <div class="quick-links">
+          <div class="quick-btn bajar" id="quick-add-bajar">
+            <div class="icon-wrapper">
+              <svg viewBox="0 0 24 24">
+                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0" />
+              </svg>
+            </div>
+            <span>Shopping</span>
+          </div>
+          <div class="quick-btn hishab" id="quick-add-expense">
+            <div class="icon-wrapper">
+              <svg viewBox="0 0 24 24">
+                <rect x="2" y="4" width="20" height="16" rx="2" ry="2" />
+                <line x1="12" y1="4" x2="12" y2="20" />
+                <line x1="2" y1="12" x2="22" y2="12" />
+              </svg>
+            </div>
+            <span>Needs</span>
+          </div>
+          <div class="quick-btn dhar" id="quick-add-due">
+            <div class="icon-wrapper">
+              <svg viewBox="0 0 24 24">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg>
+            </div>
+            <span>Dues</span>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- SCREEN 2: BAJARER TALIKA (SHOPPING LIST) -->
+      <section id="screen-bajar" class="screen">
+        <div class="card">
+          <h3 class="card-title">
+            <svg viewBox="0 0 24 24">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+              <polyline points="17 21 17 13 7 13 7 21" />
+              <polyline points="7 3 7 8 15 8" />
+            </svg>
+            Add New Item
+          </h3>
+          <form id="shopping-form">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="shop-item-name">Item Name</label>
+                <input type="text" id="shop-item-name" placeholder="e.g. Potato, Milk" required autocomplete="off">
+              </div>
+              <div class="form-group">
+                <label for="shop-item-qty">Quantity</label>
+                <input type="text" id="shop-item-qty" placeholder="e.g. 2 kg, 1 Litre" required autocomplete="off">
+              </div>
+            </div>
+            <button type="submit" id="btn-add-shopping" class="btn-primary">
+              <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              Add to List
+            </button>
+          </form>
+        </div>
+
+        <div class="tab-row" id="shopping-filter-tabs">
+          <button class="tab-btn active" data-filter="all" id="shop-tab-all">All Items</button>
+          <button class="tab-btn" data-filter="pending" id="shop-tab-pending">Pending</button>
+          <button class="tab-btn" data-filter="bought" id="shop-tab-bought">Bought</button>
+        </div>
+
+        <ul class="item-list" id="shopping-list-container">
+          <!-- List Items dynamic rendering -->
+        </ul>
+      </section>
+
+      <!-- SCREEN 3: SANSARIK HISHAB (EXPENSE TRACKER) -->
+      <section id="screen-hishab" class="screen">
+        <div class="card">
+          <h3 class="card-title">
+            <svg viewBox="0 0 24 24">
+              <line x1="12" y1="1" x2="12" y2="23" />
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+            </svg>
+            Add New Need
+          </h3>
+          <form id="expense-form">
+            <div class="form-group">
+              <label for="expense-notes">Item Name</label>
+              <input type="text" id="expense-notes" placeholder="e.g. Bed, Table, Lamp" required autocomplete="off">
+            </div>
+            <div class="form-group">
+              <label for="expense-amount">Estimated Price (৳)</label>
+              <input type="number" id="expense-amount" placeholder="Enter estimated price" required min="1" step="any">
+            </div>
+            <button type="submit" id="btn-add-expense" class="btn-primary">
+              <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              Add to List
+            </button>
+          </form>
+        </div>
+
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h3 class="card-title" style="margin-bottom: 0;">
+              <svg viewBox="0 0 24 24">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="16" y1="13" x2="8" y2="13" />
+                <line x1="16" y1="17" x2="8" y2="17" />
+                <polyline points="10 9 9 9 8 9" />
+              </svg>
+              Required Items List
+            </h3>
+          </div>
+          <div id="expense-history-list">
+            <!-- Populated via Javascript -->
+          </div>
+          <div id="expense-total-container"
+            style="display: none; justify-content: space-between; align-items: center; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border-color); font-weight: 800; font-size: 16px;">
+            <span>Total Needed:</span>
+            <span id="expense-total-value" style="color: var(--color-primary-interactive);">৳ 0</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- SCREEN 4: DHAR-DENA (LOANS & DUES) -->
+      <section id="screen-dues" class="screen">
+        <div class="card">
+          <h3 class="card-title">
+            <svg viewBox="0 0 24 24">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <line x1="19" y1="8" x2="19" y2="14" />
+              <line x1="16" y1="11" x2="22" y2="11" />
+            </svg>
+            Record Loan/Due
+          </h3>
+          <form id="due-form">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="due-person">Person Name</label>
+                <input type="text" id="due-person" placeholder="e.g. Uncle John, Shopkeeper" required
+                  autocomplete="off">
+              </div>
+              <div class="form-group">
+                <label for="due-amount">Amount (৳)</label>
+                <input type="number" id="due-amount" placeholder="Enter Amount" required min="1" step="any">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group" style="grid-column: span 2;">
+                <label for="due-type">Type</label>
+                <select id="due-type" required>
+                  <option value="give">Dena (I owe them / Pay back)</option>
+                  <option value="take">Pawna (They owe me / Collect)</option>
+                </select>
+              </div>
+            </div>
+            <button type="submit" id="btn-add-due" class="btn-primary">
+              <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              Record Entry
+            </button>
+          </form>
+        </div>
+
+        <div class="tab-row" id="dues-filter-tabs">
+          <button class="tab-btn active" data-filter="give" id="due-tab-dena">Dena</button>
+          <button class="tab-btn" data-filter="take" id="due-tab-pawna">Pawna</button>
+        </div>
+
+        <div id="dues-list-container">
+          <!-- Dynamically generated list items -->
+        </div>
+
+        <div id="dues-totals-container" class="card"
+          style="margin-top: 15px; padding: 15px; font-weight: 800; font-size: 15px; display: flex; flex-direction: column; gap: 8px;">
+          <div
+            style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+            <span>Total Dena:</span>
+            <span id="due-total-dena" style="color: var(--color-danger);">৳ 0</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 4px;">
+            <span>Total Pawna:</span>
+            <span id="due-total-pawna" style="color: var(--color-secondary);">৳ 0</span>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Custom Curved Bottom Navigation Bar -->
+    <nav class="curved-nav">
+      <!-- The sliding curved cutout container -->
+      <div class="nav-cutout-container" id="nav-cutout-container">
+        <!-- SVG Cutout filled with var(--bg-primary) -->
+        <svg class="nav-cutout-svg" viewBox="0 0 90 30">
+          <path d="M 0 0 L 0 10 L 20 10 C 30 10 32 28 45 28 C 58 28 60 10 70 10 L 90 10 L 90 0 Z" fill="var(--bg-primary)"/>
+          <path d="M 0 10 L 20 10 C 30 10 32 28 45 28 C 58 28 60 10 70 10 L 90 10" fill="none" stroke="var(--border-color)" stroke-width="1"/>
+        </svg>
+        <!-- Floating Active Circle with active icon inside -->
+        <div class="nav-active-circle">
+          <div class="nav-active-icon-wrapper" id="nav-active-icon-wrapper">
+            <!-- Active icon goes here -->
+          </div>
+        </div>
+      </div>
+      
+      <!-- Actual nav items for clicking -->
+      <div class="nav-items-container">
+        <div class="curved-nav-item active" data-screen="dashboard" data-index="0" id="nav-dashboard">
+          <svg viewBox="0 0 24 24">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+            <polyline points="9 22 9 12 15 12 15 22" />
+          </svg>
+          <span class="nav-label">Home</span>
+        </div>
+        <div class="curved-nav-item" data-screen="bajar" data-index="1" id="nav-bajar">
+          <svg viewBox="0 0 24 24">
+            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0" />
+          </svg>
+          <span class="nav-label">Bajar List</span>
+        </div>
+        <div class="curved-nav-item" data-screen="dues" data-index="2" id="nav-dues">
+          <svg viewBox="0 0 24 24">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+          </svg>
+          <span class="nav-label">DenaPawna</span>
+        </div>
+        <div class="curved-nav-item" data-screen="hishab" data-index="3" id="nav-hishab">
+          <svg viewBox="0 0 24 24">
+            <line x1="12" y1="1" x2="12" y2="23" />
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+          </svg>
+          <span class="nav-label">Needs</span>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Setup/Settings Modal -->
+    <div class="modal-overlay" id="settings-modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title">App Settings</h2>
+          <button class="modal-close" id="settings-close" aria-label="Close settings">
+            <svg viewBox="0 0 24 24">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="form-group">
+          <label>Active Profile</label>
+          <div class="user-select-grid">
+            <label class="user-option">
+              <input type="radio" name="user-profile" value="Husband" id="profile-choice-husband" checked>
+              <div class="user-card">
+                <span class="avatar">🧔</span>
+                <span class="label">Husband</span>
+              </div>
+            </label>
+            <label class="user-option">
+              <input type="radio" name="user-profile" value="Wife" id="profile-choice-wife">
+              <div class="user-card">
+                <span class="avatar">👩</span>
+                <span class="label">Wife</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 20px 0;">
+
+        <div class="form-group">
+          <label style="display: flex; justify-content: space-between; align-items: center;">
+            <span>Firebase Cloud Sync</span>
+            <input type="checkbox" id="firebase-enable" style="width: auto; cursor: pointer;">
+          </label>
+        </div>
+
+        <div id="firebase-config-section" style="display: none;">
+          <div class="alert-box info">
+            <div>
+              <strong>How to connect:</strong> Go to Firebase Console, create a web project, copy the
+              <code>firebaseConfig</code> object, and paste the values here.
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="fb-api-key">API Key</label>
+            <input type="password" id="fb-api-key" placeholder="AIzaSy...">
+          </div>
+
+          <div class="form-group">
+            <label for="fb-project-id">Project ID</label>
+            <input type="text" id="fb-project-id" placeholder="my-family-ledger-123">
+          </div>
+
+          <div class="form-group">
+            <label for="fb-auth-domain">Auth Domain</label>
+            <input type="text" id="fb-auth-domain" placeholder="my-family-ledger-123.firebaseapp.com">
+          </div>
+
+          <div class="form-group">
+            <label for="fb-app-id">App ID</label>
+            <input type="password" id="fb-app-id" placeholder="1:123456:web:abcd...">
+          </div>
+        </div>
+
+        <button id="btn-save-settings" class="btn-primary" style="margin-top: 10px;">
+          Save Settings
+        </button>
+      </div>
+    </div>
+
+    <!-- Right-side Navigation Drawer -->
+    <div class="drawer-overlay" id="drawer-overlay"></div>
+    <div class="drawer" id="app-drawer">
+      <div class="drawer-header">
+        <h3 class="drawer-title">M&M Menu</h3>
+        <button class="drawer-close" id="drawer-close" aria-label="Close menu">
+          <svg viewBox="0 0 24 24">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+      <div class="drawer-profile" id="drawer-profile-btn">
+        <span class="drawer-avatar" id="drawer-avatar">🧔</span>
+        <div class="drawer-profile-info">
+          <span class="drawer-profile-name" id="drawer-profile-name">Husband</span>
+          <span class="drawer-profile-role">Active Ledger</span>
+        </div>
+      </div>
+      <nav class="drawer-nav">
+        <div class="drawer-item active" data-screen="dashboard">
+          <svg viewBox="0 0 24 24">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+            <polyline points="9 22 9 12 15 12 15 22" />
+          </svg>
+          <span>Home</span>
+        </div>
+        <div class="drawer-item" data-screen="bajar">
+          <svg viewBox="0 0 24 24">
+            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0" />
+          </svg>
+          <span>Bajar List</span>
+        </div>
+        <div class="drawer-item" data-screen="hishab">
+          <svg viewBox="0 0 24 24">
+            <line x1="12" y1="1" x2="12" y2="23" />
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+          </svg>
+          <span>Needs</span>
+        </div>
+        <div class="drawer-item" data-screen="dues">
+          <svg viewBox="0 0 24 24">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+          </svg>
+          <span>Dhar-Dena</span>
+        </div>
+      </nav>
+      <div class="drawer-footer">
+        <button id="drawer-settings-btn" class="btn-drawer-settings">
+          <svg viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="3" />
+            <path
+              d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+          </svg>
+          Settings
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Live App Update Banner Modal -->
+  <div id="update-banner-overlay" class="update-banner-overlay" style="display: none;">
+    <div class="update-banner-card">
+      <div class="update-banner-icon">🚀</div>
+      <h3 class="update-banner-title">নতুন অ্যাপ আপডেট পাওয়া গেছে!</h3>
+      <p class="update-banner-desc">অ্যাপের কোডে নতুন পরিবর্তন বা ফিচার যোগ করা হয়েছে। আপডেট করতে নিচের বাটনে চাপ দিন।</p>
+      <button id="btn-apply-update" class="btn-update-now">এখনই আপডেট করুন 🔄</button>
+    </div>
+  </div>
+
+  <!-- Loading Firebase Core Libraries from CDN (using standard ES module syntax or global script) -->
+  <script type="importmap">
+    {
+      "imports": {
+        "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
+        "firebase/firestore": "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"
+      }
+    }
+  </script>
+
+  <!-- Core Scripts -->
+  <script type="module" src="assets/db.js?v=21"></script>
+  <script type="module" src="assets/app.js?v=21"></script>
+
+</body>
+
+</html>
