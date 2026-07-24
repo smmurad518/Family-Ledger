@@ -537,13 +537,7 @@ function setupEventListeners() {
   // Save Settings Modal Actions
   DOM.settingsSave.addEventListener('click', handleSettingsSave);
 
-  // Floating Refresh Button Click Action
-  const floatingRefreshBtn = document.getElementById('floating-refresh-btn');
-  if (floatingRefreshBtn) {
-    floatingRefreshBtn.addEventListener('click', () => {
-      window.location.reload(true);
-    });
-  }
+
 
   // Forms submissions
   DOM.shoppingForm.addEventListener('submit', handleAddShoppingItem);
@@ -689,11 +683,10 @@ async function handleSettingsSave() {
     updateProfileUI();
     closeSettingsModal();
     
-    // Show the floating refresh button
-    const refreshBtn = document.getElementById('floating-refresh-btn');
-    if (refreshBtn) {
-      refreshBtn.style.display = 'flex';
-    }
+    // Automatically reload page after 500ms to apply new configuration
+    setTimeout(() => {
+      window.location.reload(true);
+    }, 500);
 
     // Re-render everything with the new user context
     renderDashboard();
