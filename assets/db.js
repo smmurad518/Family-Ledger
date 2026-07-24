@@ -160,18 +160,22 @@ export async function pushStateToServer() {
 // DYNAMIC FIREBASE SYNC MANAGEMENT
 // ----------------------------------------------------
 export function isFirebaseConfigured() {
-  const enabled = getLocal(KEYS.FB_ENABLED, false);
-  const config = getLocal(KEYS.FB_CONFIG, null);
+  const enabled = getLocal(KEYS.FB_ENABLED, true);
+  const config = getFirebaseConfig();
   return enabled && config && config.apiKey && config.projectId;
 }
 
 export function getFirebaseConfig() {
-  return getLocal(KEYS.FB_CONFIG, {
-    apiKey: '',
-    projectId: '',
-    authDomain: '',
-    appId: ''
-  });
+  const config = getLocal(KEYS.FB_CONFIG, null);
+  if (config && config.apiKey && config.apiKey.trim() !== '') {
+    return config;
+  }
+  return {
+    apiKey: 'AIzaSyBctzeXb68VDrFpHAcKjt2SZps7yZaowO0',
+    projectId: 'family-ledger-7401f',
+    authDomain: 'family-ledger-7401f.firebaseapp.com',
+    appId: '1:931990023596:web:89f92a83ea241fdaf85e09'
+  };
 }
 
 export function getCurrentProfile() {
