@@ -187,7 +187,7 @@ let currentVersion = localStorage.getItem('mm_app_version') || null;
 
 async function checkCodeUpdate() {
   try {
-    const res = await fetch('./api/version?t=' + Date.now(), { cache: 'no-store' });
+    const res = await fetch('./version.json?t=' + Date.now(), { cache: 'no-store' });
     if (res.ok) {
       const data = await res.json();
       if (data && data.version) {
