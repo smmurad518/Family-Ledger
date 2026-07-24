@@ -478,11 +478,20 @@
 
   <!-- Live App Update Banner Modal -->
   <div id="update-banner-overlay" class="update-banner-overlay" style="display: none;">
-    <div class="update-banner-card">
+    <div class="update-banner-card" id="update-banner-card">
       <div class="update-banner-icon">🚀</div>
-      <h3 class="update-banner-title">নতুন অ্যাপ আপডেট পাওয়া গেছে!</h3>
-      <p class="update-banner-desc">অ্যাপের কোডে নতুন পরিবর্তন বা ফিচার যোগ করা হয়েছে। আপডেট করতে নিচের বাটনে চাপ দিন।</p>
-      <button id="btn-apply-update" class="btn-update-now">এখনই আপডেট করুন 🔄</button>
+      <h3 class="update-banner-title">New Update Available!</h3>
+      <p class="update-banner-desc">A new version of the app has been published with improvements and features.</p>
+      <button id="btn-apply-update" class="btn-update-now">Update Now 🔄</button>
+    </div>
+    <!-- Loading Animation Container (hidden by default) -->
+    <div class="update-loading-container" id="update-loading-container" style="display: none;">
+      <div class="spinner-wrapper">
+        <div class="custom-spinner"></div>
+        <div class="spinner-pulse"></div>
+      </div>
+      <h4 class="loading-title">Updating Application</h4>
+      <p class="loading-subtitle">Please wait, clearing cache & refreshing...</p>
     </div>
   </div>
 
@@ -497,8 +506,8 @@
   </script>
 
   <!-- Core Scripts -->
-  <script type="module" src="assets/db.js?v=22"></script>
-  <script type="module" src="assets/app.js?v=22"></script>
+  <script type="module" src="assets/db.js?v=23"></script>
+  <script type="module" src="assets/app.js?v=23"></script>
 
 </body>
 

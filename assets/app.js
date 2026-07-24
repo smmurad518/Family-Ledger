@@ -208,13 +208,17 @@ async function checkCodeUpdate() {
 function showUpdatePopup(newVersion) {
   const overlay = document.getElementById('update-banner-overlay');
   const btn = document.getElementById('btn-apply-update');
+  const card = document.getElementById('update-banner-card');
+  const loading = document.getElementById('update-loading-container');
   if (!overlay || !btn) return;
 
   overlay.style.display = 'flex';
 
   btn.onclick = async () => {
-    btn.textContent = 'আপডেট হচ্ছে... ⏳';
-    btn.disabled = true;
+    // Hide warning card and show loading spinner card
+    if (card) card.style.display = 'none';
+    if (loading) loading.style.display = 'flex';
+    
     localStorage.setItem('mm_app_version', newVersion);
 
     // Clear service worker caches
@@ -235,8 +239,10 @@ function showUpdatePopup(newVersion) {
       } catch (e) {}
     }
 
-    // Reload page fresh from server
-    window.location.reload(true);
+    // Artificial delay of 1.5 seconds to show the loading animation smoothly
+    setTimeout(() => {
+      window.location.reload(true);
+    }, 1500);
   };
 }
 
