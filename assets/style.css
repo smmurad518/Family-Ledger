@@ -272,12 +272,13 @@ main::-webkit-scrollbar {
   }
 }
 
-/* Custom Curved Bottom Navigation Bar styling */
 .curved-nav {
-  position: absolute;
+  position: fixed;
   bottom: 0;
-  left: 0;
+  left: 50%;
+  transform: translateX(-50%);
   width: 100%;
+  max-width: 480px;
   height: 64px;
   background-color: var(--bg-card);
   border-top: 1px solid var(--border-color);
