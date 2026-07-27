@@ -84,6 +84,8 @@ const DOM = {
   settingsSave: document.getElementById('btn-save-settings'),
   firebaseEnable: document.getElementById('firebase-enable'),
   firebaseSection: document.getElementById('firebase-config-section'),
+  firebaseConfigToggle: document.getElementById('firebase-config-toggle'),
+  firebaseToggleIcon: document.getElementById('firebase-toggle-icon'),
   fbApiKey: document.getElementById('fb-api-key'),
   fbProjectId: document.getElementById('fb-project-id'),
   fbAuthDomain: document.getElementById('fb-auth-domain'),
@@ -177,7 +179,13 @@ function updateThemeToggleIcon(theme) {
 
 // ----------------------------------------------------
 // INITIALIZATION
-// ----------------------------------------------------
+// Force window scroll position to 0 to prevent mobile viewport layout shift/keyboard height bugs
+window.addEventListener('scroll', () => {
+  if (window.scrollY !== 0 || window.scrollX !== 0) {
+    window.scrollTo(0, 0);
+  }
+});
+
 document.addEventListener('DOMContentLoaded', () => {
 
   // Initialize DB state
@@ -583,8 +591,30 @@ function setupEventListeners() {
 
   // Firebase sync toggler in Settings
   DOM.firebaseEnable.addEventListener('change', (e) => {
-    DOM.firebaseSection.style.display = e.target.checked ? 'block' : 'none';
+    if (e.target.checked) {
+      DOM.firebaseConfigToggle.style.display = 'block';
+    } else {
+      DOM.firebaseConfigToggle.style.display = 'none';
+      DOM.firebaseSection.style.display = 'none';
+      DOM.firebaseToggleIcon.style.transform = 'rotate(0deg)';
+    }
+    window.scrollTo(0, 0);
   });
+
+  // Firebase config dropdown toggle button
+  if (DOM.firebaseConfigToggle) {
+    DOM.firebaseConfigToggle.addEventListener('click', () => {
+      const isExpanded = DOM.firebaseSection.style.display === 'block';
+      if (isExpanded) {
+        DOM.firebaseSection.style.display = 'none';
+        DOM.firebaseToggleIcon.style.transform = 'rotate(0deg)';
+      } else {
+        DOM.firebaseSection.style.display = 'block';
+        DOM.firebaseToggleIcon.style.transform = 'rotate(180deg)';
+      }
+      window.scrollTo(0, 0);
+    });
+  }
 
   // Save Settings Modal Actions
   DOM.settingsSave.addEventListener('click', handleSettingsSave);
@@ -913,6 +943,7 @@ async function handleEditSave() {
 }
 
 function openSettingsModal() {
+  window.scrollTo(0, 0);
   const currentProfile = getCurrentProfile();
 
   // Show wife switch permission group ONLY if Husband is viewing settings
@@ -943,7 +974,9 @@ function openSettingsModal() {
   // Pre-fill firebase configs
   const isFb = isFirebaseConfigured();
   DOM.firebaseEnable.checked = isFb;
-  DOM.firebaseSection.style.display = isFb ? 'block' : 'none';
+  DOM.firebaseConfigToggle.style.display = isFb ? 'block' : 'none';
+  DOM.firebaseSection.style.display = 'none'; // Keep collapsed by default
+  DOM.firebaseToggleIcon.style.transform = 'rotate(0deg)';
 
   const fbConfig = getFirebaseConfig();
   DOM.fbApiKey.value = fbConfig.apiKey || '';
@@ -956,6 +989,7 @@ function openSettingsModal() {
 
 function closeSettingsModal() {
   DOM.settingsModal.classList.remove('active');
+  window.scrollTo(0, 0);
 }
 
 async function handleSettingsSave() {
