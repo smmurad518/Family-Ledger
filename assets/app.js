@@ -997,6 +997,14 @@ function closeSettingsModal() {
 }
 
 async function handleSettingsSave() {
+  // Collapse keyboard on mobile immediately by blurring active inputs
+  if (document.activeElement && typeof document.activeElement.blur === 'function') {
+    document.activeElement.blur();
+  }
+  
+  // Wait 350ms for viewport layout and keyboard slide down to settle
+  await new Promise(resolve => setTimeout(resolve, 350));
+
   DOM.settingsSave.disabled = true;
   DOM.settingsSave.textContent = 'Saving...';
 
@@ -1028,10 +1036,10 @@ async function handleSettingsSave() {
     updateProfileUI();
     closeSettingsModal();
     
-    // Automatically reload page after 500ms to apply new configuration
+    // Automatically reload page after 1200ms to allow layout transitions to fully settle
     setTimeout(() => {
       window.location.reload(true);
-    }, 500);
+    }, 1200);
 
     // Re-render everything with the new user context
     renderDashboard();
