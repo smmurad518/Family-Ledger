@@ -101,6 +101,12 @@ let activeShoppingFilter = 'all';
 let activeDuesFilter = 'give';
 let activeExpenseMonth = ''; // Format: YYYY-MM
 
+// Cache for detecting remote new entries
+let lastShoppingList = [];
+let lastExpensesList = [];
+let lastDuesList = [];
+let isFirstLoad = true;
+
 // Category colors for expense ledger and charts
 const CATEGORY_COLORS = {
   'House Rent': '#F87171',      // Soft Red/Coral
@@ -163,6 +169,21 @@ document.addEventListener('DOMContentLoaded', () => {
   updateProfileUI();
   updateOfflineBanner();
   switchScreen('dashboard');
+
+  // Request browser notification permissions
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+
+  // Cache initial datasets
+  lastShoppingList = getShoppingItems();
+  lastExpensesList = getExpenses();
+  lastDuesList = getDues();
+
+  // Set isFirstLoad to false after 4 seconds to ignore initial data sync events
+  setTimeout(() => {
+    isFirstLoad = false;
+  }, 4000);
 
   // Check for app code updates
   checkCodeUpdate();
@@ -778,12 +799,191 @@ async function handleSettingsSave() {
 // ----------------------------------------------------
 // DATABASE & SYNC STATE UI UPDATER
 // ----------------------------------------------------
+function playNotificationSound() {
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+    const ctx = new AudioContext();
+    const time = ctx.currentTime;
+    
+    // Tone 1: Fundamental frequency
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(784, time); // G5
+    gain1.gain.setValueAtTime(0.12, time);
+    gain1.gain.exponentialRampToValueAtTime(0.001, time + 0.4);
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    
+    // Tone 2: Overtone for pleasant ring
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(1174.66, time); // D6
+    gain2.gain.setValueAtTime(0.06, time);
+    gain2.gain.exponentialRampToValueAtTime(0.001, time + 0.35);
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+
+    osc1.start(time);
+    osc1.stop(time + 0.4);
+    osc2.start(time);
+    osc2.stop(time + 0.35);
+  } catch (e) {
+    console.error("Audio playback error:", e);
+  }
+}
+
+function showInAppToast(title, message) {
+  let toastContainer = document.getElementById('toast-container');
+  if (!toastContainer) {
+    toastContainer = document.createElement('div');
+    toastContainer.id = 'toast-container';
+    Object.assign(toastContainer.style, {
+      position: 'fixed',
+      top: '20px',
+      left: '50%',
+      transform: 'translateX(-50%)',
+      zIndex: '9999',
+      width: '90%',
+      maxWidth: '380px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '10px',
+      pointerEvents: 'none'
+    });
+    document.body.appendChild(toastContainer);
+  }
+
+  const toast = document.createElement('div');
+  toast.className = 'custom-toast';
+  Object.assign(toast.style, {
+    background: 'rgba(21, 22, 26, 0.95)',
+    border: '1px solid var(--border-color)',
+    borderRadius: '16px',
+    padding: '16px',
+    boxShadow: '0 10px 30px rgba(0, 0, 0, 0.4)',
+    backdropFilter: 'blur(10px)',
+    webkitBackdropFilter: 'blur(10px)',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '4px',
+    pointerEvents: 'auto',
+    transform: 'translateY(-30px)',
+    opacity: '0',
+    transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
+  });
+
+  toast.innerHTML = `
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+      <span style="font-family: var(--font-title); font-weight: 800; font-size: 14px; color: var(--color-primary);">${title}</span>
+      <button style="background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 0; font-size: 14px; line-height: 1;" onclick="this.closest('.custom-toast').remove()">×</button>
+    </div>
+    <span style="font-size: 12px; color: var(--text-dark); line-height: 1.4;">${message}</span>
+  `;
+
+  toastContainer.appendChild(toast);
+
+  setTimeout(() => {
+    toast.style.transform = 'translateY(0)';
+    toast.style.opacity = '1';
+  }, 10);
+
+  setTimeout(() => {
+    toast.style.transform = 'translateY(-20px)';
+    toast.style.opacity = '0';
+    setTimeout(() => {
+      toast.remove();
+    }, 400);
+  }, 5000);
+}
+
+function triggerNotification(title, message) {
+  // 1. Play sound
+  playNotificationSound();
+
+  // 2. Web Push Notification
+  if ('Notification' in window && Notification.permission === 'granted') {
+    try {
+      new Notification(title, {
+        body: message,
+        icon: './assets/icons/icon-192.png'
+      });
+    } catch (e) {
+      console.error("System notification failed:", e);
+    }
+  }
+
+  // 3. In-app Toast Notification
+  showInAppToast(title, message);
+}
+
 function handleDataUpdate(type, sourceCollection) {
   // Re-render only necessary parts based on collection updates or do complete redraws
   renderDashboard();
   if (!sourceCollection || sourceCollection === 'shopping_list') renderShoppingList();
   if (!sourceCollection || sourceCollection === 'expenses') renderExpenseTracker();
   if (!sourceCollection || sourceCollection === 'dues') renderDuesLedger();
+
+  // If this is the initial load, just update cache and return
+  if (isFirstLoad) {
+    lastShoppingList = getShoppingItems();
+    lastExpensesList = getExpenses();
+    lastDuesList = getDues();
+    return;
+  }
+
+  // Detect new items
+  const currentProfile = getCurrentProfile();
+  let newEntriesFound = [];
+
+  // 1. Check Shopping List
+  const newShoppingList = getShoppingItems();
+  newShoppingList.forEach(newItem => {
+    if (newItem.addedBy !== currentProfile && !lastShoppingList.some(oldItem => oldItem.id === newItem.id)) {
+      newEntriesFound.push({
+        type: 'Bajar Item',
+        title: 'নতুন বাজার আইটেম 🛒',
+        message: `${newItem.addedBy} একটি নতুন আইটেম যোগ করেছেন: "${newItem.name}" (${newItem.qty})।`
+      });
+    }
+  });
+  lastShoppingList = newShoppingList;
+
+  // 2. Check Expenses
+  const newExpensesList = getExpenses();
+  newExpensesList.forEach(newItem => {
+    if (newItem.addedBy !== currentProfile && !lastExpensesList.some(oldItem => oldItem.id === newItem.id)) {
+      newEntriesFound.push({
+        type: 'Expense',
+        title: 'নতুন খরচ যোগ হয়েছে ৳',
+        message: `${newItem.addedBy} একটি নতুন খরচ যোগ করেছেন: "${newItem.notes}" (৳${newItem.amount.toLocaleString('en-IN')})।`
+      });
+    }
+  });
+  lastExpensesList = newExpensesList;
+
+  // 3. Check Dues
+  const newDuesList = getDues();
+  newDuesList.forEach(newItem => {
+    if (newItem.addedBy !== currentProfile && !lastDuesList.some(oldItem => oldItem.id === newItem.id)) {
+      const typeLabel = newItem.type === 'give' ? 'দিতে হবে' : 'পাবে';
+      newEntriesFound.push({
+        type: 'Due Entry',
+        title: 'নতুন ধার-দেনা এন্ট্রি 🤝',
+        message: `${newItem.addedBy} একটি নতুন লেনদেন যোগ করেছেন: "${newItem.person}" (৳${newItem.amount.toLocaleString('en-IN')}, ${typeLabel})।`
+      });
+    }
+  });
+  lastDuesList = newDuesList;
+
+  // Trigger notification and play sound if new entries added by the other spouse are found
+  if (newEntriesFound.length > 0) {
+    newEntriesFound.forEach(entry => {
+      triggerNotification(entry.title, entry.message);
+    });
+  }
 }
 
 function handleSyncStateChange(state, errorMessage = '') {
