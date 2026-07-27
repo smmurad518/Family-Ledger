@@ -25,7 +25,8 @@ import {
   addSuggestion,
   toggleSuggestionStatus,
   deleteSuggestion,
-  updateSuggestion
+  updateSuggestion,
+  reorderListData
 } from './db.js';
 
 // DOM Element Selectors
@@ -1383,7 +1384,7 @@ function renderShoppingList() {
     ` : '';
     
     return `
-      <li class="list-item ${checkedClass}">
+      <li class="list-item ${checkedClass}" data-id="${item.id}">
         <div class="item-left">
           <div class="item-checkbox" data-id="${item.id}">
             <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
@@ -1400,6 +1401,8 @@ function renderShoppingList() {
       </li>
     `;
   }).join('');
+
+  makeListDraggable(DOM.shoppingContainer, 'mm_shopping_list', renderShoppingList);
 }
 
 async function handleAddShoppingItem(e) {
@@ -1454,7 +1457,7 @@ function renderExpenseTracker() {
     ` : '';
     
     return `
-      <div class="list-item" style="border-left: 4px solid var(--color-primary); margin-bottom: 8px; padding: 12px 16px;">
+      <div class="list-item" data-id="${exp.id}" style="border-left: 4px solid var(--color-primary); margin-bottom: 8px; padding: 12px 16px;">
         <div class="item-left" style="gap: 12px;">
           <div class="item-details">
             <span style="font-weight: 800; font-size: 15px; color: var(--text-dark);">${exp.notes || 'Expense'}</span>
@@ -1479,6 +1482,8 @@ function renderExpenseTracker() {
     DOM.expenseTotalContainer.style.display = 'flex';
     DOM.expenseTotalValue.textContent = `৳ ${total.toLocaleString('en-IN')}`;
   }
+
+  makeListDraggable(DOM.expenseHistory, 'mm_expenses', renderExpenseTracker);
 }
 
 async function handleAddExpenseItem(e) {
@@ -1552,7 +1557,7 @@ function renderDuesLedger() {
     ` : '';
     
     return `
-      <div class="ledger-item ${due.type}">
+      <div class="ledger-item ${due.type}" data-id="${due.id}">
         <div class="item-left">
           <div style="flex: 1; display: flex; flex-direction: column;">
             <span style="font-weight: 800; font-size: 15px; color: var(--text-dark);">${due.person}</span>
@@ -1571,6 +1576,8 @@ function renderDuesLedger() {
       </div>
     `;
   }).join('');
+
+  makeListDraggable(DOM.duesContainer, 'mm_dues', renderDuesLedger);
 }
 
 // Global action handlers
@@ -1654,7 +1661,7 @@ function renderSuggestionsList() {
     ` : '';
 
     return `
-      <li class="list-item ${checkedClass}">
+      <li class="list-item ${checkedClass}" data-id="${item.id}">
         <div class="item-left">
           <div class="item-checkbox" data-id="${item.id}">
             <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
@@ -1670,4 +1677,52 @@ function renderSuggestionsList() {
       </li>
     `;
   }).join('');
+
+  makeListDraggable(DOM.suggestionsContainer, 'mm_suggestions', renderSuggestionsList);
+}
+
+function makeListDraggable(container, listKey, renderFn) {
+  if (!isEditDeleteAllEnabled()) return;
+
+  const items = container.querySelectorAll('.list-item, .ledger-item');
+  items.forEach(item => {
+    item.setAttribute('draggable', 'true');
+    item.style.cursor = 'grab';
+
+    item.addEventListener('dragstart', (e) => {
+      item.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', item.dataset.id || '');
+    });
+
+    item.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      
+      const draggingEl = container.querySelector('.dragging');
+      if (draggingEl && draggingEl !== item) {
+        const rect = item.getBoundingClientRect();
+        const next = (e.clientY - rect.top) / (rect.bottom - rect.top) > 0.5;
+        container.insertBefore(draggingEl, next ? item.nextSibling : item);
+      }
+    });
+
+    item.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      const draggingEl = container.querySelector('.dragging');
+      if (!draggingEl) return;
+
+      const sourceId = draggingEl.dataset.id;
+      const targetId = item.dataset.id;
+      if (!sourceId || !targetId || sourceId === targetId) return;
+
+      await reorderListData(listKey, sourceId, targetId);
+      renderFn();
+    });
+
+    item.addEventListener('dragend', () => {
+      item.classList.remove('dragging');
+      renderFn();
+    });
+  });
 }

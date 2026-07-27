@@ -729,3 +729,48 @@ export async function updateSuggestion(id, text) {
   pushStateToServer();
 }
 
+export async function reorderListData(key, sourceId, targetId) {
+  isWriting = true;
+  if (writeCooldownTimer) clearTimeout(writeCooldownTimer);
+
+  const items = getLocal(key, []);
+  const sourceItem = items.find(item => item.id === sourceId);
+  const targetItem = items.find(item => item.id === targetId);
+  if (!sourceItem || !targetItem) { isWriting = false; return; }
+
+  const sourceIndex = items.indexOf(sourceItem);
+  items.splice(sourceIndex, 1);
+  const targetIndex = items.indexOf(targetItem);
+  items.splice(targetIndex, 0, sourceItem);
+
+  if (key === KEYS.EXPENSES) {
+    sourceItem.date = targetItem.date;
+  }
+
+  // Rewrite timestamps sequentially (newest first)
+  const now = Date.now();
+  items.forEach((item, index) => {
+    item.timestamp = now - index * 1000;
+  });
+
+  setLocal(key, items);
+
+  if (firestoreDb) {
+    const collectionName = key === KEYS.SHOPPING ? 'shopping_list' : 
+                           key === KEYS.EXPENSES ? 'expenses' : 
+                           key === KEYS.DUES ? 'dues' : 'suggestions';
+    const batch = writeBatch(firestoreDb);
+    items.forEach(item => {
+      const docRef = doc(firestoreDb, collectionName, item.id);
+      batch.set(docRef, item, { merge: true });
+    });
+    await batch.commit().catch(e => console.error("Firebase reorder sync failed:", e));
+  }
+
+  const collName = key === KEYS.SHOPPING ? 'shopping_list' : 
+                   key === KEYS.EXPENSES ? 'expenses' : 
+                   key === KEYS.DUES ? 'dues' : 'suggestions';
+  if (onUpdateCallback) onUpdateCallback('update', collName);
+  pushStateToServer();
+}
+

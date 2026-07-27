@@ -1755,3 +1755,17 @@ button.btn-primary:active {
   fill: none;
 }
 
+/* Drag and Drop visual feedback styling */
+.list-item[draggable="true"], .ledger-item[draggable="true"] {
+  user-select: none;
+  -webkit-user-drag: element;
+}
+
+.list-item.dragging, .ledger-item.dragging {
+  opacity: 0.4;
+  border: 2px dashed var(--color-primary-interactive) !important;
+  transform: scale(0.98);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  background: var(--bg-hover) !important;
+}
+
