@@ -1769,3 +1769,38 @@ button.btn-primary:active {
   background: var(--bg-hover) !important;
 }
 
+/* Premium Settings Modal Card layout */
+.setting-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-hover);
+  padding: 16px 20px;
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  margin-bottom: 12px;
+  transition: var(--transition-fast);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.setting-card:hover {
+  border-color: var(--color-primary-interactive);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.setting-card .setting-label {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--text-dark);
+}
+
+.setting-card.block {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.setting-card.block .segmented-control {
+  width: 100%;
+}
+
