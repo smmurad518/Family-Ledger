@@ -107,9 +107,6 @@ const DOM = {
   drawerToggleBtn: document.getElementById('drawer-toggle-btn'),
   drawerItems: document.querySelectorAll('.drawer-item'),
   drawerSettingsBtn: document.getElementById('drawer-settings-btn'),
-  drawerProfileBtn: document.getElementById('drawer-profile-btn'),
-  drawerAvatar: document.getElementById('drawer-avatar'),
-  drawerProfileName: document.getElementById('drawer-profile-name'),
 
   // Suggestions Selectors
   suggestionsContainer: document.getElementById('suggestions-list-container'),
@@ -570,12 +567,6 @@ function setupEventListeners() {
       openSettingsModal();
     });
   }
-  if (DOM.drawerProfileBtn) {
-    DOM.drawerProfileBtn.addEventListener('click', () => {
-      closeDrawer();
-      toggleActiveProfile();
-    });
-  }
 
   // Profile Toggling and Settings Close Buttons
   DOM.profileBtn.addEventListener('click', toggleActiveProfile);
@@ -819,10 +810,6 @@ function updateProfileUI() {
   DOM.profileName.textContent = profile;
   DOM.profileAvatar.textContent = profile === 'Husband' ? '🧔' : '👩';
   DOM.welcomeUser.textContent = profile;
-  
-  // Update drawer profile
-  if (DOM.drawerProfileName) DOM.drawerProfileName.textContent = profile;
-  if (DOM.drawerAvatar) DOM.drawerAvatar.textContent = profile === 'Husband' ? '🧔' : '👩';
   
   // Set data-profile attribute on documentElement
   document.documentElement.setAttribute('data-profile', profile.toLowerCase());
