@@ -20,7 +20,12 @@ import {
   addDue,
   toggleDueStatus,
   deleteDue,
-  updateDue
+  updateDue,
+  getSuggestions,
+  addSuggestion,
+  toggleSuggestionStatus,
+  deleteSuggestion,
+  updateSuggestion
 } from './db.js';
 
 // DOM Element Selectors
