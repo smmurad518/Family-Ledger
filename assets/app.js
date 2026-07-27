@@ -11,13 +11,16 @@ import {
   addShoppingItem,
   toggleShoppingItem,
   deleteShoppingItem,
+  updateShoppingItem,
   getExpenses,
   addExpense,
   deleteExpense,
+  updateExpense,
   getDues,
   addDue,
   toggleDueStatus,
-  deleteDue
+  deleteDue,
+  updateDue
 } from './db.js';
 
 // DOM Element Selectors
@@ -589,19 +592,49 @@ function setupEventListeners() {
     });
   });
 
-  // Shopping List Container Event Delegation (Toggle & Delete)
+  // Shopping List Container Event Delegation (Toggle, Edit & Delete)
   if (DOM.shoppingContainer) {
     DOM.shoppingContainer.addEventListener('click', async (e) => {
-      const deleteBtn = e.target.closest('.btn-icon-delete');
+      // Edit Button
+      const editBtn = e.target.closest('.btn-icon-edit');
+      if (editBtn && editBtn.dataset.id) {
+        e.stopPropagation();
+        
+        if (!isEditDeleteAllEnabled()) {
+          alert("সম্পাদনা বন্ধ করা আছে! সেটিংস থেকে Edit & Delete অন করুন।");
+          return;
+        }
 
+        const items = getShoppingItems();
+        const item = items.find(i => i.id === editBtn.dataset.id);
+        if (item) {
+          const newName = prompt("সম্পাদনা করুন (আইটেমের নাম):", item.name);
+          if (newName === null) return;
+          if (!newName.trim()) {
+            alert("নাম ফাঁকা রাখা যাবে না!");
+            return;
+          }
+          const newQty = prompt("সম্পাদনা করুন (পরিমাণ/সংখ্যা):", item.qty);
+          if (newQty === null) return;
+          if (!newQty.trim()) {
+            alert("পরিমাণ ফাঁকা রাখা যাবে না!");
+            return;
+          }
+
+          await updateShoppingItem(editBtn.dataset.id, newName.trim(), newQty.trim());
+          renderShoppingList();
+          renderDashboard();
+        }
+        return;
+      }
+
+      // Delete Button
+      const deleteBtn = e.target.closest('.btn-icon-delete');
       if (deleteBtn && deleteBtn.dataset.id) {
         e.stopPropagation();
         
-        // Safety check:
-        const items = getShoppingItems();
-        const item = items.find(i => i.id === deleteBtn.dataset.id);
-        if (item && !isEditDeleteAllEnabled() && item.addedBy !== getCurrentProfile()) {
-          alert(`You are not allowed to delete this item (added by ${item.addedBy})`);
+        if (!isEditDeleteAllEnabled()) {
+          alert("ডিলিট বন্ধ করা আছে! সেটিংস থেকে Edit & Delete অন করুন।");
           return;
         }
 
@@ -623,17 +656,49 @@ function setupEventListeners() {
     });
   }
 
-  // Expense History Container Event Delegation (Delete)
+  // Expense History Container Event Delegation (Edit & Delete)
   if (DOM.expenseHistory) {
     DOM.expenseHistory.addEventListener('click', async (e) => {
+      // Edit Button
+      const editBtn = e.target.closest('.btn-icon-edit');
+      if (editBtn && editBtn.dataset.id) {
+        e.stopPropagation();
+
+        if (!isEditDeleteAllEnabled()) {
+          alert("সম্পাদনা বন্ধ করা আছে! সেটিংস থেকে Edit & Delete অন করুন।");
+          return;
+        }
+
+        const expenses = getExpenses();
+        const exp = expenses.find(expItem => expItem.id === editBtn.dataset.id);
+        if (exp) {
+          const newNotes = prompt("সম্পাদনা করুন (খরচের বিবরণ):", exp.notes);
+          if (newNotes === null) return;
+          if (!newNotes.trim()) {
+            alert("খরচের বিবরণ ফাঁকা রাখা যাবে না!");
+            return;
+          }
+          const newAmount = prompt("সম্পাদনা করুন (টাকার পরিমাণ):", exp.amount);
+          if (newAmount === null) return;
+          if (isNaN(newAmount) || parseFloat(newAmount) <= 0) {
+            alert("সঠিক টাকার পরিমাণ লিখুন!");
+            return;
+          }
+
+          await updateExpense(editBtn.dataset.id, newAmount, newNotes.trim());
+          renderExpenseTracker();
+          renderDashboard();
+        }
+        return;
+      }
+
+      // Delete Button
       const deleteBtn = e.target.closest('.btn-icon-delete');
       if (deleteBtn && deleteBtn.dataset.id) {
         e.stopPropagation();
 
-        const expenses = getExpenses();
-        const exp = expenses.find(expItem => expItem.id === deleteBtn.dataset.id);
-        if (exp && !isEditDeleteAllEnabled() && exp.addedBy !== getCurrentProfile()) {
-          alert(`You are not allowed to delete this expense (added by ${exp.addedBy})`);
+        if (!isEditDeleteAllEnabled()) {
+          alert("ডিলিট বন্ধ করা আছে! সেটিংস থেকে Edit & Delete অন করুন।");
           return;
         }
 
@@ -644,17 +709,49 @@ function setupEventListeners() {
     });
   }
 
-  // Dues Container Event Delegation (Delete)
+  // Dues Container Event Delegation (Edit & Delete)
   if (DOM.duesContainer) {
     DOM.duesContainer.addEventListener('click', async (e) => {
+      // Edit Button
+      const editBtn = e.target.closest('.btn-icon-edit');
+      if (editBtn && editBtn.dataset.id) {
+        e.stopPropagation();
+
+        if (!isEditDeleteAllEnabled()) {
+          alert("সম্পাদনা বন্ধ করা আছে! সেটিংস থেকে Edit & Delete অন করুন।");
+          return;
+        }
+
+        const dues = getDues();
+        const due = dues.find(d => d.id === editBtn.dataset.id);
+        if (due) {
+          const newPerson = prompt("সম্পাদনা করুন (ব্যক্তির নাম):", due.person);
+          if (newPerson === null) return;
+          if (!newPerson.trim()) {
+            alert("ব্যক্তির নাম ফাঁকা রাখা যাবে না!");
+            return;
+          }
+          const newAmount = prompt("সম্পাদনা করুন (টাকার পরিমাণ):", due.amount);
+          if (newAmount === null) return;
+          if (isNaN(newAmount) || parseFloat(newAmount) <= 0) {
+            alert("সঠিক টাকার পরিমাণ লিখুন!");
+            return;
+          }
+
+          await updateDue(editBtn.dataset.id, newPerson.trim(), newAmount);
+          renderDuesLedger();
+          renderDashboard();
+        }
+        return;
+      }
+
+      // Delete Button
       const deleteBtn = e.target.closest('.btn-icon-delete');
       if (deleteBtn && deleteBtn.dataset.id) {
         e.stopPropagation();
 
-        const dues = getDues();
-        const due = dues.find(d => d.id === deleteBtn.dataset.id);
-        if (due && !isEditDeleteAllEnabled() && due.addedBy !== getCurrentProfile()) {
-          alert(`You are not allowed to delete this entry (added by ${due.addedBy})`);
+        if (!isEditDeleteAllEnabled()) {
+          alert("ডিলিট বন্ধ করা আছে! সেটিংস থেকে Edit & Delete অন করুন।");
           return;
         }
 
@@ -1149,9 +1246,11 @@ function renderShoppingList() {
   DOM.shoppingContainer.innerHTML = filteredItems.map(item => {
     const checkedClass = item.bought ? 'bought' : '';
     const buyerInfo = item.bought ? `bought by ${item.boughtBy || 'someone'}` : `added by ${item.addedBy}`;
-    const currentProfile = getCurrentProfile();
-    const canDelete = isEditDeleteAllEnabled() || (item.addedBy === currentProfile);
-    const deleteButtonHtml = canDelete ? `
+    const canAction = isEditDeleteAllEnabled();
+    const actionButtonsHtml = canAction ? `
+      <button class="btn-icon-edit" data-id="${item.id}" aria-label="Edit shopping item">
+        <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      </button>
       <button class="btn-icon-delete" data-id="${item.id}" aria-label="Delete shopping item">
         <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
       </button>
@@ -1168,9 +1267,9 @@ function renderShoppingList() {
             <span class="item-meta">${buyerInfo}</span>
           </div>
         </div>
-        <div class="item-right">
+        <div class="item-right" style="display: flex; align-items: center; gap: 8px;">
           <span class="item-qty">${item.qty}</span>
-          ${deleteButtonHtml}
+          ${actionButtonsHtml}
         </div>
       </li>
     `;
@@ -1218,9 +1317,11 @@ function renderExpenseTracker() {
 
   DOM.expenseHistory.innerHTML = expenses.map(exp => {
     const parsedDate = new Date(exp.date).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
-    const currentProfile = getCurrentProfile();
-    const canDelete = isEditDeleteAllEnabled() || (exp.addedBy === currentProfile);
-    const deleteButtonHtml = canDelete ? `
+    const canAction = isEditDeleteAllEnabled();
+    const actionButtonsHtml = canAction ? `
+      <button class="btn-icon-edit" data-id="${exp.id}" aria-label="Edit expense">
+        <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      </button>
       <button class="btn-icon-delete" data-id="${exp.id}" aria-label="Delete expense">
         <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
       </button>
@@ -1236,11 +1337,11 @@ function renderExpenseTracker() {
             </span>
           </div>
         </div>
-        <div class="item-right" style="gap: 12px;">
+        <div class="item-right" style="gap: 8px; display: flex; align-items: center;">
           <span style="font-family: var(--font-title); font-weight: 800; font-size: 16px; color: var(--text-dark);">
             ৳${exp.amount.toLocaleString('en-IN')}
           </span>
-          ${deleteButtonHtml}
+          ${actionButtonsHtml}
         </div>
       </div>
     `;
@@ -1314,9 +1415,11 @@ function renderDuesLedger() {
     // Determine labels and styling
     const typeLabel = due.type === 'give' ? 'You owe them' : 'They owe you';
     const amountColorClass = due.type === 'give' ? 'take' : 'give'; // Coral vs Sage color
-    const currentProfile = getCurrentProfile();
-    const canDelete = isEditDeleteAllEnabled() || (due.addedBy === currentProfile);
-    const deleteButtonHtml = canDelete ? `
+    const canAction = isEditDeleteAllEnabled();
+    const actionButtonsHtml = canAction ? `
+      <button class="btn-icon-edit" data-id="${due.id}" aria-label="Edit entry" style="align-self: center;">
+        <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      </button>
       <button class="btn-icon-delete" data-id="${due.id}" aria-label="Delete entry" style="align-self: center;">
         <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
       </button>
@@ -1333,11 +1436,11 @@ function renderDuesLedger() {
             <span style="font-size: 10px; color: var(--text-muted); margin-top: 1px;">by ${due.addedBy}</span>
           </div>
         </div>
-        <div class="item-right" style="gap: 12px;">
+        <div class="item-right" style="gap: 8px; display: flex; align-items: center;">
           <span class="ledger-amount ${amountColorClass}">
             ৳${due.amount.toLocaleString('en-IN')}
           </span>
-          ${deleteButtonHtml}
+          ${actionButtonsHtml}
         </div>
       </div>
     `;
@@ -1346,9 +1449,7 @@ function renderDuesLedger() {
 
 // Global action handlers
 window.handleDeleteShopping = async (id) => {
-  const items = getShoppingItems();
-  const item = items.find(i => i.id === id);
-  if (item && !isEditDeleteAllEnabled() && item.addedBy !== getCurrentProfile()) return;
+  if (!isEditDeleteAllEnabled()) return;
   await deleteShoppingItem(id);
   renderShoppingList();
   renderDashboard();
@@ -1361,18 +1462,14 @@ window.handleToggleShopping = async (id) => {
 };
 
 window.handleDeleteExpense = async (id) => {
-  const expenses = getExpenses();
-  const exp = expenses.find(e => e.id === id);
-  if (exp && !isEditDeleteAllEnabled() && exp.addedBy !== getCurrentProfile()) return;
+  if (!isEditDeleteAllEnabled()) return;
   await deleteExpense(id);
   renderExpenseTracker();
   renderDashboard();
 };
 
 window.handleDeleteDue = async (id) => {
-  const dues = getDues();
-  const due = dues.find(d => d.id === id);
-  if (due && !isEditDeleteAllEnabled() && due.addedBy !== getCurrentProfile()) return;
+  if (!isEditDeleteAllEnabled()) return;
   await deleteDue(id);
   renderDuesLedger();
   renderDashboard();

@@ -548,3 +548,76 @@ export async function deleteDue(id) {
   if (onUpdateCallback) onUpdateCallback('update', 'dues');
   pushStateToServer();
 }
+
+export async function updateShoppingItem(id, name, qty) {
+  isWriting = true;
+  if (writeCooldownTimer) clearTimeout(writeCooldownTimer);
+
+  const items = getShoppingItems();
+  const index = items.findIndex(item => item.id === id);
+  if (index === -1) { isWriting = false; return; }
+
+  items[index].name = name.trim();
+  items[index].qty = qty.trim();
+  items[index].timestamp = Date.now();
+
+  setLocal(KEYS.SHOPPING, items);
+
+  if (firestoreDb) {
+    setDoc(doc(firestoreDb, 'shopping_list', id), items[index], { merge: true }).catch(e => {
+      console.error('Firebase update failed:', e);
+    });
+  }
+
+  if (onUpdateCallback) onUpdateCallback('update', 'shopping_list');
+  pushStateToServer();
+}
+
+export async function updateExpense(id, amount, notes) {
+  isWriting = true;
+  if (writeCooldownTimer) clearTimeout(writeCooldownTimer);
+
+  const expenses = getExpenses();
+  const index = expenses.findIndex(exp => exp.id === id);
+  if (index === -1) { isWriting = false; return; }
+
+  expenses[index].amount = parseFloat(amount);
+  expenses[index].notes = notes.trim();
+  expenses[index].timestamp = Date.now();
+
+  setLocal(KEYS.EXPENSES, expenses);
+
+  if (firestoreDb) {
+    setDoc(doc(firestoreDb, 'expenses', id), expenses[index], { merge: true }).catch(e => {
+      console.error('Firebase update failed:', e);
+    });
+  }
+
+  if (onUpdateCallback) onUpdateCallback('update', 'expenses');
+  pushStateToServer();
+}
+
+export async function updateDue(id, person, amount) {
+  isWriting = true;
+  if (writeCooldownTimer) clearTimeout(writeCooldownTimer);
+
+  const dues = getDues();
+  const index = dues.findIndex(due => due.id === id);
+  if (index === -1) { isWriting = false; return; }
+
+  dues[index].person = person.trim();
+  dues[index].amount = parseFloat(amount);
+  dues[index].timestamp = Date.now();
+
+  setLocal(KEYS.DUES, dues);
+
+  if (firestoreDb) {
+    setDoc(doc(firestoreDb, 'dues', id), dues[index], { merge: true }).catch(e => {
+      console.error('Firebase update failed:', e);
+    });
+  }
+
+  if (onUpdateCallback) onUpdateCallback('update', 'dues');
+  pushStateToServer();
+}
+

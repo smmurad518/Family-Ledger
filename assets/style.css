@@ -1729,3 +1729,29 @@ button.btn-primary:active {
   color: var(--color-primary);
 }
 
+/* Custom premium edit button icon */
+.btn-icon-edit {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition-fast);
+}
+
+.btn-icon-edit:hover {
+  color: var(--color-primary-interactive);
+  transform: scale(1.15);
+}
+
+.btn-icon-edit svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+}
+
