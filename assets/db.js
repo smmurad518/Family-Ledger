@@ -19,6 +19,7 @@ const KEYS = {
   SHOPPING: 'mm_shopping_list',
   EXPENSES: 'mm_expenses',
   DUES: 'mm_dues',
+  SUGGESTIONS: 'mm_suggestions',
   EDIT_DELETE_ALL: 'mm_edit_delete_all',
   WIFE_CAN_SWITCH: 'mm_wife_can_switch'
 };
@@ -93,10 +94,12 @@ export async function pollServerData() {
         const localShopping = getLocal(KEYS.SHOPPING, []);
         const localExpenses = getLocal(KEYS.EXPENSES, []);
         const localDues = getLocal(KEYS.DUES, []);
+        const localSuggestions = getLocal(KEYS.SUGGESTIONS, []);
 
         const remoteShopping = serverData.shopping || [];
         const remoteExpenses = serverData.expenses || [];
         const remoteDues = serverData.dues || [];
+        const remoteSuggestions = serverData.suggestions || [];
 
         let updated = false;
 
@@ -110,6 +113,10 @@ export async function pollServerData() {
         }
         if (JSON.stringify(localDues) !== JSON.stringify(remoteDues)) {
           setLocal(KEYS.DUES, remoteDues);
+          updated = true;
+        }
+        if (JSON.stringify(localSuggestions) !== JSON.stringify(remoteSuggestions)) {
+          setLocal(KEYS.SUGGESTIONS, remoteSuggestions);
           updated = true;
         }
 
@@ -135,11 +142,13 @@ export async function pushStateToServer() {
     const localShopping = getLocal(KEYS.SHOPPING, []);
     const localExpenses = getLocal(KEYS.EXPENSES, []);
     const localDues = getLocal(KEYS.DUES, []);
+    const localSuggestions = getLocal(KEYS.SUGGESTIONS, []);
 
     const payload = {
       shopping: localShopping,
       expenses: localExpenses,
       dues: localDues,
+      suggestions: localSuggestions,
       updatedAt: Date.now()
     };
 
@@ -239,6 +248,7 @@ export async function connectFirebase(config, onSyncStateChange) {
     setupCollectionListener('shopping_list', KEYS.SHOPPING, onSyncStateChange);
     setupCollectionListener('expenses', KEYS.EXPENSES, onSyncStateChange);
     setupCollectionListener('dues', KEYS.DUES, onSyncStateChange);
+    setupCollectionListener('suggestions', KEYS.SUGGESTIONS, onSyncStateChange);
 
     if (onSyncStateChange) onSyncStateChange('connected');
     return true;
@@ -283,7 +293,8 @@ async function uploadLocalDataToCloud() {
   const collectionsToSync = [
     { name: 'shopping_list', localKey: KEYS.SHOPPING },
     { name: 'expenses', localKey: KEYS.EXPENSES },
-    { name: 'dues', localKey: KEYS.DUES }
+    { name: 'dues', localKey: KEYS.DUES },
+    { name: 'suggestions', localKey: KEYS.SUGGESTIONS }
   ];
 
   for (const col of collectionsToSync) {
@@ -618,6 +629,103 @@ export async function updateDue(id, person, amount) {
   }
 
   if (onUpdateCallback) onUpdateCallback('update', 'dues');
+  pushStateToServer();
+}
+
+// ----------------------------------------------------
+// APIS: NEXT SUGGESTIONS
+// ----------------------------------------------------
+export function getSuggestions() {
+  return getLocal(KEYS.SUGGESTIONS, []);
+}
+
+export async function addSuggestion(text) {
+  isWriting = true;
+  if (writeCooldownTimer) clearTimeout(writeCooldownTimer);
+
+  const list = getSuggestions();
+  const newItem = {
+    id: generateId(),
+    text: text.trim(),
+    done: false,
+    addedBy: getCurrentProfile(),
+    timestamp: Date.now()
+  };
+
+  list.push(newItem);
+  setLocal(KEYS.SUGGESTIONS, list);
+
+  if (firestoreDb) {
+    setDoc(doc(firestoreDb, 'suggestions', newItem.id), newItem).catch(e => {
+      console.error('Firebase save failed:', e);
+    });
+  }
+
+  if (onUpdateCallback) onUpdateCallback('update', 'suggestions');
+  pushStateToServer();
+}
+
+export async function toggleSuggestionStatus(id) {
+  isWriting = true;
+  if (writeCooldownTimer) clearTimeout(writeCooldownTimer);
+
+  const list = getSuggestions();
+  const index = list.findIndex(item => item.id === id);
+  if (index === -1) { isWriting = false; return; }
+
+  list[index].done = !list[index].done;
+  list[index].timestamp = Date.now();
+
+  setLocal(KEYS.SUGGESTIONS, list);
+
+  if (firestoreDb) {
+    setDoc(doc(firestoreDb, 'suggestions', id), list[index], { merge: true }).catch(e => {
+      console.error('Firebase update failed:', e);
+    });
+  }
+
+  if (onUpdateCallback) onUpdateCallback('update', 'suggestions');
+  pushStateToServer();
+}
+
+export async function deleteSuggestion(id) {
+  isWriting = true;
+  if (writeCooldownTimer) clearTimeout(writeCooldownTimer);
+
+  const list = getSuggestions();
+  const filtered = list.filter(item => item.id !== id);
+  setLocal(KEYS.SUGGESTIONS, filtered);
+
+  if (firestoreDb) {
+    deleteDoc(doc(firestoreDb, 'suggestions', id)).catch(e => {
+      console.error('Firebase delete failed:', e);
+    });
+  }
+
+  if (onUpdateCallback) onUpdateCallback('update', 'suggestions');
+  pushStateToServer();
+}
+
+export async function updateSuggestion(id, text) {
+  isWriting = true;
+  if (writeCooldownTimer) clearTimeout(writeCooldownTimer);
+
+  const list = getSuggestions();
+  const index = list.findIndex(item => item.id === id);
+  if (index === -1) { isWriting = false; return; }
+
+  list[index].text = text.trim();
+  list[index].timestamp = Date.now();
+
+  setLocal(KEYS.SUGGESTIONS, list);
+
+  if (firestoreDb) {
+    setDoc(doc(firestoreDb, 'suggestions', id), list[index], { merge: true }).catch(e => {
+      console.error('Firebase update failed:', e);
+    });
+  }
+
+  if (onUpdateCallback) onUpdateCallback('update', 'suggestions');
   pushStateToServer();
 }
 

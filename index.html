@@ -85,38 +85,7 @@
           </div>
         </div>
 
-        <h3 class="card-title">Quick Actions</h3>
-        <div class="quick-links">
-          <div class="quick-btn bajar" id="quick-add-bajar">
-            <div class="icon-wrapper">
-              <svg viewBox="0 0 24 24">
-                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0" />
-              </svg>
-            </div>
-            <span>Shopping</span>
-          </div>
-          <div class="quick-btn hishab" id="quick-add-expense">
-            <div class="icon-wrapper">
-              <svg viewBox="0 0 24 24">
-                <rect x="2" y="4" width="20" height="16" rx="2" ry="2" />
-                <line x1="12" y1="4" x2="12" y2="20" />
-                <line x1="2" y1="12" x2="22" y2="12" />
-              </svg>
-            </div>
-            <span>Needs</span>
-          </div>
-          <div class="quick-btn dhar" id="quick-add-due">
-            <div class="icon-wrapper">
-              <svg viewBox="0 0 24 24">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                <circle cx="9" cy="7" r="4" />
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-              </svg>
-            </div>
-            <span>Dues</span>
-          </div>
-        </div>
+
 
       </section>
 
@@ -282,6 +251,30 @@
         </div>
       </section>
 
+      <!-- Next Suggestions Screen -->
+      <section class="screen" id="screen-suggestions">
+        <div class="welcome-banner" style="background: linear-gradient(135deg, var(--color-primary) 0%, #a3df3b 100%); margin-bottom: 20px;">
+          <h2 style="color: var(--color-primary-dark);">Next Suggestions</h2>
+          <p style="color: var(--color-primary-dark); opacity: 0.85;">পরবর্তী আপডেটের আইডিয়া ও পরামর্শ এখানে যুক্ত করুন।</p>
+        </div>
+
+        <div class="card" style="margin-bottom: 20px; padding: 16px;">
+          <h3 style="margin-bottom: 12px; font-family: var(--font-title); font-weight: 800; font-size: 16px; color: var(--text-dark);">
+            নতুন সাজেশন যোগ করুন
+          </h3>
+          <form id="suggestion-form" style="display: flex; gap: 8px;">
+            <input type="text" id="suggestion-input" placeholder="পরবর্তী আপডেটের আইডিয়া লিখুন..." autocomplete="off" required style="flex: 1; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-dark);">
+            <button type="submit" id="btn-add-suggestion" class="btn-primary" style="width: auto; padding: 0 20px; border-radius: 12px; font-weight: 700; white-space: nowrap;">
+              + Add Idea
+            </button>
+          </form>
+        </div>
+
+        <ul class="item-list" id="suggestions-list-container" style="list-style: none; padding: 0; margin: 0;">
+          <!-- Items will be injected dynamically -->
+        </ul>
+      </section>
+
     </main>
 
     <!-- Custom Curved Bottom Navigation Bar -->
@@ -425,7 +418,7 @@
     <div class="modal-overlay" id="edit-modal">
       <div class="modal-content">
         <div class="modal-header">
-          <h2 class="modal-title" id="edit-modal-title">সম্পাদনা করুন</h2>
+          <h2 class="modal-title" id="edit-modal-title">Edit Entry</h2>
           <button class="modal-close" id="edit-modal-close" aria-label="Close edit modal">
             <svg viewBox="0 0 24 24">
               <line x1="18" y1="6" x2="6" y2="18" />
@@ -435,17 +428,17 @@
         </div>
 
         <div class="form-group">
-          <label id="edit-label-1" for="edit-input-1">প্রথম ক্ষেত্র</label>
+          <label id="edit-label-1" for="edit-input-1">Field 1</label>
           <input type="text" id="edit-input-1" autocomplete="off">
         </div>
 
         <div class="form-group">
-          <label id="edit-label-2" for="edit-input-2">দ্বিতীয় ক্ষেত্র</label>
+          <label id="edit-label-2" for="edit-input-2">Field 2</label>
           <input type="text" id="edit-input-2" autocomplete="off">
         </div>
 
         <button id="btn-save-edit" class="btn-primary" style="margin-top: 15px;">
-          হালনাগাদ করুন
+          Update Entry
         </button>
       </div>
     </div>
@@ -498,6 +491,12 @@
             <path d="M16 3.13a4 4 0 0 1 0 7.75" />
           </svg>
           <span>Dhar-Dena</span>
+        <div class="drawer-item" data-screen="suggestions">
+          <svg viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/>
+            <path d="M12 8v4l3 3" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+          </svg>
+          <span>Next Suggestion</span>
         </div>
       </nav>
       <div class="drawer-footer">
@@ -542,8 +541,8 @@
   </script>
 
   <!-- Core Scripts -->
-  <script type="module" src="assets/db.js?v=1785173125778"></script>
-  <script type="module" src="assets/app.js?v=1785173125778"></script>
+  <script type="module" src="assets/db.js?v=1785173387428"></script>
+  <script type="module" src="assets/app.js?v=1785173387428"></script>
 
 </body>
 

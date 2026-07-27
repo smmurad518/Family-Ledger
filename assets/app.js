@@ -45,9 +45,7 @@ const DOM = {
   dashTake: document.getElementById('dash-pending-take'),
   dashGive: document.getElementById('dash-pending-give'),
   dashBajarPending: document.getElementById('dash-bajar-pending'),
-  quickBajar: document.getElementById('quick-add-bajar'),
-  quickExpense: document.getElementById('quick-add-expense'),
-  quickDue: document.getElementById('quick-add-due'),
+
   recentActivitiesList: document.getElementById('recent-activities-list'),
 
   // Shopping List (Bajar)
@@ -106,7 +104,12 @@ const DOM = {
   drawerSettingsBtn: document.getElementById('drawer-settings-btn'),
   drawerProfileBtn: document.getElementById('drawer-profile-btn'),
   drawerAvatar: document.getElementById('drawer-avatar'),
-  drawerProfileName: document.getElementById('drawer-profile-name')
+  drawerProfileName: document.getElementById('drawer-profile-name'),
+
+  // Suggestions Selectors
+  suggestionsContainer: document.getElementById('suggestions-list-container'),
+  suggestionForm: document.getElementById('suggestion-form'),
+  suggestionInput: document.getElementById('suggestion-input')
 };
 
 // UI Active State Filters
@@ -118,10 +121,11 @@ let activeExpenseMonth = ''; // Format: YYYY-MM
 let lastShoppingList = [];
 let lastExpensesList = [];
 let lastDuesList = [];
+let lastSuggestionsList = [];
 let isFirstLoad = true;
 
 // Active Edit Context
-let currentEditType = ''; // 'shopping', 'expense', 'due'
+let currentEditType = ''; // 'shopping', 'expense', 'due', 'suggestion'
 let currentEditId = '';
 
 // Category colors for expense ledger and charts
@@ -196,6 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
   lastShoppingList = getShoppingItems();
   lastExpensesList = getExpenses();
   lastDuesList = getDues();
+  lastSuggestionsList = getSuggestions();
 
   // Set isFirstLoad to false after 4 seconds to ignore initial data sync events
   setTimeout(() => {
@@ -371,6 +376,8 @@ function renderActiveScreen() {
     renderExpenseTracker();
   } else if (activeScreen === 'screen-dues') {
     renderDuesLedger();
+  } else if (activeScreen === 'screen-suggestions') {
+    renderSuggestionsList();
   }
 }
 
@@ -567,10 +574,7 @@ function setupEventListeners() {
     DOM.themeToggleBtn.addEventListener('click', toggleTheme);
   }
 
-  // Quick Action Buttons
-  DOM.quickBajar.addEventListener('click', () => switchScreen('bajar'));
-  DOM.quickExpense.addEventListener('click', () => switchScreen('hishab'));
-  DOM.quickDue.addEventListener('click', () => switchScreen('dues'));
+
 
   // Firebase sync toggler in Settings
   DOM.firebaseEnable.addEventListener('change', (e) => {
@@ -617,14 +621,14 @@ function setupEventListeners() {
         e.stopPropagation();
         
         if (!isEditDeleteAllEnabled()) {
-          alert("সম্পাদনা বন্ধ করা আছে! সেটিংস থেকে Edit & Delete অন করুন।");
+          alert("Editing is disabled! Enable Edit & Delete in Settings.");
           return;
         }
 
         const items = getShoppingItems();
         const item = items.find(i => i.id === editBtn.dataset.id);
         if (item) {
-          openEditModal('shopping', item.id, 'বাজার আইটেম সম্পাদনা', 'আইটেমের নাম', item.name, 'পরিমাণ/সংখ্যা', item.qty);
+          openEditModal('shopping', item.id, 'Edit Shopping Item', 'Item Name', item.name, 'Quantity', item.qty);
         }
         return;
       }
@@ -635,7 +639,7 @@ function setupEventListeners() {
         e.stopPropagation();
         
         if (!isEditDeleteAllEnabled()) {
-          alert("ডিলিট বন্ধ করা আছে! সেটিংস থেকে Edit & Delete অন করুন।");
+          alert("Deletion is disabled! Enable Edit & Delete in Settings.");
           return;
         }
 
@@ -666,14 +670,14 @@ function setupEventListeners() {
         e.stopPropagation();
 
         if (!isEditDeleteAllEnabled()) {
-          alert("সম্পাদনা বন্ধ করা আছে! সেটিংস থেকে Edit & Delete অন করুন।");
+          alert("Editing is disabled! Enable Edit & Delete in Settings.");
           return;
         }
 
         const expenses = getExpenses();
         const exp = expenses.find(expItem => expItem.id === editBtn.dataset.id);
         if (exp) {
-          openEditModal('expense', exp.id, 'খরচ সম্পাদনা', 'খরচের বিবরণ', exp.notes, 'টাকার পরিমাণ', exp.amount);
+          openEditModal('expense', exp.id, 'Edit Expense', 'Expense Description', exp.notes, 'Amount (৳)', exp.amount);
         }
         return;
       }
@@ -684,7 +688,7 @@ function setupEventListeners() {
         e.stopPropagation();
 
         if (!isEditDeleteAllEnabled()) {
-          alert("ডিলিট বন্ধ করা আছে! সেটিংস থেকে Edit & Delete অন করুন।");
+          alert("Deletion is disabled! Enable Edit & Delete in Settings.");
           return;
         }
 
@@ -704,14 +708,14 @@ function setupEventListeners() {
         e.stopPropagation();
 
         if (!isEditDeleteAllEnabled()) {
-          alert("সম্পাদনা বন্ধ করা আছে! সেটিংস থেকে Edit & Delete অন করুন।");
+          alert("Editing is disabled! Enable Edit & Delete in Settings.");
           return;
         }
 
         const dues = getDues();
         const due = dues.find(d => d.id === editBtn.dataset.id);
         if (due) {
-          openEditModal('due', due.id, 'ধার-দেনা সম্পাদনা', 'ব্যক্তির নাম', due.person, 'টাকার পরিমাণ', due.amount);
+          openEditModal('due', due.id, 'Edit Due Entry', 'Person Name', due.person, 'Amount (৳)', due.amount);
         }
         return;
       }
@@ -722,13 +726,73 @@ function setupEventListeners() {
         e.stopPropagation();
 
         if (!isEditDeleteAllEnabled()) {
-          alert("ডিলিট বন্ধ করা আছে! সেটিংস থেকে Edit & Delete অন করুন।");
+          alert("Deletion is disabled! Enable Edit & Delete in Settings.");
           return;
         }
 
         await deleteDue(deleteBtn.dataset.id);
         renderDuesLedger();
         renderDashboard();
+      }
+    });
+  }
+
+  // Suggestions Form Submit
+  if (DOM.suggestionForm) {
+    DOM.suggestionForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const text = DOM.suggestionInput.value.trim();
+      if (!text) return;
+
+      await addSuggestion(text);
+      DOM.suggestionInput.value = '';
+      DOM.suggestionInput.blur();
+      renderSuggestionsList();
+    });
+  }
+
+  // Suggestions Container Event Delegation (Toggle, Edit, Delete)
+  if (DOM.suggestionsContainer) {
+    DOM.suggestionsContainer.addEventListener('click', async (e) => {
+      // Toggle suggestion checkbox
+      const checkbox = e.target.closest('.item-checkbox');
+      if (checkbox && checkbox.dataset.id) {
+        e.stopPropagation();
+        await toggleSuggestionStatus(checkbox.dataset.id);
+        renderSuggestionsList();
+        return;
+      }
+
+      // Edit Button
+      const editBtn = e.target.closest('.btn-icon-edit');
+      if (editBtn && editBtn.dataset.id) {
+        e.stopPropagation();
+        
+        if (!isEditDeleteAllEnabled()) {
+          alert("Editing is disabled! Enable Edit & Delete in Settings.");
+          return;
+        }
+
+        const list = getSuggestions();
+        const item = list.find(i => i.id === editBtn.dataset.id);
+        if (item) {
+          openEditModal('suggestion', item.id, 'Edit Suggestion Idea', 'Suggestion Text', item.text, '', '');
+        }
+        return;
+      }
+
+      // Delete Button
+      const deleteBtn = e.target.closest('.btn-icon-delete');
+      if (deleteBtn && deleteBtn.dataset.id) {
+        e.stopPropagation();
+
+        if (!isEditDeleteAllEnabled()) {
+          alert("Deletion is disabled! Enable Edit & Delete in Settings.");
+          return;
+        }
+
+        await deleteSuggestion(deleteBtn.dataset.id);
+        renderSuggestionsList();
       }
     });
   }
@@ -778,8 +842,15 @@ function openEditModal(type, id, title, label1, val1, label2, val2) {
   DOM.editModalTitle.textContent = title;
   DOM.editLabel1.textContent = label1;
   DOM.editInput1.value = val1;
-  DOM.editLabel2.textContent = label2;
-  DOM.editInput2.value = val2;
+
+  const formGroup2 = DOM.editInput2.closest('.form-group');
+  if (type === 'suggestion') {
+    if (formGroup2) formGroup2.style.display = 'none';
+  } else {
+    if (formGroup2) formGroup2.style.display = 'block';
+    DOM.editLabel2.textContent = label2;
+    DOM.editInput2.value = val2;
+  }
 
   DOM.editModal.classList.add('active');
 }
@@ -788,45 +859,54 @@ function closeEditModal() {
   DOM.editModal.classList.remove('active');
   currentEditType = '';
   currentEditId = '';
+  const formGroup2 = DOM.editInput2.closest('.form-group');
+  if (formGroup2) formGroup2.style.display = 'block';
 }
 
 async function handleEditSave() {
   const val1 = DOM.editInput1.value.trim();
   const val2 = DOM.editInput2.value.trim();
 
-  if (!val1 || !val2) {
-    alert("সবগুলো ফিল্ড পূরণ করুন!");
+  if (currentEditType !== 'suggestion' && (!val1 || !val2)) {
+    alert("Please fill in all fields!");
+    return;
+  }
+  if (currentEditType === 'suggestion' && !val1) {
+    alert("Please enter suggestion text!");
     return;
   }
 
   DOM.editSaveBtn.disabled = true;
-  DOM.editSaveBtn.textContent = 'হালনাগাদ হচ্ছে...';
+  DOM.editSaveBtn.textContent = 'Updating...';
 
   if (currentEditType === 'shopping') {
     await updateShoppingItem(currentEditId, val1, val2);
     renderShoppingList();
   } else if (currentEditType === 'expense') {
     if (isNaN(val2) || parseFloat(val2) <= 0) {
-      alert("সঠিক টাকার পরিমাণ লিখুন!");
+      alert("Please enter a valid amount!");
       DOM.editSaveBtn.disabled = false;
-      DOM.editSaveBtn.textContent = 'হালনাগাদ করুন';
+      DOM.editSaveBtn.textContent = 'Update Entry';
       return;
     }
     await updateExpense(currentEditId, val2, val1);
     renderExpenseTracker();
   } else if (currentEditType === 'due') {
     if (isNaN(val2) || parseFloat(val2) <= 0) {
-      alert("সঠিক টাকার পরিমাণ লিখুন!");
+      alert("Please enter a valid amount!");
       DOM.editSaveBtn.disabled = false;
-      DOM.editSaveBtn.textContent = 'হালনাগাদ করুন';
+      DOM.editSaveBtn.textContent = 'Update Entry';
       return;
     }
     await updateDue(currentEditId, val1, val2);
     renderDuesLedger();
+  } else if (currentEditType === 'suggestion') {
+    await updateSuggestion(currentEditId, val1);
+    renderSuggestionsList();
   }
 
   DOM.editSaveBtn.disabled = false;
-  DOM.editSaveBtn.textContent = 'হালনাগাদ করুন';
+  DOM.editSaveBtn.textContent = 'Update Entry';
   closeEditModal();
   renderDashboard();
 }
@@ -1053,12 +1133,14 @@ function handleDataUpdate(type, sourceCollection) {
   if (!sourceCollection || sourceCollection === 'shopping_list') renderShoppingList();
   if (!sourceCollection || sourceCollection === 'expenses') renderExpenseTracker();
   if (!sourceCollection || sourceCollection === 'dues') renderDuesLedger();
+  if (!sourceCollection || sourceCollection === 'suggestions') renderSuggestionsList();
 
   // If this is the initial load, just update cache and return
   if (isFirstLoad) {
     lastShoppingList = getShoppingItems();
     lastExpensesList = getExpenses();
     lastDuesList = getDues();
+    lastSuggestionsList = getSuggestions();
     return;
   }
 
@@ -1072,8 +1154,8 @@ function handleDataUpdate(type, sourceCollection) {
     if (newItem.addedBy !== currentProfile && !lastShoppingList.some(oldItem => oldItem.id === newItem.id)) {
       newEntriesFound.push({
         type: 'Bajar Item',
-        title: 'নতুন বাজার আইটেম 🛒',
-        message: `${newItem.addedBy} একটি নতুন আইটেম যোগ করেছেন: "${newItem.name}" (${newItem.qty})।`
+        title: 'New Shopping Item 🛒',
+        message: `${newItem.addedBy} added a new shopping item: "${newItem.name}" (${newItem.qty}).`
       });
     }
   });
@@ -1085,8 +1167,8 @@ function handleDataUpdate(type, sourceCollection) {
     if (newItem.addedBy !== currentProfile && !lastExpensesList.some(oldItem => oldItem.id === newItem.id)) {
       newEntriesFound.push({
         type: 'Expense',
-        title: 'নতুন খরচ যোগ হয়েছে ৳',
-        message: `${newItem.addedBy} একটি নতুন খরচ যোগ করেছেন: "${newItem.notes}" (৳${newItem.amount.toLocaleString('en-IN')})।`
+        title: 'New Expense Recorded ৳',
+        message: `${newItem.addedBy} recorded a new expense: "${newItem.notes}" (৳${newItem.amount.toLocaleString('en-IN')}).`
       });
     }
   });
@@ -1096,15 +1178,28 @@ function handleDataUpdate(type, sourceCollection) {
   const newDuesList = getDues();
   newDuesList.forEach(newItem => {
     if (newItem.addedBy !== currentProfile && !lastDuesList.some(oldItem => oldItem.id === newItem.id)) {
-      const typeLabel = newItem.type === 'give' ? 'দিতে হবে' : 'পাবে';
+      const typeLabel = newItem.type === 'give' ? 'Payable' : 'Receivable';
       newEntriesFound.push({
         type: 'Due Entry',
-        title: 'নতুন ধার-দেনা এন্ট্রি 🤝',
-        message: `${newItem.addedBy} একটি নতুন লেনদেন যোগ করেছেন: "${newItem.person}" (৳${newItem.amount.toLocaleString('en-IN')}, ${typeLabel})।`
+        title: 'New Dues Transaction 🤝',
+        message: `${newItem.addedBy} recorded a new transaction: "${newItem.person}" (৳${newItem.amount.toLocaleString('en-IN')}, ${typeLabel}).`
       });
     }
   });
   lastDuesList = newDuesList;
+
+  // 4. Check Suggestions
+  const newSuggestionsList = getSuggestions();
+  newSuggestionsList.forEach(newItem => {
+    if (newItem.addedBy !== currentProfile && !lastSuggestionsList.some(oldItem => oldItem.id === newItem.id)) {
+      newEntriesFound.push({
+        type: 'Suggestion',
+        title: 'New Suggestion Idea 💡',
+        message: `${newItem.addedBy} added a new suggestion: "${newItem.text}".`
+      });
+    }
+  });
+  lastSuggestionsList = newSuggestionsList;
 
   // Trigger notification and play sound if new entries added by the other spouse are found
   if (newEntriesFound.length > 0) {
@@ -1524,4 +1619,55 @@ async function handleAddDueItem(e) {
 
   renderDuesLedger();
   renderDashboard();
+}
+
+// ----------------------------------------------------
+// SCREEN RENDERS: NEXT SUGGESTIONS
+// ----------------------------------------------------
+function renderSuggestionsList() {
+  if (!DOM.suggestionsContainer) return;
+  const list = getSuggestions();
+
+  // Sort suggestions: newest first
+  list.sort((a, b) => b.timestamp - a.timestamp);
+
+  if (list.length === 0) {
+    DOM.suggestionsContainer.innerHTML = `
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/><path d="M12 8v4l3 3" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+        <p>No suggestions added yet.</p>
+      </div>
+    `;
+    return;
+  }
+
+  DOM.suggestionsContainer.innerHTML = list.map(item => {
+    const checkedClass = item.done ? 'bought' : ''; // Reuse styles from shopping list check
+    const canAction = isEditDeleteAllEnabled();
+    const actionButtonsHtml = canAction ? `
+      <button class="btn-icon-edit" data-id="${item.id}" aria-label="Edit suggestion">
+        <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      </button>
+      <button class="btn-icon-delete" data-id="${item.id}" aria-label="Delete suggestion">
+        <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      </button>
+    ` : '';
+
+    return `
+      <li class="list-item ${checkedClass}">
+        <div class="item-left">
+          <div class="item-checkbox" data-id="${item.id}">
+            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div class="item-details">
+            <span class="item-name" style="text-decoration: ${item.done ? 'line-through' : 'none'}; opacity: ${item.done ? 0.6 : 1};">${item.text}</span>
+            <span class="item-meta">added by ${item.addedBy}</span>
+          </div>
+        </div>
+        <div class="item-right" style="display: flex; align-items: center; gap: 8px;">
+          ${actionButtonsHtml}
+        </div>
+      </li>
+    `;
+  }).join('');
 }
