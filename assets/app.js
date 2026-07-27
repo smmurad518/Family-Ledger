@@ -323,11 +323,13 @@ function switchScreen(screenName) {
   });
 
   // Update curved nav cutout position and active icon
+  const cutoutContainer = document.getElementById('nav-cutout-container');
   const activeNavItem = Array.from(DOM.navItems).find(item => item.dataset.screen === screenName);
   if (activeNavItem) {
-    const index = parseInt(activeNavItem.dataset.index);
-    const cutoutContainer = document.getElementById('nav-cutout-container');
     if (cutoutContainer) {
+      cutoutContainer.style.opacity = '1';
+      cutoutContainer.style.pointerEvents = 'auto';
+      const index = parseInt(activeNavItem.dataset.index);
       cutoutContainer.style.transform = `translateX(${index * 100}%)`;
     }
     
@@ -339,6 +341,12 @@ function switchScreen(screenName) {
         activeIconWrapper.innerHTML = '';
         activeIconWrapper.appendChild(tabSvg);
       }
+    }
+  } else {
+    // Hide active cutout circle on bottom nav for sidebar-only pages
+    if (cutoutContainer) {
+      cutoutContainer.style.opacity = '0';
+      cutoutContainer.style.pointerEvents = 'none';
     }
   }
 
