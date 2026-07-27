@@ -86,6 +86,16 @@ const DOM = {
   fbAppId: document.getElementById('fb-app-id'),
   editDeleteAllEnable: document.getElementById('edit-delete-all-enable'),
   wifeSwitchPermissionGroup: document.getElementById('wife-switch-permission-group'),
+  
+  // Edit Modal Selectors
+  editModal: document.getElementById('edit-modal'),
+  editModalClose: document.getElementById('edit-modal-close'),
+  editModalTitle: document.getElementById('edit-modal-title'),
+  editLabel1: document.getElementById('edit-label-1'),
+  editLabel2: document.getElementById('edit-label-2'),
+  editInput1: document.getElementById('edit-input-1'),
+  editInput2: document.getElementById('edit-input-2'),
+  editSaveBtn: document.getElementById('btn-save-edit'),
 
   // Drawer Selectors
   drawerOverlay: document.getElementById('drawer-overlay'),
@@ -109,6 +119,10 @@ let lastShoppingList = [];
 let lastExpensesList = [];
 let lastDuesList = [];
 let isFirstLoad = true;
+
+// Active Edit Context
+let currentEditType = ''; // 'shopping', 'expense', 'due'
+let currentEditId = '';
 
 // Category colors for expense ledger and charts
 const CATEGORY_COLORS = {
@@ -546,6 +560,7 @@ function setupEventListeners() {
   // Profile Toggling and Settings Close Buttons
   DOM.profileBtn.addEventListener('click', toggleActiveProfile);
   DOM.settingsClose.addEventListener('click', closeSettingsModal);
+  DOM.editModalClose.addEventListener('click', closeEditModal);
 
   // Theme Toggle Button
   if (DOM.themeToggleBtn) {
@@ -564,6 +579,7 @@ function setupEventListeners() {
 
   // Save Settings Modal Actions
   DOM.settingsSave.addEventListener('click', handleSettingsSave);
+  DOM.editSaveBtn.addEventListener('click', handleEditSave);
 
 
 
@@ -608,22 +624,7 @@ function setupEventListeners() {
         const items = getShoppingItems();
         const item = items.find(i => i.id === editBtn.dataset.id);
         if (item) {
-          const newName = prompt("সম্পাদনা করুন (আইটেমের নাম):", item.name);
-          if (newName === null) return;
-          if (!newName.trim()) {
-            alert("নাম ফাঁকা রাখা যাবে না!");
-            return;
-          }
-          const newQty = prompt("সম্পাদনা করুন (পরিমাণ/সংখ্যা):", item.qty);
-          if (newQty === null) return;
-          if (!newQty.trim()) {
-            alert("পরিমাণ ফাঁকা রাখা যাবে না!");
-            return;
-          }
-
-          await updateShoppingItem(editBtn.dataset.id, newName.trim(), newQty.trim());
-          renderShoppingList();
-          renderDashboard();
+          openEditModal('shopping', item.id, 'বাজার আইটেম সম্পাদনা', 'আইটেমের নাম', item.name, 'পরিমাণ/সংখ্যা', item.qty);
         }
         return;
       }
@@ -672,22 +673,7 @@ function setupEventListeners() {
         const expenses = getExpenses();
         const exp = expenses.find(expItem => expItem.id === editBtn.dataset.id);
         if (exp) {
-          const newNotes = prompt("সম্পাদনা করুন (খরচের বিবরণ):", exp.notes);
-          if (newNotes === null) return;
-          if (!newNotes.trim()) {
-            alert("খরচের বিবরণ ফাঁকা রাখা যাবে না!");
-            return;
-          }
-          const newAmount = prompt("সম্পাদনা করুন (টাকার পরিমাণ):", exp.amount);
-          if (newAmount === null) return;
-          if (isNaN(newAmount) || parseFloat(newAmount) <= 0) {
-            alert("সঠিক টাকার পরিমাণ লিখুন!");
-            return;
-          }
-
-          await updateExpense(editBtn.dataset.id, newAmount, newNotes.trim());
-          renderExpenseTracker();
-          renderDashboard();
+          openEditModal('expense', exp.id, 'খরচ সম্পাদনা', 'খরচের বিবরণ', exp.notes, 'টাকার পরিমাণ', exp.amount);
         }
         return;
       }
@@ -725,22 +711,7 @@ function setupEventListeners() {
         const dues = getDues();
         const due = dues.find(d => d.id === editBtn.dataset.id);
         if (due) {
-          const newPerson = prompt("সম্পাদনা করুন (ব্যক্তির নাম):", due.person);
-          if (newPerson === null) return;
-          if (!newPerson.trim()) {
-            alert("ব্যক্তির নাম ফাঁকা রাখা যাবে না!");
-            return;
-          }
-          const newAmount = prompt("সম্পাদনা করুন (টাকার পরিমাণ):", due.amount);
-          if (newAmount === null) return;
-          if (isNaN(newAmount) || parseFloat(newAmount) <= 0) {
-            alert("সঠিক টাকার পরিমাণ লিখুন!");
-            return;
-          }
-
-          await updateDue(editBtn.dataset.id, newPerson.trim(), newAmount);
-          renderDuesLedger();
-          renderDashboard();
+          openEditModal('due', due.id, 'ধার-দেনা সম্পাদনা', 'ব্যক্তির নাম', due.person, 'টাকার পরিমাণ', due.amount);
         }
         return;
       }
@@ -798,6 +769,66 @@ function toggleActiveProfile() {
   setTimeout(() => {
     window.location.reload(true);
   }, 200);
+}
+
+function openEditModal(type, id, title, label1, val1, label2, val2) {
+  currentEditType = type;
+  currentEditId = id;
+  
+  DOM.editModalTitle.textContent = title;
+  DOM.editLabel1.textContent = label1;
+  DOM.editInput1.value = val1;
+  DOM.editLabel2.textContent = label2;
+  DOM.editInput2.value = val2;
+
+  DOM.editModal.classList.add('active');
+}
+
+function closeEditModal() {
+  DOM.editModal.classList.remove('active');
+  currentEditType = '';
+  currentEditId = '';
+}
+
+async function handleEditSave() {
+  const val1 = DOM.editInput1.value.trim();
+  const val2 = DOM.editInput2.value.trim();
+
+  if (!val1 || !val2) {
+    alert("সবগুলো ফিল্ড পূরণ করুন!");
+    return;
+  }
+
+  DOM.editSaveBtn.disabled = true;
+  DOM.editSaveBtn.textContent = 'হালনাগাদ হচ্ছে...';
+
+  if (currentEditType === 'shopping') {
+    await updateShoppingItem(currentEditId, val1, val2);
+    renderShoppingList();
+  } else if (currentEditType === 'expense') {
+    if (isNaN(val2) || parseFloat(val2) <= 0) {
+      alert("সঠিক টাকার পরিমাণ লিখুন!");
+      DOM.editSaveBtn.disabled = false;
+      DOM.editSaveBtn.textContent = 'হালনাগাদ করুন';
+      return;
+    }
+    await updateExpense(currentEditId, val2, val1);
+    renderExpenseTracker();
+  } else if (currentEditType === 'due') {
+    if (isNaN(val2) || parseFloat(val2) <= 0) {
+      alert("সঠিক টাকার পরিমাণ লিখুন!");
+      DOM.editSaveBtn.disabled = false;
+      DOM.editSaveBtn.textContent = 'হালনাগাদ করুন';
+      return;
+    }
+    await updateDue(currentEditId, val1, val2);
+    renderDuesLedger();
+  }
+
+  DOM.editSaveBtn.disabled = false;
+  DOM.editSaveBtn.textContent = 'হালনাগাদ করুন';
+  closeEditModal();
+  renderDashboard();
 }
 
 function openSettingsModal() {
