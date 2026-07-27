@@ -18,7 +18,9 @@ const KEYS = {
   FB_CONFIG: 'mm_firebase_config',
   SHOPPING: 'mm_shopping_list',
   EXPENSES: 'mm_expenses',
-  DUES: 'mm_dues'
+  DUES: 'mm_dues',
+  EDIT_DELETE_ALL: 'mm_edit_delete_all',
+  WIFE_CAN_SWITCH: 'mm_wife_can_switch'
 };
 
 // Global application state for db
@@ -186,6 +188,22 @@ export function setCurrentProfile(profile) {
   localStorage.setItem(KEYS.PROFILE, profile);
 }
 
+export function isEditDeleteAllEnabled() {
+  return getLocal(KEYS.EDIT_DELETE_ALL, false);
+}
+
+export function setEditDeleteAllEnabled(enabled) {
+  setLocal(KEYS.EDIT_DELETE_ALL, enabled);
+}
+
+export function canWifeSwitch() {
+  return getLocal(KEYS.WIFE_CAN_SWITCH, 'no');
+}
+
+export function setWifeCanSwitch(value) {
+  setLocal(KEYS.WIFE_CAN_SWITCH, value);
+}
+
 // Clear all active Firestore listeners
 function clearListeners() {
   unsubscribeCallbacks.forEach(unsub => {
@@ -303,10 +321,13 @@ export async function initializeDB(onUpdate, onSyncStateChange) {
 }
 
 // Save Firebase Config settings
-export async function saveSettings(profile, firebaseEnabled, config, onSyncStateChange) {
-  setCurrentProfile(profile);
+export async function saveSettings(firebaseEnabled, config, editDeleteAllEnabled, wifeCanSwitch, onSyncStateChange) {
   setLocal(KEYS.FB_ENABLED, firebaseEnabled);
   setLocal(KEYS.FB_CONFIG, config);
+  setLocal(KEYS.EDIT_DELETE_ALL, editDeleteAllEnabled);
+  if (wifeCanSwitch !== undefined) {
+    setLocal(KEYS.WIFE_CAN_SWITCH, wifeCanSwitch);
+  }
 
   if (firebaseEnabled && config.apiKey && config.projectId) {
     return await connectFirebase(config, onSyncStateChange);

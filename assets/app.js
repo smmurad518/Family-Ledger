@@ -5,6 +5,8 @@ import {
   getFirebaseConfig,
   getCurrentProfile,
   setCurrentProfile,
+  isEditDeleteAllEnabled,
+  canWifeSwitch,
   getShoppingItems,
   addShoppingItem,
   toggleShoppingItem,
@@ -79,6 +81,8 @@ const DOM = {
   fbProjectId: document.getElementById('fb-project-id'),
   fbAuthDomain: document.getElementById('fb-auth-domain'),
   fbAppId: document.getElementById('fb-app-id'),
+  editDeleteAllEnable: document.getElementById('edit-delete-all-enable'),
+  wifeSwitchPermissionGroup: document.getElementById('wife-switch-permission-group'),
 
   // Drawer Selectors
   drawerOverlay: document.getElementById('drawer-overlay'),
@@ -511,12 +515,12 @@ function setupEventListeners() {
   if (DOM.drawerProfileBtn) {
     DOM.drawerProfileBtn.addEventListener('click', () => {
       closeDrawer();
-      openSettingsModal();
+      toggleActiveProfile();
     });
   }
 
-  // Profile / Settings Button
-  DOM.profileBtn.addEventListener('click', openSettingsModal);
+  // Profile Toggling and Settings Close Buttons
+  DOM.profileBtn.addEventListener('click', toggleActiveProfile);
   DOM.settingsClose.addEventListener('click', closeSettingsModal);
 
   // Theme Toggle Button
@@ -571,6 +575,15 @@ function setupEventListeners() {
 
       if (deleteBtn && deleteBtn.dataset.id) {
         e.stopPropagation();
+        
+        // Safety check:
+        const items = getShoppingItems();
+        const item = items.find(i => i.id === deleteBtn.dataset.id);
+        if (item && !isEditDeleteAllEnabled() && item.addedBy !== getCurrentProfile()) {
+          alert(`You are not allowed to delete this item (added by ${item.addedBy})`);
+          return;
+        }
+
         await deleteShoppingItem(deleteBtn.dataset.id);
         renderShoppingList();
         renderDashboard();
@@ -595,6 +608,14 @@ function setupEventListeners() {
       const deleteBtn = e.target.closest('.btn-icon-delete');
       if (deleteBtn && deleteBtn.dataset.id) {
         e.stopPropagation();
+
+        const expenses = getExpenses();
+        const exp = expenses.find(expItem => expItem.id === deleteBtn.dataset.id);
+        if (exp && !isEditDeleteAllEnabled() && exp.addedBy !== getCurrentProfile()) {
+          alert(`You are not allowed to delete this expense (added by ${exp.addedBy})`);
+          return;
+        }
+
         await deleteExpense(deleteBtn.dataset.id);
         renderExpenseTracker();
         renderDashboard();
@@ -608,6 +629,14 @@ function setupEventListeners() {
       const deleteBtn = e.target.closest('.btn-icon-delete');
       if (deleteBtn && deleteBtn.dataset.id) {
         e.stopPropagation();
+
+        const dues = getDues();
+        const due = dues.find(d => d.id === deleteBtn.dataset.id);
+        if (due && !isEditDeleteAllEnabled() && due.addedBy !== getCurrentProfile()) {
+          alert(`You are not allowed to delete this entry (added by ${due.addedBy})`);
+          return;
+        }
+
         await deleteDue(deleteBtn.dataset.id);
         renderDuesLedger();
         renderDashboard();
@@ -633,13 +662,52 @@ function updateProfileUI() {
   document.documentElement.setAttribute('data-profile', profile.toLowerCase());
 }
 
-function openSettingsModal() {
-  // Pre-fill profile radios
+function toggleActiveProfile() {
   const currentProfile = getCurrentProfile();
-  if (currentProfile === 'Husband') {
-    document.getElementById('profile-choice-husband').checked = true;
-  } else {
-    document.getElementById('profile-choice-wife').checked = true;
+  
+  if (currentProfile === 'Wife') {
+    if (canWifeSwitch() !== 'yes') {
+      alert("Wife cannot switch profile! Permission denied by Husband.");
+      return;
+    }
+  }
+
+  const newProfile = currentProfile === 'Husband' ? 'Wife' : 'Husband';
+  setCurrentProfile(newProfile);
+  updateProfileUI();
+  
+  // Refresh layout and reload after a short delay so the visual switch is registered
+  setTimeout(() => {
+    window.location.reload(true);
+  }, 200);
+}
+
+function openSettingsModal() {
+  const currentProfile = getCurrentProfile();
+
+  // Show wife switch permission group ONLY if Husband is viewing settings
+  if (DOM.wifeSwitchPermissionGroup) {
+    if (currentProfile === 'Husband') {
+      DOM.wifeSwitchPermissionGroup.style.display = 'block';
+      
+      const val = canWifeSwitch();
+      const radYes = document.getElementById('wife-switch-yes');
+      const radNo = document.getElementById('wife-switch-no');
+      if (radYes && radNo) {
+        if (val === 'yes') {
+          radYes.checked = true;
+        } else {
+          radNo.checked = true;
+        }
+      }
+    } else {
+      DOM.wifeSwitchPermissionGroup.style.display = 'none';
+    }
+  }
+
+  // Pre-fill Edit & Delete all config
+  if (DOM.editDeleteAllEnable) {
+    DOM.editDeleteAllEnable.checked = isEditDeleteAllEnabled();
   }
 
   // Pre-fill firebase configs
@@ -664,9 +732,18 @@ async function handleSettingsSave() {
   DOM.settingsSave.disabled = true;
   DOM.settingsSave.textContent = 'Saving...';
 
-  // Get selected profile
-  const profile = document.querySelector('input[name="user-profile"]:checked').value;
   const firebaseEnabled = DOM.firebaseEnable.checked;
+  const editDeleteAll = DOM.editDeleteAllEnable ? DOM.editDeleteAllEnable.checked : false;
+  
+  // Read wife switch permission if Husband is saving settings
+  let wifeCanSwitch = canWifeSwitch();
+  if (getCurrentProfile() === 'Husband') {
+    const selectedRadio = document.querySelector('input[name="wife-switch"]:checked');
+    if (selectedRadio) {
+      wifeCanSwitch = selectedRadio.value;
+    }
+  }
+
   const config = {
     apiKey: DOM.fbApiKey.value.trim(),
     projectId: DOM.fbProjectId.value.trim(),
@@ -674,7 +751,7 @@ async function handleSettingsSave() {
     appId: DOM.fbAppId.value.trim()
   };
 
-  const success = await saveSettings(profile, firebaseEnabled, config, handleSyncStateChange);
+  const success = await saveSettings(firebaseEnabled, config, editDeleteAll, wifeCanSwitch, handleSyncStateChange);
   
   DOM.settingsSave.disabled = false;
   DOM.settingsSave.textContent = 'Save Settings';
@@ -872,6 +949,13 @@ function renderShoppingList() {
   DOM.shoppingContainer.innerHTML = filteredItems.map(item => {
     const checkedClass = item.bought ? 'bought' : '';
     const buyerInfo = item.bought ? `bought by ${item.boughtBy || 'someone'}` : `added by ${item.addedBy}`;
+    const currentProfile = getCurrentProfile();
+    const canDelete = isEditDeleteAllEnabled() || (item.addedBy === currentProfile);
+    const deleteButtonHtml = canDelete ? `
+      <button class="btn-icon-delete" data-id="${item.id}" aria-label="Delete shopping item">
+        <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      </button>
+    ` : '';
     
     return `
       <li class="list-item ${checkedClass}">
@@ -886,9 +970,7 @@ function renderShoppingList() {
         </div>
         <div class="item-right">
           <span class="item-qty">${item.qty}</span>
-          <button class="btn-icon-delete" data-id="${item.id}" aria-label="Delete shopping item">
-            <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-          </button>
+          ${deleteButtonHtml}
         </div>
       </li>
     `;
@@ -936,6 +1018,13 @@ function renderExpenseTracker() {
 
   DOM.expenseHistory.innerHTML = expenses.map(exp => {
     const parsedDate = new Date(exp.date).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+    const currentProfile = getCurrentProfile();
+    const canDelete = isEditDeleteAllEnabled() || (exp.addedBy === currentProfile);
+    const deleteButtonHtml = canDelete ? `
+      <button class="btn-icon-delete" data-id="${exp.id}" aria-label="Delete expense">
+        <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      </button>
+    ` : '';
     
     return `
       <div class="list-item" style="border-left: 4px solid var(--color-primary); margin-bottom: 8px; padding: 12px 16px;">
@@ -951,9 +1040,7 @@ function renderExpenseTracker() {
           <span style="font-family: var(--font-title); font-weight: 800; font-size: 16px; color: var(--text-dark);">
             ৳${exp.amount.toLocaleString('en-IN')}
           </span>
-          <button class="btn-icon-delete" data-id="${exp.id}" aria-label="Delete expense">
-            <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-          </button>
+          ${deleteButtonHtml}
         </div>
       </div>
     `;
@@ -1027,6 +1114,13 @@ function renderDuesLedger() {
     // Determine labels and styling
     const typeLabel = due.type === 'give' ? 'You owe them' : 'They owe you';
     const amountColorClass = due.type === 'give' ? 'take' : 'give'; // Coral vs Sage color
+    const currentProfile = getCurrentProfile();
+    const canDelete = isEditDeleteAllEnabled() || (due.addedBy === currentProfile);
+    const deleteButtonHtml = canDelete ? `
+      <button class="btn-icon-delete" data-id="${due.id}" aria-label="Delete entry" style="align-self: center;">
+        <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      </button>
+    ` : '';
     
     return `
       <div class="ledger-item ${due.type}">
@@ -1043,9 +1137,7 @@ function renderDuesLedger() {
           <span class="ledger-amount ${amountColorClass}">
             ৳${due.amount.toLocaleString('en-IN')}
           </span>
-          <button class="btn-icon-delete" data-id="${due.id}" aria-label="Delete entry" style="align-self: center;">
-            <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-          </button>
+          ${deleteButtonHtml}
         </div>
       </div>
     `;
@@ -1054,6 +1146,9 @@ function renderDuesLedger() {
 
 // Global action handlers
 window.handleDeleteShopping = async (id) => {
+  const items = getShoppingItems();
+  const item = items.find(i => i.id === id);
+  if (item && !isEditDeleteAllEnabled() && item.addedBy !== getCurrentProfile()) return;
   await deleteShoppingItem(id);
   renderShoppingList();
   renderDashboard();
@@ -1066,12 +1161,18 @@ window.handleToggleShopping = async (id) => {
 };
 
 window.handleDeleteExpense = async (id) => {
+  const expenses = getExpenses();
+  const exp = expenses.find(e => e.id === id);
+  if (exp && !isEditDeleteAllEnabled() && exp.addedBy !== getCurrentProfile()) return;
   await deleteExpense(id);
   renderExpenseTracker();
   renderDashboard();
 };
 
 window.handleDeleteDue = async (id) => {
+  const dues = getDues();
+  const due = dues.find(d => d.id === id);
+  if (due && !isEditDeleteAllEnabled() && due.addedBy !== getCurrentProfile()) return;
   await deleteDue(id);
   renderDuesLedger();
   renderDashboard();

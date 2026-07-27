@@ -39,7 +39,7 @@
       <button id="theme-toggle-btn" class="theme-toggle" aria-label="Toggle Theme" title="Toggle Light/Dark Mode">
         <svg viewBox="0 0 24 24" id="theme-toggle-icon"></svg>
       </button>
-      <div class="profile-badge" id="profile-btn" aria-label="Open Settings">
+      <div class="profile-badge" id="profile-btn" aria-label="Switch Profile" title="Click to switch profile">
         <span id="profile-avatar">🧔</span>
         <span id="profile-name">Husband</span>
       </div>
@@ -348,32 +348,41 @@
           </button>
         </div>
 
-        <div class="form-group">
-          <label>Active Profile</label>
-          <div class="user-select-grid">
-            <label class="user-option">
-              <input type="radio" name="user-profile" value="Husband" id="profile-choice-husband" checked>
-              <div class="user-card">
-                <span class="avatar">🧔</span>
-                <span class="label">Husband</span>
-              </div>
-            </label>
-            <label class="user-option">
-              <input type="radio" name="user-profile" value="Wife" id="profile-choice-wife">
-              <div class="user-card">
-                <span class="avatar">👩</span>
-                <span class="label">Wife</span>
-              </div>
-            </label>
+        <div class="form-group setting-row">
+          <div class="setting-info">
+            <span class="setting-label">Edit & Delete (All Items)</span>
+            <span class="setting-description">Allow editing & deleting other user's ledger entries.</span>
+          </div>
+          <label class="switch-toggle">
+            <input type="checkbox" id="edit-delete-all-enable">
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+
+        <div class="form-group" id="wife-switch-permission-group" style="display: none; margin-top: 10px; margin-bottom: 20px;">
+          <span class="setting-label" style="display: block;">Wife can switch profile?</span>
+          <span class="setting-description" style="display: block; margin-bottom: 8px;">Allow Wife to switch to Husband's ledger context.</span>
+          <div class="segmented-control">
+            <input type="radio" name="wife-switch" value="no" id="wife-switch-no" checked>
+            <label for="wife-switch-no" class="segmented-tab">No (Wife can't switch)</label>
+            
+            <input type="radio" name="wife-switch" value="yes" id="wife-switch-yes">
+            <label for="wife-switch-yes" class="segmented-tab">Yes (Wife can switch)</label>
+            
+            <span class="segmented-slider"></span>
           </div>
         </div>
 
-        <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 20px 0;">
+        <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 15px 0;">
 
-        <div class="form-group">
-          <label style="display: flex; justify-content: space-between; align-items: center;">
-            <span>Firebase Cloud Sync</span>
-            <input type="checkbox" id="firebase-enable" style="width: auto; cursor: pointer;">
+        <div class="form-group setting-row">
+          <div class="setting-info">
+            <span class="setting-label">Firebase Cloud Sync</span>
+            <span class="setting-description">Sync ledger data real-time across devices using Firestore.</span>
+          </div>
+          <label class="switch-toggle">
+            <input type="checkbox" id="firebase-enable">
+            <span class="switch-slider"></span>
           </label>
         </div>
 
@@ -424,7 +433,7 @@
           </svg>
         </button>
       </div>
-      <div class="drawer-profile" id="drawer-profile-btn">
+      <div class="drawer-profile" id="drawer-profile-btn" title="Click to switch profile">
         <span class="drawer-avatar" id="drawer-avatar">🧔</span>
         <div class="drawer-profile-info">
           <span class="drawer-profile-name" id="drawer-profile-name">Husband</span>
@@ -504,8 +513,8 @@
   </script>
 
   <!-- Core Scripts -->
-  <script type="module" src="assets/db.js?v=1784891403346"></script>
-  <script type="module" src="assets/app.js?v=1784891403346"></script>
+  <script type="module" src="assets/db.js?v=1785172579787"></script>
+  <script type="module" src="assets/app.js?v=1785172579787"></script>
 
 </body>
 
