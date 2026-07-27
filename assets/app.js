@@ -179,12 +179,10 @@ function updateThemeToggleIcon(theme) {
 
 // ----------------------------------------------------
 // INITIALIZATION
-// Force window scroll position to 0 to prevent mobile viewport layout shift/keyboard height bugs
-window.addEventListener('scroll', () => {
-  if (window.scrollY !== 0 || window.scrollX !== 0) {
-    window.scrollTo(0, 0);
-  }
-});
+// Reset window scroll position on mobile layout adjustments
+function resetViewportScroll() {
+  window.scrollTo(0, 0);
+}
 
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -232,6 +230,11 @@ document.addEventListener('DOMContentLoaded', () => {
         .catch(err => console.error('Service Worker registration failed: ', err));
     });
   }
+
+  // Reset scroll on mobile keyboards blur
+  document.querySelectorAll('input[type="text"], input[type="password"], input[type="number"], input[type="tel"]').forEach(input => {
+    input.addEventListener('blur', resetViewportScroll);
+  });
 });
 
 // Detect network status and update PWA Offline warning
@@ -598,7 +601,7 @@ function setupEventListeners() {
       DOM.firebaseSection.style.display = 'none';
       DOM.firebaseToggleIcon.style.transform = 'rotate(0deg)';
     }
-    window.scrollTo(0, 0);
+    resetViewportScroll();
   });
 
   // Firebase config dropdown toggle button
@@ -612,7 +615,7 @@ function setupEventListeners() {
         DOM.firebaseSection.style.display = 'block';
         DOM.firebaseToggleIcon.style.transform = 'rotate(180deg)';
       }
-      window.scrollTo(0, 0);
+      resetViewportScroll();
     });
   }
 
@@ -892,6 +895,7 @@ function closeEditModal() {
   currentEditId = '';
   const formGroup2 = DOM.editInput2.closest('.form-group');
   if (formGroup2) formGroup2.style.display = 'block';
+  resetViewportScroll();
 }
 
 async function handleEditSave() {
@@ -943,7 +947,7 @@ async function handleEditSave() {
 }
 
 function openSettingsModal() {
-  window.scrollTo(0, 0);
+  resetViewportScroll();
   const currentProfile = getCurrentProfile();
 
   // Show wife switch permission group ONLY if Husband is viewing settings
@@ -989,7 +993,7 @@ function openSettingsModal() {
 
 function closeSettingsModal() {
   DOM.settingsModal.classList.remove('active');
-  window.scrollTo(0, 0);
+  resetViewportScroll();
 }
 
 async function handleSettingsSave() {
