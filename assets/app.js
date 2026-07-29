@@ -2080,7 +2080,6 @@ function renderBabyNamesList() {
         ${dragHandleHtml}
         <div class="baby-name-info" style="flex: 1;">
           <span class="baby-name-text">${item.name}</span>
-          <span class="baby-name-meta">by ${addedByDisplay}</span>
         </div>
         <div class="baby-actions">
           <button class="btn-like-heart ${likeColorClass}" data-id="${item.id}">
