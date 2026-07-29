@@ -26,7 +26,12 @@ import {
   toggleSuggestionStatus,
   deleteSuggestion,
   updateSuggestion,
-  reorderListData
+  reorderListData,
+  getBabyNames,
+  addBabyName,
+  toggleLikeBabyName,
+  deleteBabyName,
+  updateBabyName
 } from './db.js';
 
 // DOM Element Selectors
@@ -123,7 +128,12 @@ const DOM = {
   boyNamesList: document.getElementById('boy-names-list'),
   girlNamesList: document.getElementById('girl-names-list'),
   babyScreen: document.getElementById('screen-baby-names'),
-  curvedNav: document.querySelector('.curved-nav')
+  curvedNav: document.querySelector('.curved-nav'),
+
+  // Profile Chooser Modal
+  profileModal: document.getElementById('profile-modal'),
+  profileModalClose: document.getElementById('profile-modal-close'),
+  profileCards: document.querySelectorAll('.profile-select-card')
 };
 
 // UI Active State Filters
@@ -893,6 +903,14 @@ function setupEventListeners() {
   if (DOM.girlNamesList) {
     DOM.girlNamesList.addEventListener('click', handleBabyListClick);
   }
+
+  // Profile Modal Chooser Listeners
+  if (DOM.profileModalClose) {
+    DOM.profileModalClose.addEventListener('click', closeProfileModal);
+  }
+  DOM.profileCards.forEach(card => {
+    card.addEventListener('click', handleProfileSelect);
+  });
 }
 
 // ----------------------------------------------------
@@ -909,24 +927,54 @@ function updateProfileUI() {
 }
 
 function toggleActiveProfile() {
+  openProfileModal();
+}
+
+function openProfileModal() {
+  resetViewportScroll();
   const currentProfile = getCurrentProfile();
-  let newProfile = 'Husband';
-  
-  if (currentProfile === 'Husband') {
-    newProfile = 'Wife';
-  } else if (currentProfile === 'Wife') {
+
+  DOM.profileCards.forEach(card => {
+    if (card.dataset.profile === currentProfile) {
+      card.classList.add('active');
+    } else {
+      card.classList.remove('active');
+    }
+  });
+
+  DOM.profileModal.classList.add('active');
+}
+
+function closeProfileModal() {
+  DOM.profileModal.classList.remove('active');
+  resetViewportScroll();
+}
+
+async function handleProfileSelect(e) {
+  const card = e.target.closest('.profile-select-card');
+  if (!card) return;
+
+  const currentProfile = getCurrentProfile();
+  const newProfile = card.dataset.profile;
+
+  if (currentProfile === newProfile) {
+    closeProfileModal();
+    return;
+  }
+
+  // Permission Check: If Wife is current user and attempts to switch away
+  if (currentProfile === 'Wife') {
     if (canWifeSwitch() !== 'yes') {
       alert("Wife cannot switch profile! Permission denied by Husband.");
+      closeProfileModal();
       return;
     }
-    newProfile = 'Baby';
-  } else {
-    newProfile = 'Husband';
   }
 
   setCurrentProfile(newProfile);
   updateProfileUI();
-  
+  closeProfileModal();
+
   // Refresh layout and reload after a short delay so the visual switch is registered
   setTimeout(() => {
     window.location.reload(true);

@@ -16,7 +16,7 @@
   <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
 
   <!-- Main Styling -->
-  <link rel="stylesheet" href="assets/style.css?v=1785344298484">
+  <link rel="stylesheet" href="assets/style.css?v=1785344523342">
 </head>
 
 <body>
@@ -559,6 +559,37 @@
       </div>
   </div>
 
+  <!-- Profile Chooser Modal -->
+  <div id="profile-modal" class="modal-overlay">
+    <div class="modal-content profile-chooser-content" style="max-width: 320px; text-align: center;">
+      <h3 class="modal-title" style="margin-bottom: 20px; text-align: center; width: 100%;">Choose Profile</h3>
+      <div style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
+        <div class="profile-select-card" data-profile="Husband" style="display: flex; align-items: center; gap: 16px; padding: 14px 20px; border-radius: 16px; cursor: pointer; text-align: left;">
+          <span style="font-size: 28px;">🧔</span>
+          <div>
+            <span style="font-weight: 800; font-size: 15px; color: var(--text-dark); display: block;">Husband</span>
+            <span style="font-size: 11px; color: var(--text-muted);">Manage ledger & bajar</span>
+          </div>
+        </div>
+        <div class="profile-select-card" data-profile="Wife" style="display: flex; align-items: center; gap: 16px; padding: 14px 20px; border-radius: 16px; cursor: pointer; text-align: left;">
+          <span style="font-size: 28px;">👩</span>
+          <div>
+            <span style="font-weight: 800; font-size: 15px; color: var(--text-dark); display: block;">Wife</span>
+            <span style="font-size: 11px; color: var(--text-muted);">View ledger & add suggestions</span>
+          </div>
+        </div>
+        <div class="profile-select-card" data-profile="Baby" style="display: flex; align-items: center; gap: 16px; padding: 14px 20px; border-radius: 16px; cursor: pointer; text-align: left;">
+          <span style="font-size: 28px;">👶</span>
+          <div>
+            <span style="font-weight: 800; font-size: 15px; color: var(--text-dark); display: block;">Baby Names</span>
+            <span style="font-size: 11px; color: var(--text-muted);">Suggest & vote on names</span>
+          </div>
+        </div>
+      </div>
+      <button id="profile-modal-close" class="btn-primary" style="margin-top: 20px; width: 100%; border-radius: 12px; background-color: var(--border-color); color: var(--text-dark); box-shadow: none;">Cancel</button>
+    </div>
+  </div>
+
   <!-- Live App Update Banner Modal -->
   <div id="update-banner-overlay" class="update-banner-overlay" style="display: none;">
     <div class="update-banner-card" id="update-banner-card">
@@ -589,8 +620,8 @@
   </script>
 
   <!-- Core Scripts -->
-  <script type="module" src="assets/db.js?v=1785344298484"></script>
-  <script type="module" src="assets/app.js?v=1785344298484"></script>
+  <script type="module" src="assets/db.js?v=1785344523342"></script>
+  <script type="module" src="assets/app.js?v=1785344523342"></script>
 
 </body>
 
