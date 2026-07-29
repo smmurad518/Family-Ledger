@@ -1730,45 +1730,133 @@ function renderSuggestionsList() {
 function makeListDraggable(container, listKey, renderFn) {
   if (!isEditDeleteAllEnabled()) return;
 
+  const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
   const items = container.querySelectorAll('.list-item, .ledger-item');
-  items.forEach(item => {
-    item.setAttribute('draggable', 'true');
-    item.style.cursor = 'grab';
 
-    item.addEventListener('dragstart', (e) => {
-      item.classList.add('dragging');
-      e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData('text/plain', item.dataset.id || '');
+  if (!isTouchDevice) {
+    // Desktop HTML5 drag and drop
+    items.forEach(item => {
+      item.setAttribute('draggable', 'true');
+      item.style.cursor = 'grab';
+
+      item.addEventListener('dragstart', (e) => {
+        item.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', item.dataset.id || '');
+      });
+
+      item.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        
+        const draggingEl = container.querySelector('.dragging');
+        if (draggingEl && draggingEl !== item) {
+          const rect = item.getBoundingClientRect();
+          const next = (e.clientY - rect.top) / (rect.bottom - rect.top) > 0.5;
+          container.insertBefore(draggingEl, next ? item.nextSibling : item);
+        }
+      });
+
+      item.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        const draggingEl = container.querySelector('.dragging');
+        if (!draggingEl) return;
+
+        const sourceId = draggingEl.dataset.id;
+        const targetId = item.dataset.id;
+        if (!sourceId || !targetId || sourceId === targetId) return;
+
+        await reorderListData(listKey, sourceId, targetId);
+        renderFn();
+      });
+
+      item.addEventListener('dragend', () => {
+        item.classList.remove('dragging');
+        renderFn();
+      });
     });
-
-    item.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
+  } else {
+    // Mobile Touch long-press drag and drop (saves default list scrolling)
+    items.forEach(item => {
+      item.style.cursor = 'grab';
       
-      const draggingEl = container.querySelector('.dragging');
-      if (draggingEl && draggingEl !== item) {
-        const rect = item.getBoundingClientRect();
-        const next = (e.clientY - rect.top) / (rect.bottom - rect.top) > 0.5;
-        container.insertBefore(draggingEl, next ? item.nextSibling : item);
-      }
+      let touchStartTimer = null;
+      let isDragging = false;
+      let startY = 0;
+      let startX = 0;
+      let lastTargetId = null;
+
+      item.addEventListener('touchstart', (e) => {
+        const touch = e.touches[0];
+        startY = touch.clientY;
+        startX = touch.clientX;
+        lastTargetId = null;
+        isDragging = false;
+
+        touchStartTimer = setTimeout(() => {
+          isDragging = true;
+          item.classList.add('dragging');
+          // Visual feedback & ignore pointer events so elementFromPoint works underneath
+          item.style.opacity = '0.6';
+          item.style.transform = 'scale(0.98)';
+          item.style.boxShadow = '0 5px 15px rgba(0,0,0,0.3)';
+          item.style.pointerEvents = 'none';
+        }, 300); // 300ms long press triggers reordering mode
+      }, { passive: true });
+
+      item.addEventListener('touchmove', (e) => {
+        const touch = e.touches[0];
+        const currentY = touch.clientY;
+        const currentX = touch.clientX;
+
+        if (!isDragging) {
+          // If moved before long press, cancel dragging mode to allow native scroll
+          if (Math.abs(currentY - startY) > 8 || Math.abs(currentX - startX) > 8) {
+            clearTimeout(touchStartTimer);
+          }
+          return;
+        }
+
+        // If we are dragging, prevent default scrolling of page
+        if (e.cancelable) {
+          e.preventDefault();
+        }
+
+        // Locate element under finger
+        const elementUnderFinger = document.elementFromPoint(touch.clientX, currentY);
+        if (!elementUnderFinger) return;
+
+        const targetItem = elementUnderFinger.closest('.list-item, .ledger-item');
+        if (targetItem && targetItem !== item && targetItem.parentNode === container) {
+          const rect = targetItem.getBoundingClientRect();
+          const next = (currentY - rect.top) / (rect.bottom - rect.top) > 0.5;
+          
+          container.insertBefore(item, next ? targetItem.nextSibling : targetItem);
+          lastTargetId = targetItem.dataset.id;
+        }
+      }, { passive: false });
+
+      const handleTouchEnd = async (e) => {
+        clearTimeout(touchStartTimer);
+        
+        if (isDragging) {
+          isDragging = false;
+          item.classList.remove('dragging');
+          item.style.opacity = '';
+          item.style.transform = '';
+          item.style.boxShadow = '';
+          item.style.pointerEvents = '';
+
+          const sourceId = item.dataset.id;
+          if (sourceId && lastTargetId && sourceId !== lastTargetId) {
+            await reorderListData(listKey, sourceId, lastTargetId);
+          }
+          renderFn();
+        }
+      };
+
+      item.addEventListener('touchend', handleTouchEnd);
+      item.addEventListener('touchcancel', handleTouchEnd);
     });
-
-    item.addEventListener('drop', async (e) => {
-      e.preventDefault();
-      const draggingEl = container.querySelector('.dragging');
-      if (!draggingEl) return;
-
-      const sourceId = draggingEl.dataset.id;
-      const targetId = item.dataset.id;
-      if (!sourceId || !targetId || sourceId === targetId) return;
-
-      await reorderListData(listKey, sourceId, targetId);
-      renderFn();
-    });
-
-    item.addEventListener('dragend', () => {
-      item.classList.remove('dragging');
-      renderFn();
-    });
-  });
+  }
 }
