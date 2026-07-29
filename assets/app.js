@@ -1585,8 +1585,18 @@ function renderShoppingList() {
       </span>
     ` : '';
 
+    const dragHandleHtml = canAction ? `
+      <div class="drag-handle">
+        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none">
+          <circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/>
+          <circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/>
+        </svg>
+      </div>
+    ` : '';
+
     return `
       <li class="list-item ${checkedClass}" data-id="${item.id}">
+        ${dragHandleHtml}
         <div class="item-left">
           <div class="item-checkbox" data-id="${item.id}">
             <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
@@ -1661,9 +1671,19 @@ function renderExpenseTracker() {
       </button>
     ` : '';
     
+    const dragHandleHtml = canAction ? `
+      <div class="drag-handle" style="padding-right: 8px;">
+        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none">
+          <circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/>
+          <circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/>
+        </svg>
+      </div>
+    ` : '';
+
     return `
-      <div class="list-item" data-id="${exp.id}" style="border-left: 4px solid var(--color-primary); margin-bottom: 8px; padding: 12px 16px;">
-        <div class="item-left" style="gap: 12px;">
+      <div class="list-item" data-id="${exp.id}" style="border-left: 4px solid var(--color-primary); margin-bottom: 8px; padding: 12px 16px; display: flex; align-items: center;">
+        ${dragHandleHtml}
+        <div class="item-left" style="gap: 12px; flex: 1;">
           <div class="item-details">
             <span style="font-weight: 800; font-size: 15px; color: var(--text-dark);">${exp.notes || 'Expense'}</span>
             <span style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">
@@ -1761,9 +1781,19 @@ function renderDuesLedger() {
       </button>
     ` : '';
     
+    const dragHandleHtml = canAction ? `
+      <div class="drag-handle" style="padding-right: 8px;">
+        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none">
+          <circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/>
+          <circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/>
+        </svg>
+      </div>
+    ` : '';
+
     return `
-      <div class="ledger-item ${due.type}" data-id="${due.id}">
-        <div class="item-left">
+      <div class="ledger-item ${due.type}" data-id="${due.id}" style="display: flex; align-items: center;">
+        ${dragHandleHtml}
+        <div class="item-left" style="flex: 1;">
           <div style="flex: 1; display: flex; flex-direction: column;">
             <span style="font-weight: 800; font-size: 15px; color: var(--text-dark);">${due.person}</span>
             <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); margin-top: 2px;">
@@ -1889,13 +1919,82 @@ function renderSuggestionsList() {
 function makeListDraggable(container, listKey, renderFn) {
   if (!isEditDeleteAllEnabled()) return;
 
-  const items = container.querySelectorAll('.list-item, .ledger-item');
+  const items = container.querySelectorAll('.list-item, .ledger-item, .baby-name-item');
   let lastTargetId = null;
 
   items.forEach(item => {
-    // Set draggable=true by default so native desktop drag starts immediately on first click
-    item.setAttribute('draggable', 'true');
-    item.style.cursor = 'grab';
+    // Disabled by default
+    item.setAttribute('draggable', 'false');
+
+    const handle = item.querySelector('.drag-handle');
+    if (handle) {
+      // Desktop drag toggling
+      handle.addEventListener('mousedown', () => {
+        item.setAttribute('draggable', 'true');
+      });
+      handle.addEventListener('mouseup', () => {
+        item.setAttribute('draggable', 'false');
+      });
+      
+      // Touch drag toggling
+      let startY = 0;
+      let startX = 0;
+      let isDragging = false;
+
+      handle.addEventListener('touchstart', (e) => {
+        lastTargetId = null;
+        isDragging = true;
+        item.classList.add('dragging');
+        item.style.opacity = '0.6';
+        item.style.transform = 'scale(0.98)';
+        item.style.boxShadow = '0 5px 15px rgba(0,0,0,0.15)';
+        item.style.pointerEvents = 'none';
+
+        const touch = e.touches[0];
+        startY = touch.clientY;
+        startX = touch.clientX;
+      }, { passive: true });
+
+      handle.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        
+        const touch = e.touches[0];
+        const currentY = touch.clientY;
+
+        if (e.cancelable) e.preventDefault();
+
+        const elementUnderFinger = document.elementFromPoint(touch.clientX, currentY);
+        if (!elementUnderFinger) return;
+
+        const targetItem = elementUnderFinger.closest('.list-item, .ledger-item, .baby-name-item');
+        if (targetItem && targetItem !== item && targetItem.parentNode === container) {
+          const rect = targetItem.getBoundingClientRect();
+          const next = (currentY - rect.top) / (rect.bottom - rect.top) > 0.5;
+          container.insertBefore(item, next ? targetItem.nextSibling : targetItem);
+          lastTargetId = targetItem.dataset.id;
+        }
+      }, { passive: false });
+
+      const handleTouchEnd = async (e) => {
+        if (isDragging) {
+          isDragging = false;
+          item.classList.remove('dragging');
+          item.style.opacity = '';
+          item.style.transform = '';
+          item.style.boxShadow = '';
+          item.style.pointerEvents = '';
+
+          const sourceId = item.dataset.id;
+          if (sourceId && lastTargetId && sourceId !== lastTargetId) {
+            await reorderListData(listKey, sourceId, lastTargetId);
+          }
+          renderFn();
+        }
+      };
+
+      handle.addEventListener('touchend', handleTouchEnd);
+      handle.addEventListener('touchcancel', handleTouchEnd);
+    }
 
     // Desktop HTML5 drag and drop listeners
     item.addEventListener('dragstart', (e) => {
@@ -1920,95 +2019,13 @@ function makeListDraggable(container, listKey, renderFn) {
 
     item.addEventListener('dragend', async () => {
       item.classList.remove('dragging');
+      item.setAttribute('draggable', 'false'); // reset
       const sourceId = item.dataset.id;
       if (sourceId && lastTargetId && sourceId !== lastTargetId) {
         await reorderListData(listKey, sourceId, lastTargetId);
       }
       renderFn();
     });
-
-    // Touch drag capability for touchscreens and mobile devices
-    let touchStartTimer = null;
-    let isDragging = false;
-    let startY = 0;
-    let startX = 0;
-
-    item.addEventListener('touchstart', (e) => {
-      // CRITICAL: Disable native draggable on touch start so it doesn't block scrolling or trigger native drag
-      item.setAttribute('draggable', 'false');
-      
-      const touch = e.touches[0];
-      startY = touch.clientY;
-      startX = touch.clientX;
-      lastTargetId = null;
-      isDragging = false;
-
-      touchStartTimer = setTimeout(() => {
-        isDragging = true;
-        item.classList.add('dragging');
-        // Visual feedback & ignore pointer events so elementFromPoint works underneath
-        item.style.opacity = '0.6';
-        item.style.transform = 'scale(0.98)';
-        item.style.boxShadow = '0 5px 15px rgba(0,0,0,0.3)';
-        item.style.pointerEvents = 'none';
-      }, 300); // 300ms long press triggers reordering mode
-    }, { passive: true });
-
-    item.addEventListener('touchmove', (e) => {
-      const touch = e.touches[0];
-      const currentY = touch.clientY;
-      const currentX = touch.clientX;
-
-      if (!isDragging) {
-        // If moved before long press, cancel dragging mode to allow native scroll
-        if (Math.abs(currentY - startY) > 8 || Math.abs(currentX - startX) > 8) {
-          clearTimeout(touchStartTimer);
-        }
-        return;
-      }
-
-      // If we are dragging, prevent default scrolling of page
-      if (e.cancelable) {
-        e.preventDefault();
-      }
-
-      // Locate element under finger
-      const elementUnderFinger = document.elementFromPoint(touch.clientX, currentY);
-      if (!elementUnderFinger) return;
-
-      const targetItem = elementUnderFinger.closest('.list-item, .ledger-item');
-      if (targetItem && targetItem !== item && targetItem.parentNode === container) {
-        const rect = targetItem.getBoundingClientRect();
-        const next = (currentY - rect.top) / (rect.bottom - rect.top) > 0.5;
-        
-        container.insertBefore(item, next ? targetItem.nextSibling : targetItem);
-        lastTargetId = targetItem.dataset.id;
-      }
-    }, { passive: false });
-
-    const handleTouchEnd = async (e) => {
-      clearTimeout(touchStartTimer);
-      // Restore draggable attribute for hybrid setups
-      item.setAttribute('draggable', 'true');
-      
-      if (isDragging) {
-        isDragging = false;
-        item.classList.remove('dragging');
-        item.style.opacity = '';
-        item.style.transform = '';
-        item.style.boxShadow = '';
-        item.style.pointerEvents = '';
-
-        const sourceId = item.dataset.id;
-        if (sourceId && lastTargetId && sourceId !== lastTargetId) {
-          await reorderListData(listKey, sourceId, lastTargetId);
-        }
-        renderFn();
-      }
-    };
-
-    item.addEventListener('touchend', handleTouchEnd);
-    item.addEventListener('touchcancel', handleTouchEnd);
   });
 }
 
@@ -2049,9 +2066,19 @@ function renderBabyNamesList() {
 
     const addedByDisplay = item.addedBy === 'Husband' || item.addedBy === 'Baby' ? 'Father' : (item.addedBy === 'Wife' ? 'Mother' : item.addedBy);
 
+    const dragHandleHtml = canAction ? `
+      <div class="drag-handle">
+        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none">
+          <circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/>
+          <circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/>
+        </svg>
+      </div>
+    ` : '';
+
     return `
-      <li class="baby-name-item" data-id="${item.id}">
-        <div class="baby-name-info">
+      <li class="baby-name-item" data-id="${item.id}" style="display: flex; align-items: center;">
+        ${dragHandleHtml}
+        <div class="baby-name-info" style="flex: 1;">
           <span class="baby-name-text">${item.name}</span>
           <span class="baby-name-meta">by ${addedByDisplay}</span>
         </div>
