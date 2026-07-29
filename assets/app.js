@@ -80,6 +80,7 @@ const DOM = {
   duePerson: document.getElementById('due-person'),
   dueAmount: document.getElementById('due-amount'),
   dueType: document.getElementById('due-type'),
+  dueDate: document.getElementById('due-date'),
   dueStatus: document.getElementById('due-status'),
   duesContainer: document.getElementById('dues-list-container'),
   duesFilterTabs: document.getElementById('dues-filter-tabs').querySelectorAll('.tab-btn'),
@@ -804,7 +805,7 @@ function setupEventListeners() {
         const dues = getDues();
         const due = dues.find(d => d.id === editBtn.dataset.id);
         if (due) {
-          openEditModal('due', due.id, 'Edit Due Entry', 'Person Name', due.person, 'Amount (৳)', due.amount);
+          openEditModal('due', due.id, 'Edit Due Entry', 'Person Name', due.person, 'Amount (৳)', due.amount, 'Date', due.date);
         }
         return;
       }
@@ -918,6 +919,10 @@ function setupEventListeners() {
   DOM.profileCards.forEach(card => {
     card.addEventListener('click', handleProfileSelect);
   });
+  // Initialize default due date to today
+  if (DOM.dueDate) {
+    DOM.dueDate.value = new Date().toISOString().split('T')[0];
+  }
 }
 
 // ----------------------------------------------------
@@ -1048,9 +1053,14 @@ function openEditModal(type, id, title, label1, val1, label2, val2, label3 = '',
     DOM.editInput2.value = val2;
   }
 
-  if (type === 'shopping') {
+  if (type === 'shopping' || type === 'due') {
     DOM.editLabel3.textContent = label3;
     DOM.editInput3.value = val3;
+    if (type === 'due') {
+      DOM.editInput3.type = 'date';
+    } else {
+      DOM.editInput3.type = 'text';
+    }
     if (DOM.editInputGroup3) DOM.editInputGroup3.style.display = 'block';
   } else {
     if (DOM.editInputGroup3) DOM.editInputGroup3.style.display = 'none';
@@ -1083,6 +1093,7 @@ function closeEditModal() {
   currentEditId = '';
   const formGroup2 = DOM.editInput2.closest('.form-group');
   if (formGroup2) formGroup2.style.display = 'block';
+  if (DOM.editInput3) DOM.editInput3.type = 'text';
   if (DOM.editInputGroup3) DOM.editInputGroup3.style.display = 'none';
   if (DOM.editInputGroupSerial) DOM.editInputGroupSerial.style.display = 'none';
   resetViewportScroll();
@@ -1139,7 +1150,7 @@ async function handleEditSave() {
       DOM.editSaveBtn.textContent = 'Update Entry';
       return;
     }
-    await updateDue(currentEditId, val1, val2);
+    await updateDue(currentEditId, val1, val2, val3);
   } else if (currentEditType === 'suggestion') {
     await updateSuggestion(currentEditId, val1);
   } else if (currentEditType === 'baby_name') {
@@ -1800,6 +1811,17 @@ async function handleAddExpenseItem(e) {
 // ----------------------------------------------------
 // SCREEN RENDERS: DHAR-DENA (LOANS & DUES)
 // ----------------------------------------------------
+function calculateDaysPassed(dateStr) {
+  if (!dateStr) return 0;
+  const start = new Date(dateStr);
+  const today = new Date();
+  start.setHours(0,0,0,0);
+  today.setHours(0,0,0,0);
+  const diffTime = today.getTime() - start.getTime();
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays;
+}
+
 function renderDuesLedger() {
   const dues = getDues();
 
@@ -1848,11 +1870,30 @@ function renderDuesLedger() {
       </button>
     ` : '';
     
+    const daysPassed = calculateDaysPassed(due.date);
+    let ageBadgeHtml = '';
+    if (daysPassed > 0) {
+      ageBadgeHtml = `
+        <span class="due-age-badge" style="background-color: var(--color-danger); color: white; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 12px; margin-left: 6px; display: inline-flex; align-items: center; justify-content: center; vertical-align: middle; box-shadow: 0 2px 4px rgba(239, 83, 80, 0.2);">
+          ${daysPassed}d
+        </span>
+      `;
+    } else {
+      ageBadgeHtml = `
+        <span class="due-age-badge" style="background-color: var(--color-primary-light); color: var(--color-primary-interactive); font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 12px; margin-left: 6px; display: inline-flex; align-items: center; justify-content: center; vertical-align: middle;">
+          Today
+        </span>
+      `;
+    }
+
     return `
       <div class="ledger-item ${due.type}" data-id="${due.id}">
         <div class="item-left">
           <div style="flex: 1; display: flex; flex-direction: column;">
-            <span style="font-weight: 800; font-size: 15px; color: var(--text-dark);">${due.person}</span>
+            <span style="font-weight: 800; font-size: 15px; color: var(--text-dark); display: flex; align-items: center; gap: 4px;">
+              ${due.person}
+              ${ageBadgeHtml}
+            </span>
             <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); margin-top: 2px;">
               ${typeLabel} • ${due.date}
             </span>
@@ -1904,14 +1945,18 @@ async function handleAddDueItem(e) {
   const person = DOM.duePerson.value;
   const amount = DOM.dueAmount.value;
   const type = DOM.dueType.value;
+  const date = DOM.dueDate ? DOM.dueDate.value : '';
   const status = 'pending';
 
   if (!person.trim() || !amount || !type) return;
 
-  await addDue(person, amount, type, status);
+  await addDue(person, amount, type, status, date);
 
   DOM.duePerson.value = '';
   DOM.dueAmount.value = '';
+  if (DOM.dueDate) {
+    DOM.dueDate.value = new Date().toISOString().split('T')[0];
+  }
   DOM.duePerson.blur();
 
   renderDuesLedger();

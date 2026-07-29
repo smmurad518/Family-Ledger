@@ -505,7 +505,7 @@ export function getDues() {
   return getLocal(KEYS.DUES, []);
 }
 
-export async function addDue(person, amount, type, status) {
+export async function addDue(person, amount, type, status, date) {
   isWriting = true;
   if (writeCooldownTimer) clearTimeout(writeCooldownTimer);
 
@@ -517,7 +517,7 @@ export async function addDue(person, amount, type, status) {
     type: type,
     status: status,
     addedBy: getCurrentProfile(),
-    date: new Date().toISOString().split('T')[0],
+    date: date || new Date().toISOString().split('T')[0],
     timestamp: Date.now()
   };
 
@@ -624,7 +624,7 @@ export async function updateExpense(id, amount, notes) {
   pushStateToServer();
 }
 
-export async function updateDue(id, person, amount) {
+export async function updateDue(id, person, amount, date) {
   isWriting = true;
   if (writeCooldownTimer) clearTimeout(writeCooldownTimer);
 
@@ -634,6 +634,9 @@ export async function updateDue(id, person, amount) {
 
   dues[index].person = person.trim();
   dues[index].amount = parseFloat(amount);
+  if (date) {
+    dues[index].date = date;
+  }
   dues[index].timestamp = Date.now();
 
   setLocal(KEYS.DUES, dues);
