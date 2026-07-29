@@ -114,7 +114,16 @@ const DOM = {
   // Suggestions Selectors
   suggestionsContainer: document.getElementById('suggestions-list-container'),
   suggestionForm: document.getElementById('suggestion-form'),
-  suggestionInput: document.getElementById('suggestion-input')
+  suggestionInput: document.getElementById('suggestion-input'),
+
+  // Baby Selectors
+  babyForm: document.getElementById('baby-name-form'),
+  babyNameInput: document.getElementById('baby-name-input'),
+  babyGenderSelect: document.getElementById('baby-gender-select'),
+  boyNamesList: document.getElementById('boy-names-list'),
+  girlNamesList: document.getElementById('girl-names-list'),
+  babyScreen: document.getElementById('screen-baby-names'),
+  curvedNav: document.querySelector('.curved-nav')
 };
 
 // UI Active State Filters
@@ -127,6 +136,7 @@ let lastShoppingList = [];
 let lastExpensesList = [];
 let lastDuesList = [];
 let lastSuggestionsList = [];
+let lastBabyNamesList = [];
 let isFirstLoad = true;
 
 // Active Edit Context
@@ -327,6 +337,14 @@ function updateOfflineBanner() {
 // NAVIGATION SYSTEM
 // ----------------------------------------------------
 function switchScreen(screenName) {
+  const profile = getCurrentProfile();
+  if (profile === 'Baby') {
+    screenName = 'baby-names';
+    if (DOM.curvedNav) DOM.curvedNav.style.display = 'none';
+  } else {
+    if (DOM.curvedNav) DOM.curvedNav.style.display = 'block';
+  }
+
   // Update nav buttons
   DOM.navItems.forEach(item => {
     if (item.dataset.screen === screenName) {
@@ -339,7 +357,7 @@ function switchScreen(screenName) {
   // Update curved nav cutout position and active icon
   const cutoutContainer = document.getElementById('nav-cutout-container');
   const activeNavItem = Array.from(DOM.navItems).find(item => item.dataset.screen === screenName);
-  if (activeNavItem) {
+  if (activeNavItem && profile !== 'Baby') {
     if (cutoutContainer) {
       cutoutContainer.style.opacity = '1';
       cutoutContainer.style.pointerEvents = 'auto';
@@ -357,7 +375,7 @@ function switchScreen(screenName) {
       }
     }
   } else {
-    // Hide active cutout circle on bottom nav for sidebar-only pages
+    // Hide active cutout circle on bottom nav for sidebar-only pages or Baby screen
     if (cutoutContainer) {
       cutoutContainer.style.opacity = '0';
       cutoutContainer.style.pointerEvents = 'none';
@@ -389,7 +407,9 @@ function switchScreen(screenName) {
 }
 
 function renderActiveScreen() {
-  const activeScreen = document.querySelector('.screen.active').id;
+  const activeScreenEl = document.querySelector('.screen.active');
+  if (!activeScreenEl) return;
+  const activeScreen = activeScreenEl.id;
   if (activeScreen === 'screen-dashboard') {
     renderDashboard();
   } else if (activeScreen === 'screen-bajar') {
@@ -400,6 +420,8 @@ function renderActiveScreen() {
     renderDuesLedger();
   } else if (activeScreen === 'screen-suggestions') {
     renderSuggestionsList();
+  } else if (activeScreen === 'screen-baby-names') {
+    renderBabyNamesList();
   }
 }
 
@@ -858,6 +880,19 @@ function setupEventListeners() {
       }
     });
   }
+
+  // Baby Names Form Submit
+  if (DOM.babyForm) {
+    DOM.babyForm.addEventListener('submit', handleAddBabyNameItem);
+  }
+
+  // Baby Names Columns Click Delegations
+  if (DOM.boyNamesList) {
+    DOM.boyNamesList.addEventListener('click', handleBabyListClick);
+  }
+  if (DOM.girlNamesList) {
+    DOM.girlNamesList.addEventListener('click', handleBabyListClick);
+  }
 }
 
 // ----------------------------------------------------
@@ -866,7 +901,7 @@ function setupEventListeners() {
 function updateProfileUI() {
   const profile = getCurrentProfile();
   DOM.profileName.textContent = profile;
-  DOM.profileAvatar.textContent = profile === 'Husband' ? '🧔' : '👩';
+  DOM.profileAvatar.textContent = profile === 'Husband' ? '🧔' : (profile === 'Wife' ? '👩' : '👶');
   DOM.welcomeUser.textContent = profile;
   
   // Set data-profile attribute on documentElement
@@ -875,15 +910,20 @@ function updateProfileUI() {
 
 function toggleActiveProfile() {
   const currentProfile = getCurrentProfile();
+  let newProfile = 'Husband';
   
-  if (currentProfile === 'Wife') {
+  if (currentProfile === 'Husband') {
+    newProfile = 'Wife';
+  } else if (currentProfile === 'Wife') {
     if (canWifeSwitch() !== 'yes') {
       alert("Wife cannot switch profile! Permission denied by Husband.");
       return;
     }
+    newProfile = 'Baby';
+  } else {
+    newProfile = 'Husband';
   }
 
-  const newProfile = currentProfile === 'Husband' ? 'Wife' : 'Husband';
   setCurrentProfile(newProfile);
   updateProfileUI();
   
@@ -902,7 +942,7 @@ function openEditModal(type, id, title, label1, val1, label2, val2) {
   DOM.editInput1.value = val1;
 
   const formGroup2 = DOM.editInput2.closest('.form-group');
-  if (type === 'suggestion') {
+  if (type === 'suggestion' || type === 'baby_name') {
     if (formGroup2) formGroup2.style.display = 'none';
   } else {
     if (formGroup2) formGroup2.style.display = 'block';
@@ -926,12 +966,14 @@ async function handleEditSave() {
   const val1 = DOM.editInput1.value.trim();
   const val2 = DOM.editInput2.value.trim();
 
-  if (currentEditType !== 'suggestion' && (!val1 || !val2)) {
+  const isOneFieldOnly = currentEditType === 'suggestion' || currentEditType === 'baby_name';
+
+  if (!isOneFieldOnly && (!val1 || !val2)) {
     alert("Please fill in all fields!");
     return;
   }
-  if (currentEditType === 'suggestion' && !val1) {
-    alert("Please enter suggestion text!");
+  if (isOneFieldOnly && !val1) {
+    alert("Please enter a value!");
     return;
   }
 
@@ -962,6 +1004,9 @@ async function handleEditSave() {
   } else if (currentEditType === 'suggestion') {
     await updateSuggestion(currentEditId, val1);
     renderSuggestionsList();
+  } else if (currentEditType === 'baby_name') {
+    await updateBabyName(currentEditId, val1);
+    renderBabyNamesList();
   }
 
   DOM.editSaveBtn.disabled = false;
@@ -1205,6 +1250,7 @@ function handleDataUpdate(type, sourceCollection) {
   if (!sourceCollection || sourceCollection === 'expenses') renderExpenseTracker();
   if (!sourceCollection || sourceCollection === 'dues') renderDuesLedger();
   if (!sourceCollection || sourceCollection === 'suggestions') renderSuggestionsList();
+  if (!sourceCollection || sourceCollection === 'baby_names') renderBabyNamesList();
 
   // If this is the initial load, just update cache and return
   if (isFirstLoad) {
@@ -1212,6 +1258,7 @@ function handleDataUpdate(type, sourceCollection) {
     lastExpensesList = getExpenses();
     lastDuesList = getDues();
     lastSuggestionsList = getSuggestions();
+    lastBabyNamesList = getBabyNames();
     return;
   }
 
@@ -1271,6 +1318,19 @@ function handleDataUpdate(type, sourceCollection) {
     }
   });
   lastSuggestionsList = newSuggestionsList;
+
+  // 5. Check Baby Names
+  const newBabyNamesList = getBabyNames();
+  newBabyNamesList.forEach(newItem => {
+    if (newItem.addedBy !== currentProfile && !lastBabyNamesList.some(oldItem => oldItem.id === newItem.id)) {
+      newEntriesFound.push({
+        type: 'Baby Name',
+        title: 'New Baby Name Suggestion 👶',
+        message: `${newItem.addedBy} suggested a new baby name: "${newItem.name}" (${newItem.gender === 'boy' ? 'Boy' : 'Girl'}).`
+      });
+    }
+  });
+  lastBabyNamesList = newBabyNamesList;
 
   // Trigger notification and play sound if new entries added by the other spouse are found
   if (newEntriesFound.length > 0) {
@@ -1393,7 +1453,7 @@ function renderDashboard() {
   DOM.recentActivitiesList.innerHTML = recentLogs.map(log => {
     const timeString = new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const dateString = new Date(log.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric' });
-    const avatar = log.user === 'Husband' ? '🧔' : '👩';
+    const avatar = log.user === 'Husband' ? '🧔' : (log.user === 'Wife' ? '👩' : '👶');
     
     return `
       <div class="list-item" style="padding: 10px 12px; margin-bottom: 8px; font-size: 13px; border-radius: 8px;">
@@ -1876,3 +1936,135 @@ function makeListDraggable(container, listKey, renderFn) {
     item.addEventListener('touchcancel', handleTouchEnd);
   });
 }
+
+// ----------------------------------------------------
+// SCREEN RENDERS: BABY NAMES TRACKER
+// ----------------------------------------------------
+function renderBabyNamesList() {
+  if (!DOM.boyNamesList || !DOM.girlNamesList) return;
+
+  const names = getBabyNames();
+  
+  // Sort: most liked first, then newest first
+  names.sort((a, b) => {
+    const likesA = (a.likes || []).length;
+    const likesB = (b.likes || []).length;
+    if (likesB !== likesA) return likesB - likesA;
+    return b.timestamp - a.timestamp;
+  });
+
+  const boyNames = names.filter(n => n.gender === 'boy');
+  const girlNames = names.filter(n => n.gender === 'girl');
+
+  const renderNameItem = (item) => {
+    const currentProfile = getCurrentProfile();
+    const likes = item.likes || [];
+    const isLiked = likes.includes(currentProfile);
+    const likeColorClass = isLiked ? 'liked' : '';
+    const canAction = isEditDeleteAllEnabled();
+    const actionButtonsHtml = canAction ? `
+      <button class="btn-icon-edit" data-id="${item.id}" aria-label="Edit name" style="padding: 2px;">
+        <svg viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      </button>
+      <button class="btn-icon-delete" data-id="${item.id}" aria-label="Delete name" style="padding: 2px;">
+        <svg viewBox="0 0 24 24" style="width: 14px; height: 14px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      </button>
+    ` : '';
+
+    return `
+      <li class="baby-name-item" data-id="${item.id}">
+        <div class="baby-name-info">
+          <span class="baby-name-text">${item.name}</span>
+          <span class="baby-name-meta">by ${item.addedBy}</span>
+        </div>
+        <div class="baby-actions">
+          <button class="btn-like-heart ${likeColorClass}" data-id="${item.id}">
+            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+            <span class="like-count">${likes.length}</span>
+          </button>
+          ${actionButtonsHtml}
+        </div>
+      </li>
+    `;
+  };
+
+  DOM.boyNamesList.innerHTML = boyNames.length === 0 
+    ? `<div class="empty-state" style="padding: 15px 10px;"><p style="font-size: 11px;">No boy names suggested yet.</p></div>` 
+    : boyNames.map(renderNameItem).join('');
+
+  DOM.girlNamesList.innerHTML = girlNames.length === 0 
+    ? `<div class="empty-state" style="padding: 15px 10px;"><p style="font-size: 11px;">No girl names suggested yet.</p></div>` 
+    : girlNames.map(renderNameItem).join('');
+
+  makeListDraggable(DOM.boyNamesList, 'mm_baby_names', renderBabyNamesList);
+  makeListDraggable(DOM.girlNamesList, 'mm_baby_names', renderBabyNamesList);
+}
+
+async function handleAddBabyNameItem(e) {
+  e.preventDefault();
+
+  const name = DOM.babyNameInput.value.trim();
+  const gender = DOM.babyGenderSelect.value;
+
+  if (!name) return;
+
+  await addBabyName(name, gender);
+
+  DOM.babyNameInput.value = '';
+  DOM.babyNameInput.blur();
+
+  renderBabyNamesList();
+}
+
+async function handleBabyListClick(e) {
+  // 1. Heart Like Button
+  const likeBtn = e.target.closest('.btn-like-heart');
+  if (likeBtn && likeBtn.dataset.id) {
+    e.stopPropagation();
+    await toggleLikeBabyName(likeBtn.dataset.id);
+    renderBabyNamesList();
+    return;
+  }
+
+  // 2. Edit Button
+  const editBtn = e.target.closest('.btn-icon-edit');
+  if (editBtn && editBtn.dataset.id) {
+    e.stopPropagation();
+    
+    if (!isEditDeleteAllEnabled()) {
+      alert("Editing is disabled! Enable Edit & Delete in Settings.");
+      return;
+    }
+
+    const items = getBabyNames();
+    const item = items.find(i => i.id === editBtn.dataset.id);
+    if (item) {
+      openEditModal('baby_name', item.id, 'Edit Baby Name', 'Baby Name', item.name, '', '');
+    }
+    return;
+  }
+
+  // 3. Delete Button
+  const deleteBtn = e.target.closest('.btn-icon-delete');
+  if (deleteBtn && deleteBtn.dataset.id) {
+    e.stopPropagation();
+    
+    if (!isEditDeleteAllEnabled()) {
+      alert("Deletion is disabled! Enable Edit & Delete in Settings.");
+      return;
+    }
+
+    const itemRow = deleteBtn.closest('.baby-name-item');
+    if (itemRow) {
+      // Apply smooth collapse deletion animation
+      itemRow.classList.add('deleting');
+      await new Promise(r => setTimeout(r, 400));
+    }
+
+    await deleteBabyName(deleteBtn.dataset.id);
+    renderBabyNamesList();
+  }
+}
+

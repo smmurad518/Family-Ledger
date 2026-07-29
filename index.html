@@ -16,7 +16,7 @@
   <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
 
   <!-- Main Styling -->
-  <link rel="stylesheet" href="assets/style.css?v=1785343871907">
+  <link rel="stylesheet" href="assets/style.css?v=1785344298484">
 </head>
 
 <body>
@@ -273,6 +273,61 @@
         <ul class="item-list" id="suggestions-list-container" style="list-style: none; padding: 0; margin: 0;">
           <!-- Items will be injected dynamically -->
         </ul>
+      </section>
+
+      <!-- SCREEN 6: BABY NAMES TRACKER -->
+      <section class="screen" id="screen-baby-names">
+        <div class="welcome-banner baby-banner" style="background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%); margin-bottom: 20px;">
+          <h2 style="color: var(--color-primary-dark); display: flex; align-items: center; gap: 8px;">
+            <span>👶 Sonomonir Name List</span>
+          </h2>
+          <p style="color: var(--color-primary-dark); opacity: 0.9;">Suggest and vote on favorite names for your little one!</p>
+        </div>
+
+        <!-- Add Name Card -->
+        <div class="card baby-card" style="margin-bottom: 20px; padding: 16px;">
+          <h3 class="card-title">
+            <svg viewBox="0 0 24 24" width="20" height="20" stroke="var(--color-primary-interactive)" stroke-width="2.5" fill="none">
+              <path d="M12 5v14M5 12h14"/>
+            </svg>
+            Add New Suggestion
+          </h3>
+          <form id="baby-name-form" style="display: flex; flex-direction: column; gap: 12px;">
+            <div style="display: flex; gap: 8px;">
+              <input type="text" id="baby-name-input" placeholder="Enter baby name..." autocomplete="off" required style="flex: 1; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-dark);">
+              <select id="baby-gender-select" required style="width: auto; padding: 0 16px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-dark); font-weight: 700;">
+                <option value="boy">Boy ♂</option>
+                <option value="girl">Girl ♀</option>
+              </select>
+            </div>
+            <button type="submit" id="btn-add-baby-name" class="btn-primary" style="width: 100%; border-radius: 12px; font-weight: 700;">
+              👶 Add Baby Name
+            </button>
+          </form>
+        </div>
+
+        <!-- Boy and Girl Names Grid -->
+        <div class="baby-grid">
+          <!-- Boy Names Column -->
+          <div class="baby-column boy-col">
+            <h3 class="column-title" style="display: flex; align-items: center; gap: 6px; font-family: var(--font-title); font-size: 15px; font-weight: 800; color: var(--color-secondary); margin-bottom: 12px; border-bottom: 2px solid var(--color-secondary-light); padding-bottom: 6px;">
+              ♂ Boy Names
+            </h3>
+            <ul class="item-list" id="boy-names-list" style="list-style: none; padding: 0; margin: 0;">
+              <!-- Inject via JS -->
+            </ul>
+          </div>
+
+          <!-- Girl Names Column -->
+          <div class="baby-column girl-col">
+            <h3 class="column-title" style="display: flex; align-items: center; gap: 6px; font-family: var(--font-title); font-size: 15px; font-weight: 800; color: var(--color-primary-interactive); margin-bottom: 12px; border-bottom: 2px solid var(--color-primary-light); padding-bottom: 6px;">
+              ♀ Girl Names
+            </h3>
+            <ul class="item-list" id="girl-names-list" style="list-style: none; padding: 0; margin: 0;">
+              <!-- Inject via JS -->
+            </ul>
+          </div>
+        </div>
       </section>
 
     </main>
@@ -534,8 +589,8 @@
   </script>
 
   <!-- Core Scripts -->
-  <script type="module" src="assets/db.js?v=1785343871907"></script>
-  <script type="module" src="assets/app.js?v=1785343871907"></script>
+  <script type="module" src="assets/db.js?v=1785344298484"></script>
+  <script type="module" src="assets/app.js?v=1785344298484"></script>
 
 </body>
 

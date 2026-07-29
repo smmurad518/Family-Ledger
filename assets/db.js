@@ -21,7 +21,8 @@ const KEYS = {
   DUES: 'mm_dues',
   SUGGESTIONS: 'mm_suggestions',
   EDIT_DELETE_ALL: 'mm_edit_delete_all',
-  WIFE_CAN_SWITCH: 'mm_wife_can_switch'
+  WIFE_CAN_SWITCH: 'mm_wife_can_switch',
+  BABY_NAMES: 'mm_baby_names'
 };
 
 // Global application state for db
@@ -95,11 +96,13 @@ export async function pollServerData() {
         const localExpenses = getLocal(KEYS.EXPENSES, []);
         const localDues = getLocal(KEYS.DUES, []);
         const localSuggestions = getLocal(KEYS.SUGGESTIONS, []);
+        const localBabyNames = getLocal(KEYS.BABY_NAMES, []);
 
         const remoteShopping = serverData.shopping || [];
         const remoteExpenses = serverData.expenses || [];
         const remoteDues = serverData.dues || [];
         const remoteSuggestions = serverData.suggestions || [];
+        const remoteBabyNames = serverData.babyNames || [];
 
         let updated = false;
 
@@ -117,6 +120,10 @@ export async function pollServerData() {
         }
         if (JSON.stringify(localSuggestions) !== JSON.stringify(remoteSuggestions)) {
           setLocal(KEYS.SUGGESTIONS, remoteSuggestions);
+          updated = true;
+        }
+        if (JSON.stringify(localBabyNames) !== JSON.stringify(remoteBabyNames)) {
+          setLocal(KEYS.BABY_NAMES, remoteBabyNames);
           updated = true;
         }
 
@@ -143,12 +150,14 @@ export async function pushStateToServer() {
     const localExpenses = getLocal(KEYS.EXPENSES, []);
     const localDues = getLocal(KEYS.DUES, []);
     const localSuggestions = getLocal(KEYS.SUGGESTIONS, []);
+    const localBabyNames = getLocal(KEYS.BABY_NAMES, []);
 
     const payload = {
       shopping: localShopping,
       expenses: localExpenses,
       dues: localDues,
       suggestions: localSuggestions,
+      babyNames: localBabyNames,
       updatedAt: Date.now()
     };
 
@@ -249,6 +258,7 @@ export async function connectFirebase(config, onSyncStateChange) {
     setupCollectionListener('expenses', KEYS.EXPENSES, onSyncStateChange);
     setupCollectionListener('dues', KEYS.DUES, onSyncStateChange);
     setupCollectionListener('suggestions', KEYS.SUGGESTIONS, onSyncStateChange);
+    setupCollectionListener('baby_names', KEYS.BABY_NAMES, onSyncStateChange);
 
     if (onSyncStateChange) onSyncStateChange('connected');
     return true;
@@ -294,7 +304,8 @@ async function uploadLocalDataToCloud() {
     { name: 'shopping_list', localKey: KEYS.SHOPPING },
     { name: 'expenses', localKey: KEYS.EXPENSES },
     { name: 'dues', localKey: KEYS.DUES },
-    { name: 'suggestions', localKey: KEYS.SUGGESTIONS }
+    { name: 'suggestions', localKey: KEYS.SUGGESTIONS },
+    { name: 'baby_names', localKey: KEYS.BABY_NAMES }
   ];
 
   for (const col of collectionsToSync) {
@@ -763,7 +774,8 @@ export async function reorderListData(key, sourceId, targetId) {
   if (firestoreDb) {
     const collectionName = key === KEYS.SHOPPING ? 'shopping_list' : 
                            key === KEYS.EXPENSES ? 'expenses' : 
-                           key === KEYS.DUES ? 'dues' : 'suggestions';
+                           key === KEYS.DUES ? 'dues' : 
+                           key === KEYS.SUGGESTIONS ? 'suggestions' : 'baby_names';
     const batch = writeBatch(firestoreDb);
     items.forEach(item => {
       const docRef = doc(firestoreDb, collectionName, item.id);
@@ -774,8 +786,114 @@ export async function reorderListData(key, sourceId, targetId) {
 
   const collName = key === KEYS.SHOPPING ? 'shopping_list' : 
                    key === KEYS.EXPENSES ? 'expenses' : 
-                   key === KEYS.DUES ? 'dues' : 'suggestions';
+                   key === KEYS.DUES ? 'dues' : 
+                   key === KEYS.SUGGESTIONS ? 'suggestions' : 'baby_names';
   if (onUpdateCallback) onUpdateCallback('update', collName);
+  pushStateToServer();
+}
+
+// ----------------------------------------------------
+// APIS: BABY NAMES LIST (SOLAMONIR NAMER TALIKA)
+// ----------------------------------------------------
+export function getBabyNames() {
+  return getLocal(KEYS.BABY_NAMES, []);
+}
+
+export async function addBabyName(name, gender) {
+  isWriting = true;
+  if (writeCooldownTimer) clearTimeout(writeCooldownTimer);
+
+  const items = getBabyNames();
+  const newItem = {
+    id: generateId(),
+    name: name.trim(),
+    gender: gender, // 'boy' or 'girl'
+    likes: [], // list of profile names who liked it e.g. ["Husband", "Wife"]
+    addedBy: getCurrentProfile(),
+    timestamp: Date.now()
+  };
+
+  items.push(newItem);
+  setLocal(KEYS.BABY_NAMES, items);
+
+  if (firestoreDb) {
+    setDoc(doc(firestoreDb, 'baby_names', newItem.id), newItem).catch(e => {
+      console.error('Firebase save failed:', e);
+    });
+  }
+
+  if (onUpdateCallback) onUpdateCallback('update', 'baby_names');
+  pushStateToServer();
+}
+
+export async function toggleLikeBabyName(id) {
+  isWriting = true;
+  if (writeCooldownTimer) clearTimeout(writeCooldownTimer);
+
+  const items = getBabyNames();
+  const index = items.findIndex(item => item.id === id);
+  if (index === -1) { isWriting = false; return; }
+
+  const currentProfile = getCurrentProfile();
+  const likes = items[index].likes || [];
+  
+  if (likes.includes(currentProfile)) {
+    items[index].likes = likes.filter(p => p !== currentProfile);
+  } else {
+    items[index].likes = [...likes, currentProfile];
+  }
+  items[index].timestamp = Date.now();
+
+  setLocal(KEYS.BABY_NAMES, items);
+
+  if (firestoreDb) {
+    setDoc(doc(firestoreDb, 'baby_names', id), items[index], { merge: true }).catch(e => {
+      console.error('Firebase update failed:', e);
+    });
+  }
+
+  if (onUpdateCallback) onUpdateCallback('update', 'baby_names');
+  pushStateToServer();
+}
+
+export async function deleteBabyName(id) {
+  isWriting = true;
+  if (writeCooldownTimer) clearTimeout(writeCooldownTimer);
+
+  const items = getBabyNames();
+  const filtered = items.filter(item => item.id !== id);
+  setLocal(KEYS.BABY_NAMES, filtered);
+
+  if (firestoreDb) {
+    deleteDoc(doc(firestoreDb, 'baby_names', id)).catch(e => {
+      console.error('Firebase delete failed:', e);
+    });
+  }
+
+  if (onUpdateCallback) onUpdateCallback('update', 'baby_names');
+  pushStateToServer();
+}
+
+export async function updateBabyName(id, name) {
+  isWriting = true;
+  if (writeCooldownTimer) clearTimeout(writeCooldownTimer);
+
+  const items = getBabyNames();
+  const index = items.findIndex(item => item.id === id);
+  if (index === -1) { isWriting = false; return; }
+
+  items[index].name = name.trim();
+  items[index].timestamp = Date.now();
+
+  setLocal(KEYS.BABY_NAMES, items);
+
+  if (firestoreDb) {
+    setDoc(doc(firestoreDb, 'baby_names', id), items[index], { merge: true }).catch(e => {
+      console.error('Firebase update failed:', e);
+    });
+  }
+
+  if (onUpdateCallback) onUpdateCallback('update', 'baby_names');
   pushStateToServer();
 }
 
