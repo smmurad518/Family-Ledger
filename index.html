@@ -16,7 +16,7 @@
   <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
 
   <!-- Main Styling -->
-  <link rel="stylesheet" href="assets/style.css?v=1785344994479">
+  <link rel="stylesheet" href="assets/style.css?v=1785345252102">
 </head>
 
 <body>
@@ -101,14 +101,18 @@
             Add New Item
           </h3>
           <form id="shopping-form">
+            <div class="form-group" style="margin-bottom: 14px;">
+              <label for="shop-item-name">Item Name</label>
+              <input type="text" id="shop-item-name" placeholder="e.g. Potato, Milk" required autocomplete="off">
+            </div>
             <div class="form-row">
-              <div class="form-group">
-                <label for="shop-item-name">Item Name</label>
-                <input type="text" id="shop-item-name" placeholder="e.g. Potato, Milk" required autocomplete="off">
-              </div>
               <div class="form-group">
                 <label for="shop-item-qty">Quantity</label>
                 <input type="text" id="shop-item-qty" placeholder="e.g. 2 kg, 1 Litre" required autocomplete="off">
+              </div>
+              <div class="form-group">
+                <label for="shop-item-amount">Amount (৳) - Optional</label>
+                <input type="number" id="shop-item-amount" placeholder="e.g. 150" min="0" step="any">
               </div>
             </div>
             <button type="submit" id="btn-add-shopping" class="btn-primary">
@@ -522,6 +526,11 @@
           <input type="text" id="edit-input-2" autocomplete="off">
         </div>
 
+        <div class="form-group" id="edit-group-3" style="display: none; margin-top: 14px;">
+          <label id="edit-label-3" for="edit-input-3">Field 3</label>
+          <input type="text" id="edit-input-3" autocomplete="off">
+        </div>
+
         <button id="btn-save-edit" class="btn-primary" style="margin-top: 15px;">
           Update Entry
         </button>
@@ -657,8 +666,8 @@
   </script>
 
     <!-- Core Scripts -->
-    <script type="module" src="assets/db.js?v=1785344994479"></script>
-    <script type="module" src="assets/app.js?v=1785344994479"></script>
+    <script type="module" src="assets/db.js?v=1785345252102"></script>
+    <script type="module" src="assets/app.js?v=1785345252102"></script>
 
 </body>
 

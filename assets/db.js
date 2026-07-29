@@ -375,7 +375,7 @@ export function getShoppingItems() {
   return getLocal(KEYS.SHOPPING, []);
 }
 
-export async function addShoppingItem(name, qty) {
+export async function addShoppingItem(name, qty, amount = '') {
   isWriting = true;
   if (writeCooldownTimer) clearTimeout(writeCooldownTimer);
 
@@ -384,6 +384,7 @@ export async function addShoppingItem(name, qty) {
     id: generateId(),
     name: name.trim(),
     qty: qty.trim(),
+    amount: amount ? parseFloat(amount) : 0,
     bought: false,
     addedBy: getCurrentProfile(),
     timestamp: Date.now()
@@ -574,7 +575,7 @@ export async function deleteDue(id) {
   pushStateToServer();
 }
 
-export async function updateShoppingItem(id, name, qty) {
+export async function updateShoppingItem(id, name, qty, amount = '') {
   isWriting = true;
   if (writeCooldownTimer) clearTimeout(writeCooldownTimer);
 
@@ -584,6 +585,7 @@ export async function updateShoppingItem(id, name, qty) {
 
   items[index].name = name.trim();
   items[index].qty = qty.trim();
+  items[index].amount = amount ? parseFloat(amount) : 0;
   items[index].timestamp = Date.now();
 
   setLocal(KEYS.SHOPPING, items);

@@ -63,6 +63,7 @@ const DOM = {
   shoppingForm: document.getElementById('shopping-form'),
   shopItemName: document.getElementById('shop-item-name'),
   shopItemQty: document.getElementById('shop-item-qty'),
+  shopItemAmount: document.getElementById('shop-item-amount'),
   shoppingContainer: document.getElementById('shopping-list-container'),
   shoppingFilterTabs: document.getElementById('shopping-filter-tabs').querySelectorAll('.tab-btn'),
   
@@ -104,8 +105,11 @@ const DOM = {
   editModalTitle: document.getElementById('edit-modal-title'),
   editLabel1: document.getElementById('edit-label-1'),
   editLabel2: document.getElementById('edit-label-2'),
+  editLabel3: document.getElementById('edit-label-3'),
   editInput1: document.getElementById('edit-input-1'),
   editInput2: document.getElementById('edit-input-2'),
+  editInput3: document.getElementById('edit-input-3'),
+  editInputGroup3: document.getElementById('edit-group-3'),
   editSaveBtn: document.getElementById('btn-save-edit'),
 
   // Drawer Selectors
@@ -698,7 +702,7 @@ function setupEventListeners() {
         const items = getShoppingItems();
         const item = items.find(i => i.id === editBtn.dataset.id);
         if (item) {
-          openEditModal('shopping', item.id, 'Edit Shopping Item', 'Item Name', item.name, 'Quantity', item.qty);
+          openEditModal('shopping', item.id, 'Edit Shopping Item', 'Item Name', item.name, 'Quantity', item.qty, 'Amount (৳)', item.amount || '');
         }
         return;
       }
@@ -981,7 +985,7 @@ async function handleProfileSelect(e) {
   }, 200);
 }
 
-function openEditModal(type, id, title, label1, val1, label2, val2) {
+function openEditModal(type, id, title, label1, val1, label2, val2, label3 = '', val3 = '') {
   currentEditType = type;
   currentEditId = id;
   
@@ -998,6 +1002,14 @@ function openEditModal(type, id, title, label1, val1, label2, val2) {
     DOM.editInput2.value = val2;
   }
 
+  if (type === 'shopping') {
+    DOM.editLabel3.textContent = label3;
+    DOM.editInput3.value = val3;
+    if (DOM.editInputGroup3) DOM.editInputGroup3.style.display = 'block';
+  } else {
+    if (DOM.editInputGroup3) DOM.editInputGroup3.style.display = 'none';
+  }
+
   DOM.editModal.classList.add('active');
 }
 
@@ -1007,17 +1019,23 @@ function closeEditModal() {
   currentEditId = '';
   const formGroup2 = DOM.editInput2.closest('.form-group');
   if (formGroup2) formGroup2.style.display = 'block';
+  if (DOM.editInputGroup3) DOM.editInputGroup3.style.display = 'none';
   resetViewportScroll();
 }
 
 async function handleEditSave() {
   const val1 = DOM.editInput1.value.trim();
   const val2 = DOM.editInput2.value.trim();
+  const val3 = DOM.editInput3 ? DOM.editInput3.value.trim() : '';
 
   const isOneFieldOnly = currentEditType === 'suggestion' || currentEditType === 'baby_name';
 
-  if (!isOneFieldOnly && (!val1 || !val2)) {
+  if (!isOneFieldOnly && currentEditType !== 'shopping' && (!val1 || !val2)) {
     alert("Please fill in all fields!");
+    return;
+  }
+  if (currentEditType === 'shopping' && (!val1 || !val2)) {
+    alert("Please enter name and quantity!");
     return;
   }
   if (isOneFieldOnly && !val1) {
@@ -1029,7 +1047,7 @@ async function handleEditSave() {
   DOM.editSaveBtn.textContent = 'Updating...';
 
   if (currentEditType === 'shopping') {
-    await updateShoppingItem(currentEditId, val1, val2);
+    await updateShoppingItem(currentEditId, val1, val2, val3);
     renderShoppingList();
   } else if (currentEditType === 'expense') {
     if (isNaN(val2) || parseFloat(val2) <= 0) {
@@ -1561,6 +1579,12 @@ function renderShoppingList() {
       </button>
     ` : '';
     
+    const amountHtml = item.amount && item.amount > 0 ? `
+      <span class="item-amount" style="font-family: var(--font-title); font-weight: 800; font-size: 13px; color: var(--color-primary-interactive); margin-right: 4px;">
+        ৳${item.amount.toLocaleString('en-IN')}
+      </span>
+    ` : '';
+
     return `
       <li class="list-item ${checkedClass}" data-id="${item.id}">
         <div class="item-left">
@@ -1573,6 +1597,7 @@ function renderShoppingList() {
           </div>
         </div>
         <div class="item-right" style="display: flex; align-items: center; gap: 8px;">
+          ${amountHtml}
           <span class="item-qty">${item.qty}</span>
           ${actionButtonsHtml}
         </div>
@@ -1588,13 +1613,15 @@ async function handleAddShoppingItem(e) {
   
   const name = DOM.shopItemName.value;
   const qty = DOM.shopItemQty.value;
+  const amount = DOM.shopItemAmount.value;
 
   if (!name.trim() || !qty.trim()) return;
 
-  await addShoppingItem(name, qty);
+  await addShoppingItem(name, qty, amount);
 
   DOM.shopItemName.value = '';
   DOM.shopItemQty.value = '';
+  DOM.shopItemAmount.value = '';
   DOM.shopItemName.blur();
 
   renderShoppingList();
