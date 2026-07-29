@@ -1732,11 +1732,9 @@ function makeListDraggable(container, listKey, renderFn) {
 
   const items = container.querySelectorAll('.list-item, .ledger-item');
   items.forEach(item => {
-    // 1. Setup mouse drag capability dynamically on mousedown (for desktops/laptops)
-    item.addEventListener('mousedown', () => {
-      item.setAttribute('draggable', 'true');
-      item.style.cursor = 'grab';
-    });
+    // Set draggable=true by default so native desktop drag starts immediately on first click
+    item.setAttribute('draggable', 'true');
+    item.style.cursor = 'grab';
 
     // Desktop HTML5 drag and drop listeners
     item.addEventListener('dragstart', (e) => {
@@ -1775,7 +1773,7 @@ function makeListDraggable(container, listKey, renderFn) {
       renderFn();
     });
 
-    // 2. Setup touch drag capability (for touchscreens and mobile devices)
+    // Touch drag capability for touchscreens and mobile devices
     let touchStartTimer = null;
     let isDragging = false;
     let startY = 0;
@@ -1783,7 +1781,7 @@ function makeListDraggable(container, listKey, renderFn) {
     let lastTargetId = null;
 
     item.addEventListener('touchstart', (e) => {
-      // Disable native draggable attribute so it doesn't break normal touch scrolling
+      // CRITICAL: Disable native draggable on touch start so it doesn't block scrolling or trigger native drag
       item.setAttribute('draggable', 'false');
       
       const touch = e.touches[0];
@@ -1837,6 +1835,8 @@ function makeListDraggable(container, listKey, renderFn) {
 
     const handleTouchEnd = async (e) => {
       clearTimeout(touchStartTimer);
+      // Restore draggable attribute for hybrid setups
+      item.setAttribute('draggable', 'true');
       
       if (isDragging) {
         isDragging = false;
