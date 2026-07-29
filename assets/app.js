@@ -223,6 +223,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Set up event listeners
   setupEventListeners();
 
+  // Initialize Collapsible Form Cards
+  setupCollapsibleCards();
+
   // Initial UI state setup
   updateProfileUI();
   updateOfflineBanner();
@@ -2143,5 +2146,36 @@ async function handleBabyListClick(e) {
     await deleteBabyName(deleteBtn.dataset.id);
     renderBabyNamesList();
   }
+}
+
+function setupCollapsibleCards() {
+  const togglers = [
+    { headerId: 'shopping-form-header', contentId: 'shopping-form-content' },
+    { headerId: 'expense-form-header', contentId: 'expense-form-content' },
+    { headerId: 'due-form-header', contentId: 'due-form-content' },
+    { headerId: 'baby-form-header', contentId: 'baby-form-content' }
+  ];
+
+  togglers.forEach(({ headerId, contentId }) => {
+    const header = document.getElementById(headerId);
+    const content = document.getElementById(contentId);
+    if (!header || !content) return;
+
+    // Default state: collapsed
+    content.classList.add('collapsible-content', 'collapsed');
+    const chevron = header.querySelector('.btn-toggle-collapse');
+    if (chevron) chevron.classList.remove('rotated');
+
+    header.addEventListener('click', () => {
+      const isCollapsed = content.classList.toggle('collapsed');
+      if (chevron) {
+        if (isCollapsed) {
+          chevron.classList.remove('rotated');
+        } else {
+          chevron.classList.add('rotated');
+        }
+      }
+    });
+  });
 }
 

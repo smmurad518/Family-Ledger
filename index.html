@@ -16,7 +16,7 @@
   <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
 
   <!-- Main Styling -->
-  <link rel="stylesheet" href="assets/style.css?v=1785346245430">
+  <link rel="stylesheet" href="assets/style.css?v=1785346380126">
 </head>
 
 <body>
@@ -92,37 +92,46 @@
       <!-- SCREEN 2: BAJARER TALIKA (SHOPPING LIST) -->
       <section id="screen-bajar" class="screen">
         <div class="card">
-          <h3 class="card-title">
-            <svg viewBox="0 0 24 24">
-              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-              <polyline points="17 21 17 13 7 13 7 21" />
-              <polyline points="7 3 7 8 15 8" />
-            </svg>
-            Add New Item
-          </h3>
-          <form id="shopping-form">
-            <div class="form-group" style="margin-bottom: 14px;">
-              <label for="shop-item-name">Item Name</label>
-              <input type="text" id="shop-item-name" placeholder="e.g. Potato, Milk" required autocomplete="off">
-            </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label for="shop-item-qty">Quantity</label>
-                <input type="text" id="shop-item-qty" placeholder="e.g. 2 kg, 1 Litre" required autocomplete="off">
-              </div>
-              <div class="form-group">
-                <label for="shop-item-amount">Amount (৳) - Optional</label>
-                <input type="number" id="shop-item-amount" placeholder="e.g. 150" min="0" step="any">
-              </div>
-            </div>
-            <button type="submit" id="btn-add-shopping" class="btn-primary">
-              <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none">
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
+          <h3 class="card-title" id="shopping-form-header" style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; width: 100%; margin-bottom: 0;">
+            <span style="display: flex; align-items: center; gap: 8px;">
+              <svg viewBox="0 0 24 24">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                <polyline points="17 21 17 13 7 13 7 21" />
+                <polyline points="7 3 7 8 15 8" />
               </svg>
-              Add to List
+              Add New Item
+            </span>
+            <button type="button" class="btn-toggle-collapse" aria-label="Toggle Form" style="background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center;">
+              <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" style="transition: transform 0.3s ease;">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
             </button>
-          </form>
+          </h3>
+          <div id="shopping-form-content" style="margin-top: 15px;">
+            <form id="shopping-form">
+              <div class="form-group" style="margin-bottom: 14px;">
+                <label for="shop-item-name">Item Name</label>
+                <input type="text" id="shop-item-name" placeholder="e.g. Potato, Milk" required autocomplete="off">
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="shop-item-qty">Quantity</label>
+                  <input type="text" id="shop-item-qty" placeholder="e.g. 2 kg, 1 Litre" required autocomplete="off">
+                </div>
+                <div class="form-group">
+                  <label for="shop-item-amount">Amount (৳) - Optional</label>
+                  <input type="number" id="shop-item-amount" placeholder="e.g. 150" min="0" step="any">
+                </div>
+              </div>
+              <button type="submit" id="btn-add-shopping" class="btn-primary">
+                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none">
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                Add to List
+              </button>
+            </form>
+          </div>
         </div>
 
         <div class="tab-row" id="shopping-filter-tabs">
@@ -139,30 +148,39 @@
       <!-- SCREEN 3: SANSARIK HISHAB (EXPENSE TRACKER) -->
       <section id="screen-hishab" class="screen">
         <div class="card">
-          <h3 class="card-title">
-            <svg viewBox="0 0 24 24">
-              <line x1="12" y1="1" x2="12" y2="23" />
-              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-            </svg>
-            Add New Need
-          </h3>
-          <form id="expense-form">
-            <div class="form-group">
-              <label for="expense-notes">Item Name</label>
-              <input type="text" id="expense-notes" placeholder="e.g. Bed, Table, Lamp" required autocomplete="off">
-            </div>
-            <div class="form-group">
-              <label for="expense-amount">Estimated Price (৳)</label>
-              <input type="number" id="expense-amount" placeholder="Enter estimated price" required min="1" step="any">
-            </div>
-            <button type="submit" id="btn-add-expense" class="btn-primary">
-              <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none">
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
+          <h3 class="card-title" id="expense-form-header" style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; width: 100%; margin-bottom: 0;">
+            <span style="display: flex; align-items: center; gap: 8px;">
+              <svg viewBox="0 0 24 24">
+                <line x1="12" y1="1" x2="12" y2="23" />
+                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
               </svg>
-              Add to List
+              Add New Need
+            </span>
+            <button type="button" class="btn-toggle-collapse" aria-label="Toggle Form" style="background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center;">
+              <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" style="transition: transform 0.3s ease;">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
             </button>
-          </form>
+          </h3>
+          <div id="expense-form-content" style="margin-top: 15px;">
+            <form id="expense-form">
+              <div class="form-group">
+                <label for="expense-notes">Item Name</label>
+                <input type="text" id="expense-notes" placeholder="e.g. Bed, Table, Lamp" required autocomplete="off">
+              </div>
+              <div class="form-group">
+                <label for="expense-amount">Estimated Price (৳)</label>
+                <input type="number" id="expense-amount" placeholder="Enter estimated price" required min="1" step="any">
+              </div>
+              <button type="submit" id="btn-add-expense" class="btn-primary">
+                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none">
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                Add to List
+              </button>
+            </form>
+          </div>
         </div>
 
         <div class="card">
@@ -192,48 +210,57 @@
       <!-- SCREEN 4: DHAR-DENA (LOANS & DUES) -->
       <section id="screen-dues" class="screen">
         <div class="card">
-          <h3 class="card-title">
-            <svg viewBox="0 0 24 24">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-              <circle cx="9" cy="7" r="4" />
-              <line x1="19" y1="8" x2="19" y2="14" />
-              <line x1="16" y1="11" x2="22" y2="11" />
-            </svg>
-            Record Loan/Due
-          </h3>
-          <form id="due-form">
-            <div class="form-row">
-              <div class="form-group">
-                <label for="due-person">Person Name</label>
-                <input type="text" id="due-person" placeholder="e.g. Uncle John, Shopkeeper" required
-                  autocomplete="off">
-              </div>
-              <div class="form-group">
-                <label for="due-amount">Amount (৳)</label>
-                <input type="number" id="due-amount" placeholder="Enter Amount" required min="1" step="any">
-              </div>
-            </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label for="due-type">Type</label>
-                <select id="due-type" required>
-                  <option value="give">Dena (I owe them / Pay back)</option>
-                  <option value="take">Pawna (They owe me / Collect)</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label for="due-date">Date</label>
-                <input type="date" id="due-date" required style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-dark);">
-              </div>
-            </div>
-            <button type="submit" id="btn-add-due" class="btn-primary">
-              <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none">
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
+          <h3 class="card-title" id="due-form-header" style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; width: 100%; margin-bottom: 0;">
+            <span style="display: flex; align-items: center; gap: 8px;">
+              <svg viewBox="0 0 24 24">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <line x1="19" y1="8" x2="19" y2="14" />
+                <line x1="16" y1="11" x2="22" y2="11" />
               </svg>
-              Record Entry
+              Record Loan/Due
+            </span>
+            <button type="button" class="btn-toggle-collapse" aria-label="Toggle Form" style="background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center;">
+              <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" style="transition: transform 0.3s ease;">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
             </button>
-          </form>
+          </h3>
+          <div id="due-form-content" style="margin-top: 15px;">
+            <form id="due-form">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="due-person">Person Name</label>
+                  <input type="text" id="due-person" placeholder="e.g. Uncle John, Shopkeeper" required
+                    autocomplete="off">
+                </div>
+                <div class="form-group">
+                  <label for="due-amount">Amount (৳)</label>
+                  <input type="number" id="due-amount" placeholder="Enter Amount" required min="1" step="any">
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="due-type">Type</label>
+                  <select id="due-type" required>
+                    <option value="give">Dena (I owe them / Pay back)</option>
+                    <option value="take">Pawna (They owe me / Collect)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="due-date">Date</label>
+                  <input type="date" id="due-date" required style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-dark);">
+                </div>
+              </div>
+              <button type="submit" id="btn-add-due" class="btn-primary">
+                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none">
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                Record Entry
+              </button>
+            </form>
+          </div>
         </div>
 
         <div class="tab-row" id="dues-filter-tabs">
@@ -302,28 +329,36 @@
 
         <!-- Add Name Card -->
         <div class="card baby-card" style="margin-bottom: 20px; padding: 16px;">
-          <h3 class="card-title">
-            <svg viewBox="0 0 24 24" width="20" height="20" stroke="var(--color-primary-interactive)" stroke-width="2.5"
-              fill="none">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-            Add New Suggestion
-          </h3>
-          <form id="baby-name-form" style="display: flex; flex-direction: column; gap: 12px;">
-            <div style="display: flex; gap: 8px;">
-              <input type="text" id="baby-name-input" placeholder="Enter baby name..." autocomplete="off" required
-                style="flex: 1; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-dark);">
-              <select id="baby-gender-select" required
-                style="width: auto; padding: 0 16px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-dark); font-weight: 700;">
-                <option value="boy">Boy ♂</option>
-                <option value="girl">Girl ♀</option>
-              </select>
-            </div>
-            <button type="submit" id="btn-add-baby-name" class="btn-primary"
-              style="width: 100%; border-radius: 12px; font-weight: 700;">
-              👶 Add Baby Name
+          <h3 class="card-title" id="baby-form-header" style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; width: 100%; margin-bottom: 0;">
+            <span style="display: flex; align-items: center; gap: 8px;">
+              <svg viewBox="0 0 24 24" width="20" height="20" stroke="var(--color-primary-interactive)" stroke-width="2.5" fill="none">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+              Add New Suggestion
+            </span>
+            <button type="button" class="btn-toggle-collapse" aria-label="Toggle Form" style="background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center;">
+              <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" style="transition: transform 0.3s ease;">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
             </button>
-          </form>
+          </h3>
+          <div id="baby-form-content" style="margin-top: 15px;">
+            <form id="baby-name-form" style="display: flex; flex-direction: column; gap: 12px;">
+              <div style="display: flex; gap: 8px;">
+                <input type="text" id="baby-name-input" placeholder="Enter baby name..." autocomplete="off" required
+                  style="flex: 1; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-dark);">
+                <select id="baby-gender-select" required
+                  style="width: auto; padding: 0 16px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-dark); font-weight: 700;">
+                  <option value="boy">Boy ♂</option>
+                  <option value="girl">Girl ♀</option>
+                </select>
+              </div>
+              <button type="submit" id="btn-add-baby-name" class="btn-primary"
+                style="width: 100%; border-radius: 12px; font-weight: 700;">
+                👶 Add Baby Name
+              </button>
+            </form>
+          </div>
         </div>
 
         <!-- Boy and Girl Names Grid -->
@@ -675,8 +710,8 @@
   </script>
 
     <!-- Core Scripts -->
-    <script type="module" src="assets/db.js?v=1785346245430"></script>
-    <script type="module" src="assets/app.js?v=1785346245430"></script>
+    <script type="module" src="assets/db.js?v=1785346380126"></script>
+    <script type="module" src="assets/app.js?v=1785346380126"></script>
 
 </body>
 
