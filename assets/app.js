@@ -2005,9 +2005,10 @@ function renderBabyNamesList() {
   const girlNames = names.filter(n => n.gender === 'girl');
 
   const renderNameItem = (item) => {
-    const currentProfile = getCurrentProfile();
+    const parent = localStorage.getItem('mm_parent_profile') || 'Husband';
+    const addedByLabel = parent === 'Husband' ? 'Father' : 'Mother';
     const likes = item.likes || [];
-    const isLiked = likes.includes(currentProfile);
+    const isLiked = likes.includes(addedByLabel);
     const likeColorClass = isLiked ? 'liked' : '';
     const canAction = isEditDeleteAllEnabled();
     const actionButtonsHtml = canAction ? `
@@ -2019,11 +2020,13 @@ function renderBabyNamesList() {
       </button>
     ` : '';
 
+    const addedByDisplay = item.addedBy === 'Husband' || item.addedBy === 'Baby' ? 'Father' : (item.addedBy === 'Wife' ? 'Mother' : item.addedBy);
+
     return `
       <li class="baby-name-item" data-id="${item.id}">
         <div class="baby-name-info">
           <span class="baby-name-text">${item.name}</span>
-          <span class="baby-name-meta">by ${item.addedBy}</span>
+          <span class="baby-name-meta">by ${addedByDisplay}</span>
         </div>
         <div class="baby-actions">
           <button class="btn-like-heart ${likeColorClass}" data-id="${item.id}">

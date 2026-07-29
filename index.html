@@ -16,7 +16,7 @@
   <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
 
   <!-- Main Styling -->
-  <link rel="stylesheet" href="assets/style.css?v=1785344667122">
+  <link rel="stylesheet" href="assets/style.css?v=1785344994479">
 </head>
 
 <body>
@@ -253,18 +253,24 @@
 
       <!-- Next Suggestions Screen -->
       <section class="screen" id="screen-suggestions">
-        <div class="welcome-banner" style="background: linear-gradient(135deg, var(--color-primary) 0%, #a3df3b 100%); margin-bottom: 20px;">
+        <div class="welcome-banner"
+          style="background: linear-gradient(135deg, var(--color-primary) 0%, #a3df3b 100%); margin-bottom: 20px;">
           <h2 style="color: var(--color-primary-dark);">Next Suggestions</h2>
-          <p style="color: var(--color-primary-dark); opacity: 0.85;">Add your ideas and recommendations for the next updates here.</p>
+          <p style="color: var(--color-primary-dark); opacity: 0.85;">Add your ideas and recommendations for the next
+            updates here.</p>
         </div>
 
         <div class="card" style="margin-bottom: 20px; padding: 16px;">
-          <h3 style="margin-bottom: 12px; font-family: var(--font-title); font-weight: 800; font-size: 16px; color: var(--text-dark);">
+          <h3
+            style="margin-bottom: 12px; font-family: var(--font-title); font-weight: 800; font-size: 16px; color: var(--text-dark);">
             Add New Suggestion
           </h3>
           <form id="suggestion-form" style="display: flex; gap: 8px;">
-            <input type="text" id="suggestion-input" placeholder="Write ideas for the next update..." autocomplete="off" required style="flex: 1; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-dark);">
-            <button type="submit" id="btn-add-suggestion" class="btn-primary" style="width: auto; padding: 0 20px; border-radius: 12px; font-weight: 700; white-space: nowrap;">
+            <input type="text" id="suggestion-input" placeholder="Write ideas for the next update..." autocomplete="off"
+              required
+              style="flex: 1; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-dark);">
+            <button type="submit" id="btn-add-suggestion" class="btn-primary"
+              style="width: auto; padding: 0 20px; border-radius: 12px; font-weight: 700; white-space: nowrap;">
               + Add Idea
             </button>
           </form>
@@ -277,30 +283,36 @@
 
       <!-- SCREEN 6: BABY NAMES TRACKER -->
       <section class="screen" id="screen-baby-names">
-        <div class="welcome-banner baby-banner" style="background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%); margin-bottom: 20px;">
+        <div class="welcome-banner baby-banner"
+          style="background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%); margin-bottom: 20px;">
           <h2 style="color: var(--color-primary-dark); display: flex; align-items: center; gap: 8px;">
-            <span>👶 Sonomonir Name List</span>
+            <span>👶 Sonamonir Name List</span>
           </h2>
-          <p style="color: var(--color-primary-dark); opacity: 0.9;">Suggest and vote on favorite names for your little one!</p>
+          <p style="color: var(--color-primary-dark); opacity: 0.9;">Suggest and vote on favorite names for your little
+            one!</p>
         </div>
 
         <!-- Add Name Card -->
         <div class="card baby-card" style="margin-bottom: 20px; padding: 16px;">
           <h3 class="card-title">
-            <svg viewBox="0 0 24 24" width="20" height="20" stroke="var(--color-primary-interactive)" stroke-width="2.5" fill="none">
-              <path d="M12 5v14M5 12h14"/>
+            <svg viewBox="0 0 24 24" width="20" height="20" stroke="var(--color-primary-interactive)" stroke-width="2.5"
+              fill="none">
+              <path d="M12 5v14M5 12h14" />
             </svg>
             Add New Suggestion
           </h3>
           <form id="baby-name-form" style="display: flex; flex-direction: column; gap: 12px;">
             <div style="display: flex; gap: 8px;">
-              <input type="text" id="baby-name-input" placeholder="Enter baby name..." autocomplete="off" required style="flex: 1; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-dark);">
-              <select id="baby-gender-select" required style="width: auto; padding: 0 16px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-dark); font-weight: 700;">
+              <input type="text" id="baby-name-input" placeholder="Enter baby name..." autocomplete="off" required
+                style="flex: 1; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-dark);">
+              <select id="baby-gender-select" required
+                style="width: auto; padding: 0 16px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-dark); font-weight: 700;">
                 <option value="boy">Boy ♂</option>
                 <option value="girl">Girl ♀</option>
               </select>
             </div>
-            <button type="submit" id="btn-add-baby-name" class="btn-primary" style="width: 100%; border-radius: 12px; font-weight: 700;">
+            <button type="submit" id="btn-add-baby-name" class="btn-primary"
+              style="width: 100%; border-radius: 12px; font-weight: 700;">
               👶 Add Baby Name
             </button>
           </form>
@@ -310,7 +322,8 @@
         <div class="baby-grid">
           <!-- Boy Names Column -->
           <div class="baby-column boy-col">
-            <h3 class="column-title" style="display: flex; align-items: center; gap: 6px; font-family: var(--font-title); font-size: 15px; font-weight: 800; color: var(--color-secondary); margin-bottom: 12px; border-bottom: 2px solid var(--color-secondary-light); padding-bottom: 6px;">
+            <h3 class="column-title"
+              style="display: flex; align-items: center; gap: 6px; font-family: var(--font-title); font-size: 15px; font-weight: 800; color: var(--color-secondary); margin-bottom: 12px; border-bottom: 2px solid var(--color-secondary-light); padding-bottom: 6px;">
               ♂ Boy Names
             </h3>
             <ul class="item-list" id="boy-names-list" style="list-style: none; padding: 0; margin: 0;">
@@ -320,7 +333,8 @@
 
           <!-- Girl Names Column -->
           <div class="baby-column girl-col">
-            <h3 class="column-title" style="display: flex; align-items: center; gap: 6px; font-family: var(--font-title); font-size: 15px; font-weight: 800; color: var(--color-primary-interactive); margin-bottom: 12px; border-bottom: 2px solid var(--color-primary-light); padding-bottom: 6px;">
+            <h3 class="column-title"
+              style="display: flex; align-items: center; gap: 6px; font-family: var(--font-title); font-size: 15px; font-weight: 800; color: var(--color-primary-interactive); margin-bottom: 12px; border-bottom: 2px solid var(--color-primary-light); padding-bottom: 6px;">
               ♀ Girl Names
             </h3>
             <ul class="item-list" id="girl-names-list" style="list-style: none; padding: 0; margin: 0;">
@@ -338,8 +352,10 @@
       <div class="nav-cutout-container" id="nav-cutout-container">
         <!-- SVG Cutout filled with var(--bg-primary) -->
         <svg class="nav-cutout-svg" viewBox="0 0 90 30">
-          <path d="M 0 0 L 0 10 L 20 10 C 30 10 32 28 45 28 C 58 28 60 10 70 10 L 90 10 L 90 0 Z" fill="var(--bg-primary)"/>
-          <path d="M 0 10 L 20 10 C 30 10 32 28 45 28 C 58 28 60 10 70 10 L 90 10" fill="none" stroke="var(--border-color)" stroke-width="1"/>
+          <path d="M 0 0 L 0 10 L 20 10 C 30 10 32 28 45 28 C 58 28 60 10 70 10 L 90 10 L 90 0 Z"
+            fill="var(--bg-primary)" />
+          <path d="M 0 10 L 20 10 C 30 10 32 28 45 28 C 58 28 60 10 70 10 L 90 10" fill="none"
+            stroke="var(--border-color)" stroke-width="1" />
         </svg>
         <!-- Floating Active Circle with active icon inside -->
         <div class="nav-active-circle">
@@ -348,7 +364,7 @@
           </div>
         </div>
       </div>
-      
+
       <!-- Actual nav items for clicking -->
       <div class="nav-items-container">
         <div class="curved-nav-item active" data-screen="dashboard" data-index="0" id="nav-dashboard">
@@ -409,10 +425,10 @@
           <div class="segmented-control">
             <input type="radio" name="wife-switch" value="no" id="wife-switch-no" checked>
             <label for="wife-switch-no" class="segmented-tab">No</label>
-            
+
             <input type="radio" name="wife-switch" value="yes" id="wife-switch-yes">
             <label for="wife-switch-yes" class="segmented-tab">Yes</label>
-            
+
             <span class="segmented-slider"></span>
           </div>
         </div>
@@ -420,8 +436,11 @@
         <div class="setting-card">
           <span class="setting-label">Firebase Cloud Sync</span>
           <div style="display: flex; align-items: center; gap: 12px;">
-            <button id="firebase-config-toggle" class="btn-icon" style="display: none; background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center;">
-              <svg viewBox="0 0 24 24" style="width: 20px; height: 20px; stroke: currentColor; stroke-width: 2; fill: none; transform: rotate(0deg); transition: transform 0.25s ease;" id="firebase-toggle-icon">
+            <button id="firebase-config-toggle" class="btn-icon"
+              style="display: none; background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center;">
+              <svg viewBox="0 0 24 24"
+                style="width: 20px; height: 20px; stroke: currentColor; stroke-width: 2; fill: none; transform: rotate(0deg); transition: transform 0.25s ease;"
+                id="firebase-toggle-icon">
                 <polyline points="6 9 12 15 18 9" />
               </svg>
             </button>
@@ -441,27 +460,40 @@
           </div>
 
           <div class="form-group" style="margin-bottom: 14px;">
-            <label for="fb-api-key" style="display: block; margin-bottom: 6px; font-weight: 700; font-size: 13px; color: var(--text-dark);">API Key</label>
-            <input type="password" id="fb-api-key" placeholder="AIzaSy..." style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-dark);">
+            <label for="fb-api-key"
+              style="display: block; margin-bottom: 6px; font-weight: 700; font-size: 13px; color: var(--text-dark);">API
+              Key</label>
+            <input type="password" id="fb-api-key" placeholder="AIzaSy..."
+              style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-dark);">
           </div>
 
           <div class="form-group" style="margin-bottom: 14px;">
-            <label for="fb-project-id" style="display: block; margin-bottom: 6px; font-weight: 700; font-size: 13px; color: var(--text-dark);">Project ID</label>
-            <input type="text" id="fb-project-id" placeholder="my-family-ledger-123" style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-dark);">
+            <label for="fb-project-id"
+              style="display: block; margin-bottom: 6px; font-weight: 700; font-size: 13px; color: var(--text-dark);">Project
+              ID</label>
+            <input type="text" id="fb-project-id" placeholder="my-family-ledger-123"
+              style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-dark);">
           </div>
 
           <div class="form-group" style="margin-bottom: 14px;">
-            <label for="fb-auth-domain" style="display: block; margin-bottom: 6px; font-weight: 700; font-size: 13px; color: var(--text-dark);">Auth Domain</label>
-            <input type="text" id="fb-auth-domain" placeholder="my-family-ledger-123.firebaseapp.com" style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-dark);">
+            <label for="fb-auth-domain"
+              style="display: block; margin-bottom: 6px; font-weight: 700; font-size: 13px; color: var(--text-dark);">Auth
+              Domain</label>
+            <input type="text" id="fb-auth-domain" placeholder="my-family-ledger-123.firebaseapp.com"
+              style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-dark);">
           </div>
 
           <div class="form-group" style="margin-bottom: 20px;">
-            <label for="fb-app-id" style="display: block; margin-bottom: 6px; font-weight: 700; font-size: 13px; color: var(--text-dark);">App ID</label>
-            <input type="password" id="fb-app-id" placeholder="1:123456:web:abcd..." style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-dark);">
+            <label for="fb-app-id"
+              style="display: block; margin-bottom: 6px; font-weight: 700; font-size: 13px; color: var(--text-dark);">App
+              ID</label>
+            <input type="password" id="fb-app-id" placeholder="1:123456:web:abcd..."
+              style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-dark);">
           </div>
         </div>
 
-        <button id="btn-save-settings" class="btn-primary" style="margin-top: 15px; width: 100%; padding: 14px; border-radius: 14px; font-weight: 800;">
+        <button id="btn-save-settings" class="btn-primary"
+          style="margin-top: 15px; width: 100%; padding: 14px; border-radius: 14px; font-weight: 800;">
           Save Settings
         </button>
       </div>
@@ -541,8 +573,8 @@
         </div>
         <div class="drawer-item" data-screen="suggestions">
           <svg viewBox="0 0 24 24">
-            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/>
-            <path d="M12 8v4l3 3" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" />
+            <path d="M12 8v4l3 3" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" />
           </svg>
           <span>Next Suggestion</span>
         </div>
@@ -557,60 +589,65 @@
           Settings
         </button>
       </div>
-  </div>
+    </div>
 
-  <!-- Profile Chooser Modal -->
-  <div id="profile-modal" class="modal-overlay">
-    <div class="modal-content profile-chooser-content" style="max-width: 320px; text-align: center;">
-      <h3 class="modal-title" style="margin-bottom: 20px; text-align: center; width: 100%;">Choose Profile</h3>
-      <div style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
-        <div class="profile-select-card" data-profile="Husband" style="display: flex; align-items: center; gap: 16px; padding: 14px 20px; border-radius: 16px; cursor: pointer; text-align: left;">
-          <span style="font-size: 28px;">🧔</span>
-          <div>
-            <span style="font-weight: 800; font-size: 15px; color: var(--text-dark); display: block;">Husband</span>
-            <span style="font-size: 11px; color: var(--text-muted);">Manage ledger & bajar</span>
+    <!-- Profile Chooser Modal -->
+    <div id="profile-modal" class="modal-overlay">
+      <div class="modal-content profile-chooser-content" style="max-width: 320px; text-align: center;">
+        <h3 class="modal-title" style="margin-bottom: 20px; text-align: center; width: 100%;">Choose Profile</h3>
+        <div style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
+          <div class="profile-select-card" data-profile="Husband"
+            style="display: flex; align-items: center; gap: 16px; padding: 14px 20px; border-radius: 16px; cursor: pointer; text-align: left;">
+            <span style="font-size: 28px;">🧔</span>
+            <div>
+              <span style="font-weight: 800; font-size: 15px; color: var(--text-dark); display: block;">Husband</span>
+              <span style="font-size: 11px; color: var(--text-muted);">Manage ledger & bajar</span>
+            </div>
+          </div>
+          <div class="profile-select-card" data-profile="Wife"
+            style="display: flex; align-items: center; gap: 16px; padding: 14px 20px; border-radius: 16px; cursor: pointer; text-align: left;">
+            <span style="font-size: 28px;">👩</span>
+            <div>
+              <span style="font-weight: 800; font-size: 15px; color: var(--text-dark); display: block;">Wife</span>
+              <span style="font-size: 11px; color: var(--text-muted);">View ledger & add suggestions</span>
+            </div>
+          </div>
+          <div class="profile-select-card" data-profile="Baby"
+            style="display: flex; align-items: center; gap: 16px; padding: 14px 20px; border-radius: 16px; cursor: pointer; text-align: left;">
+            <span style="font-size: 28px;">👶</span>
+            <div>
+              <span style="font-weight: 800; font-size: 15px; color: var(--text-dark); display: block;">Baby
+                Names</span>
+              <span style="font-size: 11px; color: var(--text-muted);">Suggest & vote on names</span>
+            </div>
           </div>
         </div>
-        <div class="profile-select-card" data-profile="Wife" style="display: flex; align-items: center; gap: 16px; padding: 14px 20px; border-radius: 16px; cursor: pointer; text-align: left;">
-          <span style="font-size: 28px;">👩</span>
-          <div>
-            <span style="font-weight: 800; font-size: 15px; color: var(--text-dark); display: block;">Wife</span>
-            <span style="font-size: 11px; color: var(--text-muted);">View ledger & add suggestions</span>
-          </div>
-        </div>
-        <div class="profile-select-card" data-profile="Baby" style="display: flex; align-items: center; gap: 16px; padding: 14px 20px; border-radius: 16px; cursor: pointer; text-align: left;">
-          <span style="font-size: 28px;">👶</span>
-          <div>
-            <span style="font-weight: 800; font-size: 15px; color: var(--text-dark); display: block;">Baby Names</span>
-            <span style="font-size: 11px; color: var(--text-muted);">Suggest & vote on names</span>
-          </div>
-        </div>
+        <button id="profile-modal-close" class="btn-primary"
+          style="margin-top: 20px; width: 100%; border-radius: 12px; background-color: var(--border-color); color: var(--text-dark); box-shadow: none;">Cancel</button>
       </div>
-      <button id="profile-modal-close" class="btn-primary" style="margin-top: 20px; width: 100%; border-radius: 12px; background-color: var(--border-color); color: var(--text-dark); box-shadow: none;">Cancel</button>
     </div>
-  </div>
 
-  <!-- Live App Update Banner Modal -->
-  <div id="update-banner-overlay" class="update-banner-overlay" style="display: none;">
-    <div class="update-banner-card" id="update-banner-card">
-      <div class="update-banner-icon">🚀</div>
-      <h3 class="update-banner-title">New Update Available!</h3>
-      <p class="update-banner-desc">A new version of the app has been published with improvements and features.</p>
-      <button id="btn-apply-update" class="btn-update-now">Update Now 🔄</button>
-    </div>
-    <!-- Loading Animation Container (hidden by default) -->
-    <div class="update-loading-container" id="update-loading-container" style="display: none;">
-      <div class="spinner-wrapper">
-        <div class="custom-spinner"></div>
-        <div class="spinner-pulse"></div>
+    <!-- Live App Update Banner Modal -->
+    <div id="update-banner-overlay" class="update-banner-overlay" style="display: none;">
+      <div class="update-banner-card" id="update-banner-card">
+        <div class="update-banner-icon">🚀</div>
+        <h3 class="update-banner-title">New Update Available!</h3>
+        <p class="update-banner-desc">A new version of the app has been published with improvements and features.</p>
+        <button id="btn-apply-update" class="btn-update-now">Update Now 🔄</button>
       </div>
-      <h4 class="loading-title">Updating Application</h4>
-      <p class="loading-subtitle">Please wait, clearing cache & refreshing...</p>
+      <!-- Loading Animation Container (hidden by default) -->
+      <div class="update-loading-container" id="update-loading-container" style="display: none;">
+        <div class="spinner-wrapper">
+          <div class="custom-spinner"></div>
+          <div class="spinner-pulse"></div>
+        </div>
+        <h4 class="loading-title">Updating Application</h4>
+        <p class="loading-subtitle">Please wait, clearing cache & refreshing...</p>
+      </div>
     </div>
-  </div>
 
-  <!-- Loading Firebase Core Libraries from CDN (using standard ES module syntax or global script) -->
-  <script type="importmap">
+    <!-- Loading Firebase Core Libraries from CDN (using standard ES module syntax or global script) -->
+    <script type="importmap">
     {
       "imports": {
         "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
@@ -619,9 +656,9 @@
     }
   </script>
 
-  <!-- Core Scripts -->
-  <script type="module" src="assets/db.js?v=1785344667122"></script>
-  <script type="module" src="assets/app.js?v=1785344667122"></script>
+    <!-- Core Scripts -->
+    <script type="module" src="assets/db.js?v=1785344994479"></script>
+    <script type="module" src="assets/app.js?v=1785344994479"></script>
 
 </body>
 

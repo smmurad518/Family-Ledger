@@ -204,6 +204,9 @@ export function getCurrentProfile() {
 
 export function setCurrentProfile(profile) {
   localStorage.setItem(KEYS.PROFILE, profile);
+  if (profile === 'Husband' || profile === 'Wife') {
+    localStorage.setItem('mm_parent_profile', profile);
+  }
 }
 
 export function isEditDeleteAllEnabled() {
@@ -804,12 +807,15 @@ export async function addBabyName(name, gender) {
   if (writeCooldownTimer) clearTimeout(writeCooldownTimer);
 
   const items = getBabyNames();
+  const parent = localStorage.getItem('mm_parent_profile') || 'Husband';
+  const addedByLabel = parent === 'Husband' ? 'Father' : 'Mother';
+
   const newItem = {
     id: generateId(),
     name: name.trim(),
     gender: gender, // 'boy' or 'girl'
-    likes: [], // list of profile names who liked it e.g. ["Husband", "Wife"]
-    addedBy: getCurrentProfile(),
+    likes: [], // list of profile names who liked it e.g. ["Father", "Mother"]
+    addedBy: addedByLabel,
     timestamp: Date.now()
   };
 
@@ -834,13 +840,14 @@ export async function toggleLikeBabyName(id) {
   const index = items.findIndex(item => item.id === id);
   if (index === -1) { isWriting = false; return; }
 
-  const currentProfile = getCurrentProfile();
+  const parent = localStorage.getItem('mm_parent_profile') || 'Husband';
+  const addedByLabel = parent === 'Husband' ? 'Father' : 'Mother';
   const likes = items[index].likes || [];
   
-  if (likes.includes(currentProfile)) {
-    items[index].likes = likes.filter(p => p !== currentProfile);
+  if (likes.includes(addedByLabel)) {
+    items[index].likes = likes.filter(p => p !== addedByLabel);
   } else {
-    items[index].likes = [...likes, currentProfile];
+    items[index].likes = [...likes, addedByLabel];
   }
   items[index].timestamp = Date.now();
 
