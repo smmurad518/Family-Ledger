@@ -2003,9 +2003,9 @@ button.btn-primary:active {
 
 /* Baby Screen Custom Layouts */
 .baby-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
   margin-top: 10px;
 }
 
@@ -2015,7 +2015,7 @@ button.btn-primary:active {
   padding: 16px;
   border: 1px solid var(--border-color);
   box-shadow: var(--shadow-card);
-  min-height: 200px;
+  min-height: auto;
 }
 
 /* Baby Name list items */
@@ -2094,6 +2094,25 @@ button.btn-primary:active {
 .like-count {
   font-size: 10px;
   font-weight: 800;
+}
+
+/* Profile Selector Cards styling */
+.profile-select-card {
+  border: 2px solid var(--border-color) !important;
+  background-color: var(--bg-card) !important;
+  transition: all var(--transition-fast) !important;
+}
+
+.profile-select-card:hover {
+  border-color: var(--color-primary-interactive) !important;
+  transform: translateY(-2px) !important;
+  background-color: var(--bg-hover) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+}
+
+.profile-select-card.active {
+  border-color: var(--color-primary-interactive) !important;
+  background-color: var(--color-primary-light) !important;
 }
 
 
