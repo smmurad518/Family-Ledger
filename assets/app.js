@@ -1731,6 +1731,8 @@ function makeListDraggable(container, listKey, renderFn) {
   if (!isEditDeleteAllEnabled()) return;
 
   const items = container.querySelectorAll('.list-item, .ledger-item');
+  let lastTargetId = null;
+
   items.forEach(item => {
     // Set draggable=true by default so native desktop drag starts immediately on first click
     item.setAttribute('draggable', 'true');
@@ -1739,6 +1741,7 @@ function makeListDraggable(container, listKey, renderFn) {
     // Desktop HTML5 drag and drop listeners
     item.addEventListener('dragstart', (e) => {
       item.classList.add('dragging');
+      lastTargetId = null;
       e.dataTransfer.effectAllowed = 'move';
       e.dataTransfer.setData('text/plain', item.dataset.id || '');
     });
@@ -1752,24 +1755,16 @@ function makeListDraggable(container, listKey, renderFn) {
         const rect = item.getBoundingClientRect();
         const next = (e.clientY - rect.top) / (rect.bottom - rect.top) > 0.5;
         container.insertBefore(draggingEl, next ? item.nextSibling : item);
+        lastTargetId = item.dataset.id;
       }
     });
 
-    item.addEventListener('drop', async (e) => {
-      e.preventDefault();
-      const draggingEl = container.querySelector('.dragging');
-      if (!draggingEl) return;
-
-      const sourceId = draggingEl.dataset.id;
-      const targetId = item.dataset.id;
-      if (!sourceId || !targetId || sourceId === targetId) return;
-
-      await reorderListData(listKey, sourceId, targetId);
-      renderFn();
-    });
-
-    item.addEventListener('dragend', () => {
+    item.addEventListener('dragend', async () => {
       item.classList.remove('dragging');
+      const sourceId = item.dataset.id;
+      if (sourceId && lastTargetId && sourceId !== lastTargetId) {
+        await reorderListData(listKey, sourceId, lastTargetId);
+      }
       renderFn();
     });
 
@@ -1778,7 +1773,6 @@ function makeListDraggable(container, listKey, renderFn) {
     let isDragging = false;
     let startY = 0;
     let startX = 0;
-    let lastTargetId = null;
 
     item.addEventListener('touchstart', (e) => {
       // CRITICAL: Disable native draggable on touch start so it doesn't block scrolling or trigger native drag
