@@ -745,36 +745,99 @@ export async function updateSuggestion(id, text) {
   pushStateToServer();
 }
 
-export async function reorderListData(key, sourceId, targetId) {
+export async function reorderItemToPosition(key, itemId, newPosition, filterType = 'all', activeDuesFilter = 'give') {
   isWriting = true;
   if (writeCooldownTimer) clearTimeout(writeCooldownTimer);
 
   const items = getLocal(key, []);
-  const sourceItem = items.find(item => item.id === sourceId);
-  const targetItem = items.find(item => item.id === targetId);
-  if (!sourceItem || !targetItem) { isWriting = false; return; }
-
-  const sourceIndex = items.indexOf(sourceItem);
-  const targetIndex = items.indexOf(targetItem);
-
-  items.splice(sourceIndex, 1);
-  let insertIndex = items.indexOf(targetItem);
-  if (sourceIndex < targetIndex) {
-    insertIndex += 1;
-  }
-  items.splice(insertIndex, 0, sourceItem);
-
+  
+  // Sort items by current order
   if (key === KEYS.EXPENSES) {
-    sourceItem.date = targetItem.date;
+    items.sort((a, b) => b.date.localeCompare(a.date) || b.timestamp - a.timestamp);
+  } else if (key === KEYS.BABY_NAMES) {
+    // We sort baby names by likes then timestamp descending
+    items.sort((a, b) => {
+      const likesA = (a.likes || []).length;
+      const likesB = (b.likes || []).length;
+      if (likesB !== likesA) return likesB - likesA;
+      return b.timestamp - a.timestamp;
+    });
+  } else {
+    items.sort((a, b) => b.timestamp - a.timestamp);
   }
 
-  // Rewrite timestamps sequentially (newest first)
+  const sourceItem = items.find(item => item.id === itemId);
+  if (!sourceItem) { isWriting = false; return; }
+
+  // Filter items matching current view
+  let filteredItems = [];
+  if (key === KEYS.SHOPPING) {
+    if (filterType === 'pending') {
+      filteredItems = items.filter(item => !item.bought);
+    } else if (filterType === 'bought') {
+      filteredItems = items.filter(item => item.bought);
+    } else {
+      filteredItems = [...items];
+    }
+  } else if (key === KEYS.DUES) {
+    filteredItems = items.filter(due => due.type === activeDuesFilter);
+  } else if (key === KEYS.BABY_NAMES) {
+    filteredItems = items.filter(n => n.gender === sourceItem.gender);
+  } else {
+    filteredItems = [...items];
+  }
+
+  // Remove sourceItem from filtered items
+  const sourceIndexInFiltered = filteredItems.indexOf(sourceItem);
+  if (sourceIndexInFiltered !== -1) {
+    filteredItems.splice(sourceIndexInFiltered, 1);
+  }
+
+  // Bound and insert at target position (1-indexed input)
+  let targetIndex = parseInt(newPosition) - 1;
+  if (isNaN(targetIndex) || targetIndex < 0) targetIndex = 0;
+  if (targetIndex > filteredItems.length) targetIndex = filteredItems.length;
+
+  filteredItems.splice(targetIndex, 0, sourceItem);
+
+  // Re-map the new filtered items order back into the main items array
+  let finalItems = [];
+  if (key === KEYS.SHOPPING && filterType !== 'all') {
+    let filteredIdx = 0;
+    finalItems = items.map(item => {
+      const isMatch = filterType === 'pending' ? !item.bought : item.bought;
+      if (isMatch) {
+        return filteredItems[filteredIdx++];
+      }
+      return item;
+    });
+  } else if (key === KEYS.DUES) {
+    let filteredIdx = 0;
+    finalItems = items.map(item => {
+      if (item.type === activeDuesFilter) {
+        return filteredItems[filteredIdx++];
+      }
+      return item;
+    });
+  } else if (key === KEYS.BABY_NAMES) {
+    let filteredIdx = 0;
+    finalItems = items.map(item => {
+      if (item.gender === sourceItem.gender) {
+        return filteredItems[filteredIdx++];
+      }
+      return item;
+    });
+  } else {
+    finalItems = filteredItems;
+  }
+
+  // Rewrite timestamps sequentially (newest first) to maintain visual persistence
   const now = Date.now();
-  items.forEach((item, index) => {
+  finalItems.forEach((item, index) => {
     item.timestamp = now - index * 1000;
   });
 
-  setLocal(key, items);
+  setLocal(key, finalItems);
 
   if (firestoreDb) {
     const collectionName = key === KEYS.SHOPPING ? 'shopping_list' : 
@@ -782,7 +845,7 @@ export async function reorderListData(key, sourceId, targetId) {
                            key === KEYS.DUES ? 'dues' : 
                            key === KEYS.SUGGESTIONS ? 'suggestions' : 'baby_names';
     const batch = writeBatch(firestoreDb);
-    items.forEach(item => {
+    finalItems.forEach(item => {
       const docRef = doc(firestoreDb, collectionName, item.id);
       batch.set(docRef, item, { merge: true });
     });

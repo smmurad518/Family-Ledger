@@ -26,7 +26,7 @@ import {
   toggleSuggestionStatus,
   deleteSuggestion,
   updateSuggestion,
-  reorderListData,
+  reorderItemToPosition,
   getBabyNames,
   addBabyName,
   toggleLikeBabyName,
@@ -106,10 +106,13 @@ const DOM = {
   editLabel1: document.getElementById('edit-label-1'),
   editLabel2: document.getElementById('edit-label-2'),
   editLabel3: document.getElementById('edit-label-3'),
+  editLabelSerial: document.getElementById('edit-label-serial'),
   editInput1: document.getElementById('edit-input-1'),
   editInput2: document.getElementById('edit-input-2'),
   editInput3: document.getElementById('edit-input-3'),
+  editInputSerial: document.getElementById('edit-input-serial'),
   editInputGroup3: document.getElementById('edit-group-3'),
+  editInputGroupSerial: document.getElementById('edit-group-serial'),
   editSaveBtn: document.getElementById('btn-save-edit'),
 
   // Drawer Selectors
@@ -985,6 +988,49 @@ async function handleProfileSelect(e) {
   }, 200);
 }
 
+function getListForType(type, itemId) {
+  if (type === 'shopping') {
+    const items = getShoppingItems();
+    let filtered = items;
+    if (activeShoppingFilter === 'pending') {
+      filtered = items.filter(item => !item.bought);
+    } else if (activeShoppingFilter === 'bought') {
+      filtered = items.filter(item => item.bought);
+    }
+    filtered.sort((a, b) => b.timestamp - a.timestamp);
+    return filtered;
+  }
+  if (type === 'expense') {
+    const items = getExpenses();
+    items.sort((a, b) => b.date.localeCompare(a.date) || b.timestamp - a.timestamp);
+    return items;
+  }
+  if (type === 'due') {
+    const items = getDues().filter(due => due.type === activeDuesFilter);
+    items.sort((a, b) => b.timestamp - a.timestamp);
+    return items;
+  }
+  if (type === 'suggestion') {
+    const items = getSuggestions();
+    items.sort((a, b) => b.timestamp - a.timestamp);
+    return items;
+  }
+  if (type === 'baby_name') {
+    const items = getBabyNames();
+    const item = items.find(i => i.id === itemId);
+    if (!item) return [];
+    const filtered = items.filter(n => n.gender === item.gender);
+    filtered.sort((a, b) => {
+      const likesA = (a.likes || []).length;
+      const likesB = (b.likes || []).length;
+      if (likesB !== likesA) return likesB - likesA;
+      return b.timestamp - a.timestamp;
+    });
+    return filtered;
+  }
+  return [];
+}
+
 function openEditModal(type, id, title, label1, val1, label2, val2, label3 = '', val3 = '') {
   currentEditType = type;
   currentEditId = id;
@@ -1010,6 +1056,24 @@ function openEditModal(type, id, title, label1, val1, label2, val2, label3 = '',
     if (DOM.editInputGroup3) DOM.editInputGroup3.style.display = 'none';
   }
 
+  // Pre-fill serial number information
+  const list = getListForType(type, id);
+  const idx = list.findIndex(item => item.id === id);
+  const currentSerial = idx !== -1 ? idx + 1 : 1;
+  const totalCount = list.length;
+
+  if (DOM.editLabelSerial && DOM.editInputSerial && DOM.editInputGroupSerial) {
+    if (totalCount > 1) {
+      DOM.editLabelSerial.textContent = `Serial No (1 to ${totalCount})`;
+      DOM.editInputSerial.value = currentSerial;
+      DOM.editInputSerial.min = 1;
+      DOM.editInputSerial.max = totalCount;
+      DOM.editInputGroupSerial.style.display = 'block';
+    } else {
+      DOM.editInputGroupSerial.style.display = 'none';
+    }
+  }
+
   DOM.editModal.classList.add('active');
 }
 
@@ -1020,6 +1084,7 @@ function closeEditModal() {
   const formGroup2 = DOM.editInput2.closest('.form-group');
   if (formGroup2) formGroup2.style.display = 'block';
   if (DOM.editInputGroup3) DOM.editInputGroup3.style.display = 'none';
+  if (DOM.editInputGroupSerial) DOM.editInputGroupSerial.style.display = 'none';
   resetViewportScroll();
 }
 
@@ -1027,6 +1092,7 @@ async function handleEditSave() {
   const val1 = DOM.editInput1.value.trim();
   const val2 = DOM.editInput2.value.trim();
   const val3 = DOM.editInput3 ? DOM.editInput3.value.trim() : '';
+  const newSerialVal = DOM.editInputSerial ? DOM.editInputSerial.value.trim() : '';
 
   const isOneFieldOnly = currentEditType === 'suggestion' || currentEditType === 'baby_name';
 
@@ -1046,9 +1112,18 @@ async function handleEditSave() {
   DOM.editSaveBtn.disabled = true;
   DOM.editSaveBtn.textContent = 'Updating...';
 
+  // Determine active keys for serial reordering
+  const keyMap = {
+    'shopping': 'mm_shopping_list',
+    'expense': 'mm_expenses',
+    'due': 'mm_dues',
+    'suggestion': 'mm_suggestions',
+    'baby_name': 'mm_baby_names'
+  };
+
+  // Perform updates
   if (currentEditType === 'shopping') {
     await updateShoppingItem(currentEditId, val1, val2, val3);
-    renderShoppingList();
   } else if (currentEditType === 'expense') {
     if (isNaN(val2) || parseFloat(val2) <= 0) {
       alert("Please enter a valid amount!");
@@ -1057,7 +1132,6 @@ async function handleEditSave() {
       return;
     }
     await updateExpense(currentEditId, val2, val1);
-    renderExpenseTracker();
   } else if (currentEditType === 'due') {
     if (isNaN(val2) || parseFloat(val2) <= 0) {
       alert("Please enter a valid amount!");
@@ -1066,14 +1140,31 @@ async function handleEditSave() {
       return;
     }
     await updateDue(currentEditId, val1, val2);
-    renderDuesLedger();
   } else if (currentEditType === 'suggestion') {
     await updateSuggestion(currentEditId, val1);
-    renderSuggestionsList();
   } else if (currentEditType === 'baby_name') {
     await updateBabyName(currentEditId, val1);
-    renderBabyNamesList();
   }
+
+  // Handle Serial reordering if requested and valid
+  const dbKey = keyMap[currentEditType];
+  if (dbKey && newSerialVal) {
+    const list = getListForType(currentEditType, currentEditId);
+    const oldIdx = list.findIndex(item => item.id === currentEditId);
+    const oldSerial = oldIdx !== -1 ? oldIdx + 1 : -1;
+    const newSerial = parseInt(newSerialVal);
+
+    if (newSerial > 0 && newSerial <= list.length && newSerial !== oldSerial) {
+      await reorderItemToPosition(dbKey, currentEditId, newSerial, activeShoppingFilter, activeDuesFilter);
+    }
+  }
+
+  // Trigger renders
+  if (currentEditType === 'shopping') renderShoppingList();
+  if (currentEditType === 'expense') renderExpenseTracker();
+  if (currentEditType === 'due') renderDuesLedger();
+  if (currentEditType === 'suggestion') renderSuggestionsList();
+  if (currentEditType === 'baby_name') renderBabyNamesList();
 
   DOM.editSaveBtn.disabled = false;
   DOM.editSaveBtn.textContent = 'Update Entry';
@@ -1585,18 +1676,8 @@ function renderShoppingList() {
       </span>
     ` : '';
 
-    const dragHandleHtml = canAction ? `
-      <div class="drag-handle">
-        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none">
-          <circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/>
-          <circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/>
-        </svg>
-      </div>
-    ` : '';
-
     return `
       <li class="list-item ${checkedClass}" data-id="${item.id}">
-        ${dragHandleHtml}
         <div class="item-left">
           <div class="item-checkbox" data-id="${item.id}">
             <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
@@ -1614,8 +1695,6 @@ function renderShoppingList() {
       </li>
     `;
   }).join('');
-
-  makeListDraggable(DOM.shoppingContainer, 'mm_shopping_list', renderShoppingList);
 }
 
 async function handleAddShoppingItem(e) {
@@ -1671,19 +1750,9 @@ function renderExpenseTracker() {
       </button>
     ` : '';
     
-    const dragHandleHtml = canAction ? `
-      <div class="drag-handle" style="padding-right: 8px;">
-        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none">
-          <circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/>
-          <circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/>
-        </svg>
-      </div>
-    ` : '';
-
     return `
-      <div class="list-item" data-id="${exp.id}" style="border-left: 4px solid var(--color-primary); margin-bottom: 8px; padding: 12px 16px; display: flex; align-items: center;">
-        ${dragHandleHtml}
-        <div class="item-left" style="gap: 12px; flex: 1;">
+      <div class="list-item" data-id="${exp.id}" style="border-left: 4px solid var(--color-primary); margin-bottom: 8px; padding: 12px 16px;">
+        <div class="item-left" style="gap: 12px;">
           <div class="item-details">
             <span style="font-weight: 800; font-size: 15px; color: var(--text-dark);">${exp.notes || 'Expense'}</span>
             <span style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">
@@ -1707,8 +1776,6 @@ function renderExpenseTracker() {
     DOM.expenseTotalContainer.style.display = 'flex';
     DOM.expenseTotalValue.textContent = `৳ ${total.toLocaleString('en-IN')}`;
   }
-
-  makeListDraggable(DOM.expenseHistory, 'mm_expenses', renderExpenseTracker);
 }
 
 async function handleAddExpenseItem(e) {
@@ -1781,19 +1848,9 @@ function renderDuesLedger() {
       </button>
     ` : '';
     
-    const dragHandleHtml = canAction ? `
-      <div class="drag-handle" style="padding-right: 8px;">
-        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none">
-          <circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/>
-          <circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/>
-        </svg>
-      </div>
-    ` : '';
-
     return `
-      <div class="ledger-item ${due.type}" data-id="${due.id}" style="display: flex; align-items: center;">
-        ${dragHandleHtml}
-        <div class="item-left" style="flex: 1;">
+      <div class="ledger-item ${due.type}" data-id="${due.id}">
+        <div class="item-left">
           <div style="flex: 1; display: flex; flex-direction: column;">
             <span style="font-weight: 800; font-size: 15px; color: var(--text-dark);">${due.person}</span>
             <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); margin-top: 2px;">
@@ -1811,8 +1868,6 @@ function renderDuesLedger() {
       </div>
     `;
   }).join('');
-
-  makeListDraggable(DOM.duesContainer, 'mm_dues', renderDuesLedger);
 }
 
 // Global action handlers
@@ -1913,120 +1968,6 @@ function renderSuggestionsList() {
     `;
   }).join('');
 
-  makeListDraggable(DOM.suggestionsContainer, 'mm_suggestions', renderSuggestionsList);
-}
-
-function makeListDraggable(container, listKey, renderFn) {
-  if (!isEditDeleteAllEnabled()) return;
-
-  const items = container.querySelectorAll('.list-item, .ledger-item, .baby-name-item');
-  let lastTargetId = null;
-
-  items.forEach(item => {
-    // Disabled by default
-    item.setAttribute('draggable', 'false');
-
-    const handle = item.querySelector('.drag-handle');
-    if (handle) {
-      // Desktop drag toggling
-      handle.addEventListener('mousedown', () => {
-        item.setAttribute('draggable', 'true');
-      });
-      handle.addEventListener('mouseup', () => {
-        item.setAttribute('draggable', 'false');
-      });
-      
-      // Touch drag toggling
-      let startY = 0;
-      let startX = 0;
-      let isDragging = false;
-
-      handle.addEventListener('touchstart', (e) => {
-        lastTargetId = null;
-        isDragging = true;
-        item.classList.add('dragging');
-        item.style.opacity = '0.6';
-        item.style.transform = 'scale(0.98)';
-        item.style.boxShadow = '0 5px 15px rgba(0,0,0,0.15)';
-        item.style.pointerEvents = 'none';
-
-        const touch = e.touches[0];
-        startY = touch.clientY;
-        startX = touch.clientX;
-      }, { passive: true });
-
-      handle.addEventListener('touchmove', (e) => {
-        if (!isDragging) return;
-        
-        const touch = e.touches[0];
-        const currentY = touch.clientY;
-
-        if (e.cancelable) e.preventDefault();
-
-        const elementUnderFinger = document.elementFromPoint(touch.clientX, currentY);
-        if (!elementUnderFinger) return;
-
-        const targetItem = elementUnderFinger.closest('.list-item, .ledger-item, .baby-name-item');
-        if (targetItem && targetItem !== item && targetItem.parentNode === container) {
-          const rect = targetItem.getBoundingClientRect();
-          const next = (currentY - rect.top) / (rect.bottom - rect.top) > 0.5;
-          container.insertBefore(item, next ? targetItem.nextSibling : targetItem);
-          lastTargetId = targetItem.dataset.id;
-        }
-      }, { passive: false });
-
-      const handleTouchEnd = async (e) => {
-        if (isDragging) {
-          isDragging = false;
-          item.classList.remove('dragging');
-          item.style.opacity = '';
-          item.style.transform = '';
-          item.style.boxShadow = '';
-          item.style.pointerEvents = '';
-
-          const sourceId = item.dataset.id;
-          if (sourceId && lastTargetId && sourceId !== lastTargetId) {
-            await reorderListData(listKey, sourceId, lastTargetId);
-          }
-          renderFn();
-        }
-      };
-
-      handle.addEventListener('touchend', handleTouchEnd);
-      handle.addEventListener('touchcancel', handleTouchEnd);
-    }
-
-    // Desktop HTML5 drag and drop listeners
-    item.addEventListener('dragstart', (e) => {
-      item.classList.add('dragging');
-      lastTargetId = null;
-      e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData('text/plain', item.dataset.id || '');
-    });
-
-    item.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
-      
-      const draggingEl = container.querySelector('.dragging');
-      if (draggingEl && draggingEl !== item) {
-        const rect = item.getBoundingClientRect();
-        const next = (e.clientY - rect.top) / (rect.bottom - rect.top) > 0.5;
-        container.insertBefore(draggingEl, next ? item.nextSibling : item);
-        lastTargetId = item.dataset.id;
-      }
-    });
-
-    item.addEventListener('dragend', async () => {
-      item.classList.remove('dragging');
-      item.setAttribute('draggable', 'false'); // reset
-      const sourceId = item.dataset.id;
-      if (sourceId && lastTargetId && sourceId !== lastTargetId) {
-        await reorderListData(listKey, sourceId, lastTargetId);
-      }
-      renderFn();
-    });
-  });
 }
 
 // ----------------------------------------------------
@@ -2066,19 +2007,9 @@ function renderBabyNamesList() {
 
     const addedByDisplay = item.addedBy === 'Husband' || item.addedBy === 'Baby' ? 'Father' : (item.addedBy === 'Wife' ? 'Mother' : item.addedBy);
 
-    const dragHandleHtml = canAction ? `
-      <div class="drag-handle">
-        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none">
-          <circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/>
-          <circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/>
-        </svg>
-      </div>
-    ` : '';
-
     return `
-      <li class="baby-name-item" data-id="${item.id}" style="display: flex; align-items: center;">
-        ${dragHandleHtml}
-        <div class="baby-name-info" style="flex: 1;">
+      <li class="baby-name-item" data-id="${item.id}">
+        <div class="baby-name-info">
           <span class="baby-name-text">${item.name}</span>
         </div>
         <div class="baby-actions">
@@ -2101,9 +2032,6 @@ function renderBabyNamesList() {
   DOM.girlNamesList.innerHTML = girlNames.length === 0 
     ? `<div class="empty-state" style="padding: 15px 10px;"><p style="font-size: 11px;">No girl names suggested yet.</p></div>` 
     : girlNames.map(renderNameItem).join('');
-
-  makeListDraggable(DOM.boyNamesList, 'mm_baby_names', renderBabyNamesList);
-  makeListDraggable(DOM.girlNamesList, 'mm_baby_names', renderBabyNamesList);
 }
 
 async function handleAddBabyNameItem(e) {

@@ -2115,30 +2115,5 @@ button.btn-primary:active {
   background-color: var(--color-primary-light) !important;
 }
 
-/* Drag and Drop Drag Handle styling */
-.drag-handle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-muted);
-  opacity: 0.4;
-  cursor: grab;
-  padding-right: 8px;
-  user-select: none;
-  -webkit-user-drag: none;
-}
-.drag-handle:hover {
-  opacity: 0.8;
-}
-.drag-handle svg {
-  display: block;
-}
-.list-item.dragging, .ledger-item.dragging, .baby-name-item.dragging {
-  opacity: 0.5 !important;
-  transform: scale(0.98) !important;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
-  border-color: var(--color-primary-interactive) !important;
-}
-
 
 
