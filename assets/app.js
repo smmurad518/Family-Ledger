@@ -681,6 +681,12 @@ function setupEventListeners() {
           return;
         }
 
+        const itemRow = deleteBtn.closest('.list-item');
+        if (itemRow) {
+          itemRow.classList.add('deleting');
+          await new Promise(r => setTimeout(r, 400));
+        }
+
         await deleteShoppingItem(deleteBtn.dataset.id);
         renderShoppingList();
         renderDashboard();
@@ -730,6 +736,12 @@ function setupEventListeners() {
           return;
         }
 
+        const itemRow = deleteBtn.closest('.list-item');
+        if (itemRow) {
+          itemRow.classList.add('deleting');
+          await new Promise(r => setTimeout(r, 400));
+        }
+
         await deleteExpense(deleteBtn.dataset.id);
         renderExpenseTracker();
         renderDashboard();
@@ -766,6 +778,12 @@ function setupEventListeners() {
         if (!isEditDeleteAllEnabled()) {
           alert("Deletion is disabled! Enable Edit & Delete in Settings.");
           return;
+        }
+
+        const itemRow = deleteBtn.closest('.ledger-item');
+        if (itemRow) {
+          itemRow.classList.add('deleting');
+          await new Promise(r => setTimeout(r, 400));
         }
 
         await deleteDue(deleteBtn.dataset.id);
@@ -827,6 +845,12 @@ function setupEventListeners() {
         if (!isEditDeleteAllEnabled()) {
           alert("Deletion is disabled! Enable Edit & Delete in Settings.");
           return;
+        }
+
+        const itemRow = deleteBtn.closest('.list-item');
+        if (itemRow) {
+          itemRow.classList.add('deleting');
+          await new Promise(r => setTimeout(r, 400));
         }
 
         await deleteSuggestion(deleteBtn.dataset.id);

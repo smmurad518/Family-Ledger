@@ -1,11 +1,11 @@
-const CACHE_NAME = 'mm-ledger-v1785343709061';
+const CACHE_NAME = 'mm-ledger-v1785343871907';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './manifest.json',
   './assets/style.css',
-  './assets/app.js?v=1785343709061',
-  './assets/db.js?v=1785343709061',
+  './assets/app.js?v=1785343871907',
+  './assets/db.js?v=1785343871907',
 ];
 
 self.addEventListener('install', (e) => {

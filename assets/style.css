@@ -702,7 +702,6 @@ button.btn-primary:active {
 }
 
 .list-item.bought .item-name {
-  text-decoration: line-through;
   color: var(--text-muted);
 }
 
@@ -866,17 +865,21 @@ button.btn-primary:active {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: rgba(61, 64, 91, 0.5);
-  backdrop-filter: blur(4px);
-  display: none;
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
-  animation: fadeIn var(--transition-fast);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
 }
 
 .modal-overlay.active {
-  display: flex;
+  opacity: 1;
+  visibility: visible;
 }
 
 .modal-content {
@@ -889,6 +892,12 @@ button.btn-primary:active {
   border: 1px solid var(--border-color);
   max-height: 85vh;
   overflow-y: auto;
+  transform: scale(0.9);
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.modal-overlay.active .modal-content {
+  transform: scale(1);
 }
 
 .modal-header {
@@ -1805,4 +1814,121 @@ button.btn-primary:active {
 .setting-card.block .segmented-control {
   width: 100%;
 }
+
+/* ----------------------------------------------------
+   RICH ANIMATIONS & MICRO-INTERACTIONS
+   ---------------------------------------------------- */
+
+/* Item list entrances (pop-in pop animation) */
+.list-item, .ledger-item {
+  animation: itemPopIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  transform-origin: center center;
+}
+
+@keyframes itemPopIn {
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Strikethrough sweep line animation */
+.item-name {
+  position: relative;
+  display: inline-block;
+  transition: color 0.3s ease;
+}
+
+.item-name::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 55%;
+  width: 0;
+  height: 2px;
+  background-color: var(--text-muted);
+  transition: width 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+  transform: translateY(-50%);
+}
+
+.list-item.bought .item-name::after {
+  width: 100%;
+}
+
+/* Checked box bounce effect */
+@keyframes checkBounce {
+  0% { transform: scale(0.6); }
+  50% { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+
+.list-item.bought .item-checkbox svg {
+  animation: checkBounce 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* Smooth deletion slide-out animation */
+.list-item.deleting, .ledger-item.deleting {
+  animation: itemDelete 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards !important;
+  pointer-events: none;
+}
+
+@keyframes itemDelete {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+    max-height: 100px;
+    margin-bottom: 10px;
+    padding-top: 14px;
+    padding-bottom: 14px;
+    border-width: 1px;
+  }
+  40% {
+    opacity: 0;
+    transform: scale(0.9);
+    max-height: 100px;
+    margin-bottom: 10px;
+    padding-top: 14px;
+    padding-bottom: 14px;
+    border-width: 1px;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.9);
+    max-height: 0;
+    margin-bottom: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    border-width: 0;
+  }
+}
+
+/* Sync indicator pulse rotate */
+.sync-dot.syncing {
+  animation: syncPulse 1.2s infinite linear;
+}
+
+@keyframes syncPulse {
+  0% { transform: scale(0.85); box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.4); }
+  70% { transform: scale(1.15); box-shadow: 0 0 0 6px rgba(251, 191, 36, 0); }
+  100% { transform: scale(0.85); box-shadow: 0 0 0 0 rgba(251, 191, 36, 0); }
+}
+
+/* Theme toggle button SVG rotation */
+.theme-toggle:active svg {
+  transform: rotate(45deg) scale(0.9);
+}
+
+/* Drawer smooth overlay fade and spring entry */
+.drawer {
+  transition: transform 0.45s cubic-bezier(0.25, 1, 0.5, 1) !important;
+}
+
+.drawer-overlay {
+  transition: opacity 0.4s cubic-bezier(0.25, 1, 0.5, 1) !important;
+}
+
 
