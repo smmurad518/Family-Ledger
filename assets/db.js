@@ -739,9 +739,14 @@ export async function reorderListData(key, sourceId, targetId) {
   if (!sourceItem || !targetItem) { isWriting = false; return; }
 
   const sourceIndex = items.indexOf(sourceItem);
-  items.splice(sourceIndex, 1);
   const targetIndex = items.indexOf(targetItem);
-  items.splice(targetIndex, 0, sourceItem);
+
+  items.splice(sourceIndex, 1);
+  let insertIndex = items.indexOf(targetItem);
+  if (sourceIndex < targetIndex) {
+    insertIndex += 1;
+  }
+  items.splice(insertIndex, 0, sourceItem);
 
   if (key === KEYS.EXPENSES) {
     sourceItem.date = targetItem.date;
