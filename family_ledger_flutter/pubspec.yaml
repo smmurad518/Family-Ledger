@@ -1,0 +1,25 @@
+name: family_ledger
+description: A private dual-user family management mobile application for husband and wife to track daily household activities, shopping lists, expenses, and dues.
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.6
+  provider: ^6.1.2
+  hive_flutter: ^1.1.0
+  http: ^1.2.1
+  uuid: ^4.3.3
+  firebase_core: ^2.27.0
+  cloud_firestore: ^4.15.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
