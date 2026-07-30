@@ -31,7 +31,12 @@ import {
   addBabyName,
   toggleLikeBabyName,
   deleteBabyName,
-  updateBabyName
+  updateBabyName,
+  getMovies,
+  addMovie,
+  toggleWatchedMovie,
+  deleteMovie,
+  updateMovie
 } from './db.js';
 
 // DOM Element Selectors
@@ -136,6 +141,13 @@ const DOM = {
   girlNamesList: document.getElementById('girl-names-list'),
   babyScreen: document.getElementById('screen-baby-names'),
   curvedNav: document.querySelector('.curved-nav'),
+  
+  // Movie Selectors
+  movieForm: document.getElementById('movie-form'),
+  movieNameInput: document.getElementById('movie-name-input'),
+  movieTypeSelect: document.getElementById('movie-type-select'),
+  moviesContainer: document.getElementById('movies-list-container'),
+  seriesContainer: document.getElementById('series-list-container'),
 
   // Profile Chooser Modal
   profileModal: document.getElementById('profile-modal'),
@@ -154,6 +166,7 @@ let lastExpensesList = [];
 let lastDuesList = [];
 let lastSuggestionsList = [];
 let lastBabyNamesList = [];
+let lastMoviesList = [];
 let isFirstLoad = true;
 
 // Active Edit Context
@@ -442,6 +455,8 @@ function renderActiveScreen() {
     renderSuggestionsList();
   } else if (activeScreen === 'screen-baby-names') {
     renderBabyNamesList();
+  } else if (activeScreen === 'screen-movies') {
+    renderMoviesList();
   }
 }
 
@@ -914,6 +929,19 @@ function setupEventListeners() {
     DOM.girlNamesList.addEventListener('click', handleBabyListClick);
   }
 
+  // Movie Form Submit
+  if (DOM.movieForm) {
+    DOM.movieForm.addEventListener('submit', handleAddMovieItem);
+  }
+
+  // Movies Containers Click Delegations
+  if (DOM.moviesContainer) {
+    DOM.moviesContainer.addEventListener('click', handleMovieListClick);
+  }
+  if (DOM.seriesContainer) {
+    DOM.seriesContainer.addEventListener('click', handleMovieListClick);
+  }
+
   // Profile Modal Chooser Listeners
   if (DOM.profileModalClose) {
     DOM.profileModalClose.addEventListener('click', closeProfileModal);
@@ -985,7 +1013,7 @@ async function handleProfileSelect(e) {
   // Refresh layout and reload after a short delay so the visual switch is registered
   setTimeout(() => {
     window.location.reload(true);
-  }, 200);
+  }, 350);
 }
 
 function getListForType(type, itemId) {
@@ -1026,6 +1054,14 @@ function getListForType(type, itemId) {
       if (likesB !== likesA) return likesB - likesA;
       return b.timestamp - a.timestamp;
     });
+    return filtered;
+  }
+  if (type === 'movie') {
+    const items = getMovies();
+    const item = items.find(i => i.id === itemId);
+    if (!item) return [];
+    const filtered = items.filter(m => m.type === item.type);
+    filtered.sort((a, b) => b.timestamp - a.timestamp);
     return filtered;
   }
   return [];
@@ -1124,7 +1160,8 @@ async function handleEditSave() {
     'expense': 'mm_expenses',
     'due': 'mm_dues',
     'suggestion': 'mm_suggestions',
-    'baby_name': 'mm_baby_names'
+    'baby_name': 'mm_baby_names',
+    'movie': 'mm_movies'
   };
 
   // Perform updates
@@ -1150,6 +1187,8 @@ async function handleEditSave() {
     await updateSuggestion(currentEditId, val1);
   } else if (currentEditType === 'baby_name') {
     await updateBabyName(currentEditId, val1);
+  } else if (currentEditType === 'movie') {
+    await updateMovie(currentEditId, val1);
   }
 
   // Handle Serial reordering if requested and valid
@@ -1171,6 +1210,7 @@ async function handleEditSave() {
   if (currentEditType === 'due') renderDuesLedger();
   if (currentEditType === 'suggestion') renderSuggestionsList();
   if (currentEditType === 'baby_name') renderBabyNamesList();
+  if (currentEditType === 'movie') renderMoviesList();
 
   DOM.editSaveBtn.disabled = false;
   DOM.editSaveBtn.textContent = 'Update Entry';
@@ -1385,6 +1425,7 @@ function handleDataUpdate(type, sourceCollection) {
   if (!sourceCollection || sourceCollection === 'dues') renderDuesLedger();
   if (!sourceCollection || sourceCollection === 'suggestions') renderSuggestionsList();
   if (!sourceCollection || sourceCollection === 'baby_names') renderBabyNamesList();
+  if (!sourceCollection || sourceCollection === 'movies') renderMoviesList();
 
   // If this is the initial load, just update cache and return
   if (isFirstLoad) {
@@ -1393,6 +1434,7 @@ function handleDataUpdate(type, sourceCollection) {
     lastDuesList = getDues();
     lastSuggestionsList = getSuggestions();
     lastBabyNamesList = getBabyNames();
+    lastMoviesList = getMovies();
     return;
   }
 
@@ -1465,6 +1507,22 @@ function handleDataUpdate(type, sourceCollection) {
     }
   });
   lastBabyNamesList = newBabyNamesList;
+
+  // 6. Check Movies/Series
+  const newMoviesList = getMovies();
+  newMoviesList.forEach(newItem => {
+    const isFather = newItem.addedBy === 'Father';
+    const isByOther = (currentProfile === 'Husband' && !isFather) || (currentProfile === 'Wife' && isFather);
+    if (isByOther && !lastMoviesList.some(oldItem => oldItem.id === newItem.id)) {
+      const typeLabel = newItem.type === 'movie' ? 'movie' : 'series';
+      newEntriesFound.push({
+        type: 'Movie/Series',
+        title: `New ${newItem.type === 'movie' ? 'Movie 🎥' : 'Series 📺'} Added`,
+        message: `${newItem.addedBy} added a new ${typeLabel}: "${newItem.name}".`
+      });
+    }
+  });
+  lastMoviesList = newMoviesList;
 
   // Trigger notification and play sound if new entries added by the other spouse are found
   if (newEntriesFound.length > 0) {
@@ -2145,23 +2203,153 @@ function setupCollapsibleCards() {
 function playProfileSwitchSound() {
   try {
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
     
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
+    function playNote(freq, startTime, duration, vol = 0.08) {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      osc.type = 'triangle'; 
+      osc.frequency.setValueAtTime(freq, startTime);
+      
+      gain.gain.setValueAtTime(0, startTime);
+      gain.gain.linearRampToValueAtTime(vol, startTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+      
+      osc.start(startTime);
+      osc.stop(startTime + duration);
+    }
     
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(261.63, audioCtx.currentTime + 0.15);
-    
-    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
-    
-    osc.start(audioCtx.currentTime);
-    osc.stop(audioCtx.currentTime + 0.15);
+    const now = audioCtx.currentTime;
+    playNote(523.25, now, 0.20, 0.08);       // C5
+    playNote(659.25, now + 0.04, 0.18, 0.07); // E5
+    playNote(783.99, now + 0.08, 0.22, 0.06); // G5
   } catch (e) {
     console.error("Failed to play profile switch sound:", e);
   }
+}
+
+async function handleAddMovieItem(e) {
+  e.preventDefault();
+  const name = DOM.movieNameInput.value.trim();
+  const type = DOM.movieTypeSelect.value;
+
+  if (!name) return;
+
+  await addMovie(name, type);
+
+  DOM.movieNameInput.value = '';
+  DOM.movieNameInput.blur();
+
+  renderMoviesList();
+}
+
+async function handleMovieListClick(e) {
+  // 1. Checkbox click to toggle watched
+  const checkbox = e.target.closest('.item-checkbox');
+  if (checkbox && checkbox.dataset.id) {
+    e.stopPropagation();
+    await toggleWatchedMovie(checkbox.dataset.id);
+    renderMoviesList();
+    return;
+  }
+
+  // 2. Edit Button click
+  const editBtn = e.target.closest('.btn-icon-edit');
+  if (editBtn && editBtn.dataset.id) {
+    e.stopPropagation();
+    
+    if (!isEditDeleteAllEnabled()) {
+      alert("Editing is disabled! Enable Edit & Delete in Settings.");
+      return;
+    }
+
+    const items = getMovies();
+    const item = items.find(i => i.id === editBtn.dataset.id);
+    if (item) {
+      openEditModal('movie', item.id, 'Edit Movie/Series Name', 'Name', item.name, '', '');
+    }
+    return;
+  }
+
+  // 3. Delete Button click
+  const deleteBtn = e.target.closest('.btn-icon-delete');
+  if (deleteBtn && deleteBtn.dataset.id) {
+    e.stopPropagation();
+
+    if (!isEditDeleteAllEnabled()) {
+      alert("Deletion is disabled! Enable Edit & Delete in Settings.");
+      return;
+    }
+
+    const itemRow = deleteBtn.closest('.list-item');
+    if (itemRow) {
+      itemRow.classList.add('deleting');
+      await new Promise(r => setTimeout(r, 400));
+    }
+
+    await deleteMovie(deleteBtn.dataset.id);
+    renderMoviesList();
+  }
+}
+
+function renderMoviesList() {
+  if (!DOM.moviesContainer || !DOM.seriesContainer) return;
+
+  const items = getMovies();
+  
+  // Sort items: newest first
+  items.sort((a, b) => b.timestamp - a.timestamp);
+
+  const movies = items.filter(item => item.type === 'movie');
+  const series = items.filter(item => item.type === 'series');
+
+  // Render function for each sub-list
+  function renderList(list, container, emptyMsg) {
+    if (list.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+          <p>${emptyMsg}</p>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = list.map(item => {
+      const checkedClass = item.watched ? 'bought' : '';
+      const canAction = isEditDeleteAllEnabled();
+      const actionButtonsHtml = canAction ? `
+        <button class="btn-icon-edit" data-id="${item.id}" aria-label="Edit item">
+          <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </button>
+        <button class="btn-icon-delete" data-id="${item.id}" aria-label="Delete item">
+          <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        </button>
+      ` : '';
+
+      return `
+        <li class="list-item ${checkedClass}" data-id="${item.id}">
+          <div class="item-left">
+            <div class="item-checkbox" data-id="${item.id}">
+              <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div class="item-details">
+              <span class="item-name" style="text-decoration: ${item.watched ? 'line-through' : 'none'}; opacity: ${item.watched ? 0.6 : 1};">${item.name}</span>
+              <span class="item-meta">added by ${item.addedBy}</span>
+            </div>
+          </div>
+          <div class="item-right" style="display: flex; align-items: center; gap: 8px;">
+            ${actionButtonsHtml}
+          </div>
+        </li>
+      `;
+    }).join('');
+  }
+
+  renderList(movies, DOM.moviesContainer, "No movies added yet.");
+  renderList(series, DOM.seriesContainer, "No series added yet.");
 }
 

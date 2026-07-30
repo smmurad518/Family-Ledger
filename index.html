@@ -16,7 +16,7 @@
   <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
 
   <!-- Main Styling -->
-  <link rel="stylesheet" href="assets/style.css?v=1785432292171">
+  <link rel="stylesheet" href="assets/style.css?v=1785432826818">
 </head>
 
 <body>
@@ -387,6 +387,59 @@
         </div>
       </section>
 
+      <!-- SCREEN 7: MOVIE/SERIES WISHLIST -->
+      <section class="screen" id="screen-movies">
+        <div class="welcome-banner"
+          style="background: linear-gradient(135deg, #8a2be2 0%, #da70d6 100%); margin-bottom: 20px;">
+          <h2 style="color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 8px;">
+            <span>🎬 Movie & Series List</span>
+          </h2>
+          <p style="color: #fff; opacity: 0.9;">Add movies and series you want to watch together!</p>
+        </div>
+
+        <div class="card" style="margin-bottom: 20px; padding: 16px;">
+          <h3
+            style="margin-bottom: 12px; font-family: var(--font-title); font-weight: 800; font-size: 16px; color: var(--text-dark);">
+            Add Movie / Series
+          </h3>
+          <form id="movie-form" style="display: flex; gap: 8px; flex-direction: row; align-items: center;">
+            <input type="text" id="movie-name-input" placeholder="Enter name..." autocomplete="off" required
+              style="flex: 2; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-dark);">
+            
+            <select id="movie-type-select" required
+              style="flex: 1; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-dark); outline: none; min-width: 110px;">
+              <option value="movie" selected>🎥 Movie</option>
+              <option value="series">📺 Series</option>
+            </select>
+
+            <button type="submit" id="btn-add-movie" class="btn-primary"
+              style="width: auto; padding: 0 20px; border-radius: 12px; font-weight: 700; white-space: nowrap; height: 45px;">
+              + Add
+            </button>
+          </form>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 24px;">
+          <div>
+            <h3 style="margin-bottom: 12px; font-family: var(--font-title); font-weight: 800; font-size: 16px; color: var(--text-dark); display: flex; align-items: center; gap: 6px; border-bottom: 2px solid var(--border-color); padding-bottom: 6px;">
+              🎥 Movies Wishlist
+            </h3>
+            <ul class="item-list" id="movies-list-container" style="list-style: none; padding: 0; margin: 0;">
+              <!-- Inject via JS -->
+            </ul>
+          </div>
+          <div>
+            <h3 style="margin-bottom: 12px; font-family: var(--font-title); font-weight: 800; font-size: 16px; color: var(--text-dark); display: flex; align-items: center; gap: 6px; border-bottom: 2px solid var(--border-color); padding-bottom: 6px;">
+              📺 Series Wishlist
+            </h3>
+            <ul class="item-list" id="series-list-container" style="list-style: none; padding: 0; margin: 0;">
+              <!-- Inject via JS -->
+            </ul>
+          </div>
+        </div>
+      </section>
+
+
     </main>
 
     <!-- Custom Curved Bottom Navigation Bar -->
@@ -618,6 +671,19 @@
           </svg>
           <span>Next Suggestion</span>
         </div>
+        <div class="drawer-item" data-screen="movies">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect>
+            <line x1="7" y1="2" x2="7" y2="22"></line>
+            <line x1="17" y1="2" x2="17" y2="22"></line>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+            <line x1="2" y1="7" x2="7" y2="7"></line>
+            <line x1="2" y1="17" x2="7" y2="17"></line>
+            <line x1="17" y1="17" x2="22" y2="17"></line>
+            <line x1="17" y1="7" x2="22" y2="7"></line>
+          </svg>
+          <span>Movie/Series List</span>
+        </div>
       </nav>
       <div class="drawer-footer">
         <button id="drawer-settings-btn" class="btn-drawer-settings">
@@ -697,8 +763,8 @@
   </script>
 
     <!-- Core Scripts -->
-    <script type="module" src="assets/db.js?v=1785432292171"></script>
-    <script type="module" src="assets/app.js?v=1785432292171"></script>
+    <script type="module" src="assets/db.js?v=1785432826818"></script>
+    <script type="module" src="assets/app.js?v=1785432826818"></script>
 
 </body>
 
