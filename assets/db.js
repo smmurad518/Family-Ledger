@@ -911,12 +911,7 @@ export async function toggleLikeBabyName(id) {
   const parent = localStorage.getItem('mm_parent_profile') || 'Husband';
   const addedByLabel = parent === 'Husband' ? 'Father' : 'Mother';
   const likes = items[index].likes || [];
-  
-  if (likes.includes(addedByLabel)) {
-    items[index].likes = likes.filter(p => p !== addedByLabel);
-  } else {
-    items[index].likes = [...likes, addedByLabel];
-  }
+  items[index].likes = [...likes, addedByLabel];
   items[index].timestamp = Date.now();
 
   setLocal(KEYS.BABY_NAMES, items);
