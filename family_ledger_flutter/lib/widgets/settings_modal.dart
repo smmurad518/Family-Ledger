@@ -111,61 +111,6 @@ class _SettingsModalState extends State<SettingsModal> {
                 },
                 activeColor: primaryInteractive,
               ),
-              
-              // Setting Card 2: Wife Profile Switch (Only visible for Husband)
-              if (isHusband) ...[
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
-                  decoration: BoxDecoration(
-                    color: inputBg,
-                    borderRadius: BorderRadius.circular(16),
-                    border: BorderSide(color: borderCol),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.between,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Wife can switch profile?',
-                              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: textDark),
-                            ),
-                            Text(
-                              'Allow profile switching from wife avatar.',
-                              style: TextStyle(fontSize: 12, color: textMuted),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      // Segmented style control
-                      ToggleButtons(
-                        borderRadius: BorderRadius.circular(10),
-                        selectedColor: Colors.black,
-                        fillColor: primaryInteractive,
-                        color: textMuted,
-                        borderWidth: 1,
-                        borderColor: borderCol,
-                        selectedBorderColor: borderCol,
-                        constraints: const BoxConstraints(minWidth: 45, minHeight: 32),
-                        isSelected: [!_wifeCanSwitch, _wifeCanSwitch],
-                        onPressed: (index) {
-                          setState(() {
-                            _wifeCanSwitch = index == 1;
-                          });
-                        },
-                        children: const [
-                          Text('No', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                          Text('Yes', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
 
               const SizedBox(height: 12),
 
@@ -288,7 +233,7 @@ class _SettingsModalState extends State<SettingsModal> {
                       'appId': _appIdController.text.trim(),
                     },
                     editDeleteAll: _editDeleteAll,
-                    wifeCanSwitch: _wifeCanSwitch,
+                    wifeCanSwitch: true,
                     serverUrl: _serverUrlController.text.trim(),
                   );
                   Navigator.of(context).pop();

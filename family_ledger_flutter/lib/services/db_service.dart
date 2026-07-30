@@ -30,7 +30,7 @@ class DbService {
   String getProfile() => _box.get(keyProfile, defaultValue: 'Husband');
   bool getFirebaseEnabled() => _box.get(keyFbEnabled, defaultValue: false);
   bool getEditDeleteAll() => _box.get(keyEditDeleteAll, defaultValue: false);
-  bool getWifeCanSwitch() => _box.get(keyWifeCanSwitch, defaultValue: false);
+  bool getWifeCanSwitch() => true;
   String getTheme() => _box.get(keyTheme, defaultValue: 'light');
 
   Map<String, String> getFirebaseConfig() {

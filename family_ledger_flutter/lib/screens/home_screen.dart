@@ -44,16 +44,6 @@ class _HomeScreenState extends State<HomeScreen> {
   void _handleProfileToggle(AppState appState) {
     final curProfile = appState.currentProfile;
 
-    if (curProfile == 'Wife' && !appState.wifeCanSwitch) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Wife cannot switch profile! Permission denied by Husband.'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
-      return;
-    }
-
     final newProfile = curProfile == 'Husband' ? 'Wife' : 'Husband';
     appState.switchProfile(newProfile);
 

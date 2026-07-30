@@ -218,11 +218,11 @@ export function setEditDeleteAllEnabled(enabled) {
 }
 
 export function canWifeSwitch() {
-  return getLocal(KEYS.WIFE_CAN_SWITCH, 'no');
+  return 'yes';
 }
 
 export function setWifeCanSwitch(value) {
-  setLocal(KEYS.WIFE_CAN_SWITCH, value);
+  // No-op, wife can always switch
 }
 
 // Clear all active Firestore listeners

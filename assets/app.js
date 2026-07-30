@@ -98,7 +98,6 @@ const DOM = {
   fbAuthDomain: document.getElementById('fb-auth-domain'),
   fbAppId: document.getElementById('fb-app-id'),
   editDeleteAllEnable: document.getElementById('edit-delete-all-enable'),
-  wifeSwitchPermissionGroup: document.getElementById('wife-switch-permission-group'),
   
   // Edit Modal Selectors
   editModal: document.getElementById('edit-modal'),
@@ -977,15 +976,6 @@ async function handleProfileSelect(e) {
     return;
   }
 
-  // Permission Check: If Wife is current user and attempts to switch away
-  if (currentProfile === 'Wife') {
-    if (canWifeSwitch() !== 'yes') {
-      alert("Wife cannot switch profile! Permission denied by Husband.");
-      closeProfileModal();
-      return;
-    }
-  }
-
   setCurrentProfile(newProfile);
   updateProfileUI();
   closeProfileModal();
@@ -1190,26 +1180,6 @@ function openSettingsModal() {
   resetViewportScroll();
   const currentProfile = getCurrentProfile();
 
-  // Show wife switch permission group ONLY if Husband is viewing settings
-  if (DOM.wifeSwitchPermissionGroup) {
-    if (currentProfile === 'Husband') {
-      DOM.wifeSwitchPermissionGroup.style.display = 'block';
-      
-      const val = canWifeSwitch();
-      const radYes = document.getElementById('wife-switch-yes');
-      const radNo = document.getElementById('wife-switch-no');
-      if (radYes && radNo) {
-        if (val === 'yes') {
-          radYes.checked = true;
-        } else {
-          radNo.checked = true;
-        }
-      }
-    } else {
-      DOM.wifeSwitchPermissionGroup.style.display = 'none';
-    }
-  }
-
   // Pre-fill Edit & Delete all config
   if (DOM.editDeleteAllEnable) {
     DOM.editDeleteAllEnable.checked = isEditDeleteAllEnabled();
@@ -1250,15 +1220,6 @@ async function handleSettingsSave() {
 
   const firebaseEnabled = DOM.firebaseEnable.checked;
   const editDeleteAll = DOM.editDeleteAllEnable ? DOM.editDeleteAllEnable.checked : false;
-  
-  // Read wife switch permission if Husband is saving settings
-  let wifeCanSwitch = canWifeSwitch();
-  if (getCurrentProfile() === 'Husband') {
-    const selectedRadio = document.querySelector('input[name="wife-switch"]:checked');
-    if (selectedRadio) {
-      wifeCanSwitch = selectedRadio.value;
-    }
-  }
 
   const config = {
     apiKey: DOM.fbApiKey.value.trim(),
@@ -1267,7 +1228,7 @@ async function handleSettingsSave() {
     appId: DOM.fbAppId.value.trim()
   };
 
-  const success = await saveSettings(firebaseEnabled, config, editDeleteAll, wifeCanSwitch, handleSyncStateChange);
+  const success = await saveSettings(firebaseEnabled, config, editDeleteAll, 'yes', handleSyncStateChange);
   
   DOM.settingsSave.disabled = false;
   DOM.settingsSave.textContent = 'Save Settings';

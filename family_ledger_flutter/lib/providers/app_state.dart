@@ -18,7 +18,7 @@ class AppState extends ChangeNotifier {
   bool _firebaseEnabled = false;
   Map<String, String> _firebaseConfig = {};
   bool _editDeleteAll = false;
-  bool _wifeCanSwitch = false;
+  bool _wifeCanSwitch = true;
   String _localServerUrl = 'http://localhost:8000';
 
   List<ShoppingItem> _shoppingItems = [];
