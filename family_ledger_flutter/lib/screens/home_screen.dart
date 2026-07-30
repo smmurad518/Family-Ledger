@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 import '../widgets/curved_nav_bar.dart';
@@ -45,6 +46,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final curProfile = appState.currentProfile;
 
     final newProfile = curProfile == 'Husband' ? 'Wife' : 'Husband';
+    SystemSound.play(SystemSoundType.click);
     appState.switchProfile(newProfile);
 
     ScaffoldMessenger.of(context).showSnackBar(

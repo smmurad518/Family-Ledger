@@ -976,6 +976,8 @@ async function handleProfileSelect(e) {
     return;
   }
 
+  playProfileSwitchSound();
+
   setCurrentProfile(newProfile);
   updateProfileUI();
   closeProfileModal();
@@ -2138,5 +2140,28 @@ function setupCollapsibleCards() {
       }
     });
   });
+}
+
+function playProfileSwitchSound() {
+  try {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(261.63, audioCtx.currentTime + 0.15);
+    
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+    
+    osc.start(audioCtx.currentTime);
+    osc.stop(audioCtx.currentTime + 0.15);
+  } catch (e) {
+    console.error("Failed to play profile switch sound:", e);
+  }
 }
 
