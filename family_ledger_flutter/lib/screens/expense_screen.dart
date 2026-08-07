@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 import '../models/expense_item.dart';
+import 'dart:convert';
 
 class ExpenseScreen extends StatefulWidget {
   const ExpenseScreen({Key? key}) : super(key: key);
@@ -285,6 +286,17 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                                     'Added by ${item.addedBy} on ${item.date}',
                                     style: TextStyle(color: textMuted.withOpacity(0.7), fontSize: 10),
                                   ),
+                                  if (item.image.isNotEmpty) ...[
+                                    const SizedBox(height: 6),
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Image.memory(
+                                        base64Decode(item.image.split(',').last),
+                                        maxHeight: 120,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                  ],
                                 ],
                               ),
                             ),

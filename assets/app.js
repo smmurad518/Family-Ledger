@@ -145,6 +145,11 @@ const DOM = {
   babyScreen: document.getElementById('screen-baby-names'),
   curvedNav: document.querySelector('.curved-nav'),
   
+  // Baby Needs Selectors
+  babyNeedsForm: document.getElementById('baby-needs-form'),
+  babyNeedInput: document.getElementById('baby-need-input'),
+  babyNeedsList: document.getElementById('baby-needs-list'),
+  
   // Movie Selectors
   movieForm: document.getElementById('movie-form'),
   movieNameInput: document.getElementById('movie-name-input'),
@@ -175,6 +180,8 @@ let isFirstLoad = true;
 // Active Edit Context
 let currentEditType = ''; // 'shopping', 'expense', 'due', 'suggestion'
 let currentEditId = '';
+let selectedExpenseImageBase64 = '';
+let lastBabyNeedsList = [];
 
 // Category colors for expense ledger and charts
 const CATEGORY_COLORS = {
@@ -256,6 +263,7 @@ document.addEventListener('DOMContentLoaded', () => {
   lastExpensesList = getExpenses();
   lastDuesList = getDues();
   lastSuggestionsList = getSuggestions();
+  lastBabyNeedsList = getBabyNeeds();
 
   // Set isFirstLoad to false after 4 seconds to ignore initial data sync events
   setTimeout(() => {
@@ -458,6 +466,7 @@ function renderActiveScreen() {
     renderSuggestionsList();
   } else if (activeScreen === 'screen-baby-names') {
     renderBabyNamesList();
+    renderBabyNeedsList();
   } else if (activeScreen === 'screen-movies') {
     renderMoviesList();
   }
@@ -697,6 +706,60 @@ function setupEventListeners() {
   const btnDeleteAllShopping = document.getElementById('btn-delete-all-shopping');
   if (btnDeleteAllShopping) {
     btnDeleteAllShopping.addEventListener('click', handleDeleteAllShoppingClick);
+  }
+
+  const expenseImageInput = document.getElementById('expense-image');
+  const expenseImagePreview = document.getElementById('expense-image-preview');
+  const btnClearExpenseImage = document.getElementById('btn-clear-expense-image');
+
+  if (expenseImageInput) {
+    expenseImageInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        if (file.size > 1024 * 1024 * 1.5) {
+          alert('Image size is too large! Please choose an image smaller than 1.5MB.');
+          expenseImageInput.value = '';
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          selectedExpenseImageBase64 = evt.target.result;
+          if (expenseImagePreview) {
+            const img = expenseImagePreview.querySelector('img');
+            if (img) img.src = selectedExpenseImageBase64;
+            expenseImagePreview.style.display = 'block';
+          }
+          if (btnClearExpenseImage) btnClearExpenseImage.style.display = 'inline-block';
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+  }
+
+  if (btnClearExpenseImage) {
+    btnClearExpenseImage.addEventListener('click', () => {
+      selectedExpenseImageBase64 = '';
+      if (expenseImageInput) expenseImageInput.value = '';
+      if (expenseImagePreview) expenseImagePreview.style.display = 'none';
+      btnClearExpenseImage.style.display = 'none';
+    });
+  }
+
+  const imgCloseBtn = document.getElementById('image-preview-close');
+  if (imgCloseBtn) {
+    imgCloseBtn.addEventListener('click', () => {
+      const modal = document.getElementById('image-preview-modal');
+      if (modal) modal.classList.remove('active');
+    });
+  }
+  const imgModal = document.getElementById('image-preview-modal');
+  if (imgModal) {
+    imgModal.addEventListener('click', (e) => {
+      if (e.target === imgModal) {
+        imgModal.classList.remove('active');
+      }
+    });
   }
 
   const btnClearDueDate = document.getElementById('btn-clear-due-date');
@@ -955,6 +1018,15 @@ function setupEventListeners() {
     DOM.girlNamesList.addEventListener('click', handleBabyListClick);
   }
 
+  // Baby Needs Form Submit
+  if (DOM.babyNeedsForm) {
+    DOM.babyNeedsForm.addEventListener('submit', handleAddBabyNeedItem);
+  }
+  // Baby Needs click delegation
+  if (DOM.babyNeedsList) {
+    DOM.babyNeedsList.addEventListener('click', handleBabyNeedsClick);
+  }
+
   // Movie Form Submit
   if (DOM.movieForm) {
     DOM.movieForm.addEventListener('submit', handleAddMovieItem);
@@ -1085,6 +1157,11 @@ function getListForType(type, itemId) {
     filtered.sort((a, b) => b.timestamp - a.timestamp);
     return filtered;
   }
+  if (type === 'baby_need') {
+    const items = getBabyNeeds();
+    items.sort((a, b) => b.timestamp - a.timestamp);
+    return items;
+  }
   return [];
 }
 
@@ -1095,14 +1172,30 @@ function openEditModal(type, id, title, label1, val1, label2, val2, label3 = '',
   DOM.editModalTitle.textContent = title;
   DOM.editLabel1.textContent = label1;
   DOM.editInput1.value = val1;
-
   const formGroup2 = DOM.editInput2.closest('.form-group');
-  if (type === 'suggestion' || type === 'baby_name') {
+  if (type === 'suggestion' || type === 'baby_name' || type === 'movie' || type === 'baby_need') {
     if (formGroup2) formGroup2.style.display = 'none';
   } else {
     if (formGroup2) formGroup2.style.display = 'block';
     DOM.editLabel2.textContent = label2;
     DOM.editInput2.value = val2;
+  }
+
+  const editImageGroup = document.getElementById('edit-image-group');
+  const editImagePreview = document.getElementById('edit-image-preview');
+  if (editImageGroup && editImagePreview) {
+    if (type === 'expense') {
+      const expenses = getExpenses();
+      const exp = expenses.find(e => e.id === id);
+      if (exp && exp.image) {
+        editImagePreview.src = exp.image;
+        editImageGroup.style.display = 'block';
+      } else {
+        editImageGroup.style.display = 'none';
+      }
+    } else {
+      editImageGroup.style.display = 'none';
+    }
   }
 
   const btnClearEditDate = document.getElementById('btn-clear-edit-date');
@@ -1158,6 +1251,12 @@ function closeEditModal() {
   if (DOM.editInputGroupSerial) DOM.editInputGroupSerial.style.display = 'none';
   const btnClearEditDate = document.getElementById('btn-clear-edit-date');
   if (btnClearEditDate) btnClearEditDate.style.display = 'none';
+  
+  const editImageGroup = document.getElementById('edit-image-group');
+  const editImagePreview = document.getElementById('edit-image-preview');
+  if (editImageGroup) editImageGroup.style.display = 'none';
+  if (editImagePreview) editImagePreview.src = '';
+
   resetViewportScroll();
 }
 
@@ -1192,7 +1291,8 @@ async function handleEditSave() {
     'due': 'mm_dues',
     'suggestion': 'mm_suggestions',
     'baby_name': 'mm_baby_names',
-    'movie': 'mm_movies'
+    'movie': 'mm_movies',
+    'baby_need': 'mm_baby_needs'
   };
 
   // Perform updates
@@ -1220,6 +1320,8 @@ async function handleEditSave() {
     await updateBabyName(currentEditId, val1);
   } else if (currentEditType === 'movie') {
     await updateMovie(currentEditId, val1);
+  } else if (currentEditType === 'baby_need') {
+    await updateBabyNeed(currentEditId, val1);
   }
 
   // Handle Serial reordering if requested and valid
@@ -1242,6 +1344,7 @@ async function handleEditSave() {
   if (currentEditType === 'suggestion') renderSuggestionsList();
   if (currentEditType === 'baby_name') renderBabyNamesList();
   if (currentEditType === 'movie') renderMoviesList();
+  if (currentEditType === 'baby_need') renderBabyNeedsList();
 
   DOM.editSaveBtn.disabled = false;
   DOM.editSaveBtn.textContent = 'Update Entry';
@@ -1457,6 +1560,7 @@ function handleDataUpdate(type, sourceCollection) {
   if (!sourceCollection || sourceCollection === 'suggestions') renderSuggestionsList();
   if (!sourceCollection || sourceCollection === 'baby_names') renderBabyNamesList();
   if (!sourceCollection || sourceCollection === 'movies') renderMoviesList();
+  if (!sourceCollection || sourceCollection === 'baby_needs') renderBabyNeedsList();
 
   // If this is the initial load, just update cache and return
   if (isFirstLoad) {
@@ -1466,6 +1570,7 @@ function handleDataUpdate(type, sourceCollection) {
     lastSuggestionsList = getSuggestions();
     lastBabyNamesList = getBabyNames();
     lastMoviesList = getMovies();
+    lastBabyNeedsList = getBabyNeeds();
     return;
   }
 
@@ -1554,6 +1659,19 @@ function handleDataUpdate(type, sourceCollection) {
     }
   });
   lastMoviesList = newMoviesList;
+
+  // 6.5. Check Baby Needs
+  const newBabyNeedsList = getBabyNeeds();
+  newBabyNeedsList.forEach(newItem => {
+    if (newItem.addedBy !== currentProfile && !lastBabyNeedsList.some(oldItem => oldItem.id === newItem.id)) {
+      newEntriesFound.push({
+        type: 'Baby Need',
+        title: 'New Baby Need Added 🍼',
+        message: `${newItem.addedBy} added a new baby need: "${newItem.name}".`
+      });
+    }
+  });
+  lastBabyNeedsList = newBabyNeedsList;
 
   // Trigger notification and play sound if new entries added by the other spouse are found
   if (newEntriesFound.length > 0) {
@@ -1856,6 +1974,15 @@ function renderExpenseTracker() {
       </button>
     ` : '';
     
+    const imageHtml = exp.image ? `
+      <div style="margin-top: 6px;">
+        <button type="button" class="btn-image-attachment" style="background: var(--color-primary-light); color: var(--color-primary-interactive); border: none; border-radius: 20px; padding: 4px 10px; font-size: 11px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" onclick="window.handlePreviewImage('${exp.image}')">
+          <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px;"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+          View Attachment
+        </button>
+      </div>
+    ` : '';
+    
     return `
       <div class="list-item" data-id="${exp.id}" style="border-left: 4px solid var(--color-primary); margin-bottom: 8px; padding: 12px 16px;">
         <div class="item-left" style="gap: 12px;">
@@ -1864,6 +1991,7 @@ function renderExpenseTracker() {
             <span style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">
               by ${exp.addedBy} • ${parsedDate}
             </span>
+            ${imageHtml}
           </div>
         </div>
         <div class="item-right" style="gap: 8px; display: flex; align-items: center;">
@@ -1893,14 +2021,133 @@ async function handleAddExpenseItem(e) {
 
   if (!amount || !notes.trim()) return;
 
-  await addExpense(today, 'General', amount, notes);
+  await addExpense(today, 'General', amount, notes, selectedExpenseImageBase64);
 
   DOM.expenseAmount.value = '';
   DOM.expenseNotes.value = '';
+  
+  const expenseImageInput = document.getElementById('expense-image');
+  const expenseImagePreview = document.getElementById('expense-image-preview');
+  const btnClearExpenseImage = document.getElementById('btn-clear-expense-image');
+  
+  if (expenseImageInput) expenseImageInput.value = '';
+  if (expenseImagePreview) expenseImagePreview.style.display = 'none';
+  if (btnClearExpenseImage) btnClearExpenseImage.style.display = 'none';
+  selectedExpenseImageBase64 = '';
+  
   DOM.expenseNotes.blur();
 
   renderExpenseTracker();
   renderDashboard();
+}
+
+window.handlePreviewImage = (src) => {
+  const modal = document.getElementById('image-preview-modal');
+  const img = document.getElementById('img-modal-target');
+  if (modal && img) {
+    img.src = src;
+    modal.classList.add('active');
+  }
+};
+
+// ----------------------------------------------------
+// SCREEN RENDERS: BABY NEEDS LIST
+// ----------------------------------------------------
+function renderBabyNeedsList() {
+  if (!DOM.babyNeedsList) return;
+
+  const items = getBabyNeeds();
+  
+  // Sort: newest first
+  items.sort((a, b) => b.timestamp - a.timestamp);
+
+  if (items.length === 0) {
+    DOM.babyNeedsList.innerHTML = `
+      <div class="empty-state" style="padding: 20px 10px;">
+        <svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        <p style="font-size: 11px;">No baby needs suggested yet.</p>
+      </div>
+    `;
+    return;
+  }
+
+  DOM.babyNeedsList.innerHTML = items.map(item => {
+    const canAction = isEditDeleteAllEnabled();
+    const actionButtonsHtml = canAction ? `
+      <button class="btn-icon-edit" data-id="${item.id}" aria-label="Edit need" style="padding: 2px;">
+        <svg viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      </button>
+      <button class="btn-icon-delete" data-id="${item.id}" aria-label="Delete need" style="padding: 2px;">
+        <svg viewBox="0 0 24 24" style="width: 14px; height: 14px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      </button>
+    ` : '';
+
+    return `
+      <li class="baby-name-item" data-id="${item.id}" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: var(--bg-card); border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border-color);">
+        <div class="baby-name-info" style="display: flex; flex-direction: column;">
+          <span class="baby-name-text" style="font-weight: 700; color: var(--text-dark);">${item.name}</span>
+          <span style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">added by ${item.addedBy}</span>
+        </div>
+        <div class="baby-actions" style="display: flex; gap: 4px;">
+          ${actionButtonsHtml}
+        </div>
+      </li>
+    `;
+  }).join('');
+}
+
+async function handleAddBabyNeedItem(e) {
+  e.preventDefault();
+
+  const name = DOM.babyNeedInput.value.trim();
+  if (!name) return;
+
+  await addBabyNeed(name);
+
+  DOM.babyNeedInput.value = '';
+  DOM.babyNeedInput.blur();
+
+  renderBabyNeedsList();
+}
+
+async function handleBabyNeedsClick(e) {
+  // 1. Edit Button
+  const editBtn = e.target.closest('.btn-icon-edit');
+  if (editBtn && editBtn.dataset.id) {
+    e.stopPropagation();
+    
+    if (!isEditDeleteAllEnabled()) {
+      alert("Editing is disabled! Enable Edit & Delete in Settings.");
+      return;
+    }
+
+    const items = getBabyNeeds();
+    const item = items.find(i => i.id === editBtn.dataset.id);
+    if (item) {
+      openEditModal('baby_need', item.id, 'Edit Baby Need', 'Item Name', item.name, '', '');
+    }
+    return;
+  }
+
+  // 2. Delete Button
+  const deleteBtn = e.target.closest('.btn-icon-delete');
+  if (deleteBtn && deleteBtn.dataset.id) {
+    e.stopPropagation();
+    
+    if (!isEditDeleteAllEnabled()) {
+      alert("Deletion is disabled! Enable Edit & Delete in Settings.");
+      return;
+    }
+
+    const itemRow = deleteBtn.closest('.baby-name-item');
+    if (itemRow) {
+      itemRow.classList.add('deleting');
+      await new Promise(r => setTimeout(r, 400));
+    }
+
+    await deleteBabyNeed(deleteBtn.dataset.id);
+    renderBabyNeedsList();
+  }
 }
 
 // ----------------------------------------------------
@@ -2288,7 +2535,8 @@ function setupCollapsibleCards() {
     { headerId: 'shopping-form-header', contentId: 'shopping-form-content' },
     { headerId: 'expense-form-header', contentId: 'expense-form-content' },
     { headerId: 'due-form-header', contentId: 'due-form-content' },
-    { headerId: 'baby-form-header', contentId: 'baby-form-content' }
+    { headerId: 'baby-form-header', contentId: 'baby-form-content' },
+    { headerId: 'baby-needs-form-header', contentId: 'baby-needs-form-content' }
   ];
 
   togglers.forEach(({ headerId, contentId }) => {

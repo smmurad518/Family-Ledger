@@ -6,6 +6,7 @@ class ExpenseItem {
   final String notes;
   final String addedBy;
   final int timestamp;
+  final String image;
 
   ExpenseItem({
     required this.id,
@@ -15,6 +16,7 @@ class ExpenseItem {
     required this.notes,
     required this.addedBy,
     required this.timestamp,
+    this.image = '',
   });
 
   Map<String, dynamic> toJson() {
@@ -26,6 +28,7 @@ class ExpenseItem {
       'notes': notes,
       'addedBy': addedBy,
       'timestamp': timestamp,
+      'image': image,
     };
   }
 
@@ -38,6 +41,7 @@ class ExpenseItem {
       notes: json['notes'] ?? '',
       addedBy: json['addedBy'] ?? '',
       timestamp: json['timestamp'] ?? DateTime.now().millisecondsSinceEpoch,
+      image: json['image'] ?? '',
     );
   }
 
@@ -49,6 +53,7 @@ class ExpenseItem {
     String? notes,
     String? addedBy,
     int? timestamp,
+    String? image,
   }) {
     return ExpenseItem(
       id: id ?? this.id,
@@ -58,6 +63,7 @@ class ExpenseItem {
       notes: notes ?? this.notes,
       addedBy: addedBy ?? this.addedBy,
       timestamp: timestamp ?? this.timestamp,
+      image: image ?? this.image,
     );
   }
 }

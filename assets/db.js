@@ -23,7 +23,8 @@ const KEYS = {
   EDIT_DELETE_ALL: 'mm_edit_delete_all',
   WIFE_CAN_SWITCH: 'mm_wife_can_switch',
   BABY_NAMES: 'mm_baby_names',
-  MOVIES: 'mm_movies'
+  MOVIES: 'mm_movies',
+  BABY_NEEDS: 'mm_baby_needs'
 };
 
 // Global application state for db
@@ -99,6 +100,7 @@ export async function pollServerData() {
         const localSuggestions = getLocal(KEYS.SUGGESTIONS, []);
         const localBabyNames = getLocal(KEYS.BABY_NAMES, []);
         const localMovies = getLocal(KEYS.MOVIES, []);
+        const localBabyNeeds = getLocal(KEYS.BABY_NEEDS, []);
 
         const remoteShopping = serverData.shopping || [];
         const remoteExpenses = serverData.expenses || [];
@@ -106,6 +108,7 @@ export async function pollServerData() {
         const remoteSuggestions = serverData.suggestions || [];
         const remoteBabyNames = serverData.babyNames || [];
         const remoteMovies = serverData.movies || [];
+        const remoteBabyNeeds = serverData.babyNeeds || [];
 
         let updated = false;
 
@@ -131,6 +134,10 @@ export async function pollServerData() {
         }
         if (JSON.stringify(localMovies) !== JSON.stringify(remoteMovies)) {
           setLocal(KEYS.MOVIES, remoteMovies);
+          updated = true;
+        }
+        if (JSON.stringify(localBabyNeeds) !== JSON.stringify(remoteBabyNeeds)) {
+          setLocal(KEYS.BABY_NEEDS, remoteBabyNeeds);
           updated = true;
         }
 
@@ -159,6 +166,7 @@ export async function pushStateToServer() {
     const localSuggestions = getLocal(KEYS.SUGGESTIONS, []);
     const localBabyNames = getLocal(KEYS.BABY_NAMES, []);
     const localMovies = getLocal(KEYS.MOVIES, []);
+    const localBabyNeeds = getLocal(KEYS.BABY_NEEDS, []);
 
     const payload = {
       shopping: localShopping,
@@ -167,6 +175,7 @@ export async function pushStateToServer() {
       suggestions: localSuggestions,
       babyNames: localBabyNames,
       movies: localMovies,
+      babyNeeds: localBabyNeeds,
       updatedAt: Date.now()
     };
 
@@ -272,6 +281,7 @@ export async function connectFirebase(config, onSyncStateChange) {
     setupCollectionListener('suggestions', KEYS.SUGGESTIONS, onSyncStateChange);
     setupCollectionListener('baby_names', KEYS.BABY_NAMES, onSyncStateChange);
     setupCollectionListener('movies', KEYS.MOVIES, onSyncStateChange);
+    setupCollectionListener('baby_needs', KEYS.BABY_NEEDS, onSyncStateChange);
 
     if (onSyncStateChange) onSyncStateChange('connected');
     return true;
@@ -319,7 +329,8 @@ async function uploadLocalDataToCloud() {
     { name: 'dues', localKey: KEYS.DUES },
     { name: 'suggestions', localKey: KEYS.SUGGESTIONS },
     { name: 'baby_names', localKey: KEYS.BABY_NAMES },
-    { name: 'movies', localKey: KEYS.MOVIES }
+    { name: 'movies', localKey: KEYS.MOVIES },
+    { name: 'baby_needs', localKey: KEYS.BABY_NEEDS }
   ];
 
   for (const col of collectionsToSync) {
@@ -541,7 +552,7 @@ export function getExpenses() {
   return getLocal(KEYS.EXPENSES, []);
 }
 
-export async function addExpense(date, category, amount, notes) {
+export async function addExpense(date, category, amount, notes, image = '') {
   isWriting = true;
   if (writeCooldownTimer) clearTimeout(writeCooldownTimer);
 
@@ -552,6 +563,7 @@ export async function addExpense(date, category, amount, notes) {
     category: category,
     amount: parseFloat(amount),
     notes: notes.trim(),
+    image: image,
     addedBy: getCurrentProfile(),
     timestamp: Date.now()
   };
@@ -925,7 +937,8 @@ export async function reorderItemToPosition(key, itemId, newPosition, filterType
     const collectionName = key === KEYS.SHOPPING ? 'shopping_list' : 
                            key === KEYS.EXPENSES ? 'expenses' : 
                            key === KEYS.DUES ? 'dues' : 
-                           key === KEYS.SUGGESTIONS ? 'suggestions' : 'baby_names';
+                           key === KEYS.SUGGESTIONS ? 'suggestions' : 
+                           key === KEYS.BABY_NEEDS ? 'baby_needs' : 'baby_names';
     const batch = writeBatch(firestoreDb);
     finalItems.forEach(item => {
       const docRef = doc(firestoreDb, collectionName, item.id);
@@ -937,7 +950,8 @@ export async function reorderItemToPosition(key, itemId, newPosition, filterType
   const collName = key === KEYS.SHOPPING ? 'shopping_list' : 
                    key === KEYS.EXPENSES ? 'expenses' : 
                    key === KEYS.DUES ? 'dues' : 
-                   key === KEYS.SUGGESTIONS ? 'suggestions' : 'baby_names';
+                   key === KEYS.SUGGESTIONS ? 'suggestions' : 
+                   key === KEYS.BABY_NEEDS ? 'baby_needs' : 'baby_names';
   if (onUpdateCallback) onUpdateCallback('update', collName);
   pushStateToServer();
 }
@@ -1145,4 +1159,75 @@ export async function updateMovie(id, name) {
   pushStateToServer();
 }
 
+// ----------------------------------------------------
+// APIS: BABY NEEDS LIST
+// ----------------------------------------------------
+export function getBabyNeeds() {
+  return getLocal(KEYS.BABY_NEEDS, []);
+}
 
+export async function addBabyNeed(name) {
+  isWriting = true;
+  if (writeCooldownTimer) clearTimeout(writeCooldownTimer);
+
+  const items = getBabyNeeds();
+  const newItem = {
+    id: generateId(),
+    name: name.trim(),
+    addedBy: getCurrentProfile(),
+    timestamp: Date.now()
+  };
+
+  items.push(newItem);
+  setLocal(KEYS.BABY_NEEDS, items);
+
+  if (firestoreDb) {
+    setDoc(doc(firestoreDb, 'baby_needs', newItem.id), newItem).catch(e => {
+      console.error('Firebase save failed:', e);
+    });
+  }
+
+  if (onUpdateCallback) onUpdateCallback('update', 'baby_needs');
+  pushStateToServer();
+}
+
+export async function deleteBabyNeed(id) {
+  isWriting = true;
+  if (writeCooldownTimer) clearTimeout(writeCooldownTimer);
+
+  const items = getBabyNeeds();
+  const filtered = items.filter(item => item.id !== id);
+  setLocal(KEYS.BABY_NEEDS, filtered);
+
+  if (firestoreDb) {
+    deleteDoc(doc(firestoreDb, 'baby_needs', id)).catch(e => {
+      console.error('Firebase delete failed:', e);
+    });
+  }
+
+  if (onUpdateCallback) onUpdateCallback('update', 'baby_needs');
+  pushStateToServer();
+}
+
+export async function updateBabyNeed(id, name) {
+  isWriting = true;
+  if (writeCooldownTimer) clearTimeout(writeCooldownTimer);
+
+  const items = getBabyNeeds();
+  const index = items.findIndex(item => item.id === id);
+  if (index === -1) { isWriting = false; return; }
+
+  items[index].name = name.trim();
+  items[index].timestamp = Date.now();
+
+  setLocal(KEYS.BABY_NEEDS, items);
+
+  if (firestoreDb) {
+    setDoc(doc(firestoreDb, 'baby_needs', id), items[index], { merge: true }).catch(e => {
+      console.error('Firebase update failed:', e);
+    });
+  }
+
+  if (onUpdateCallback) onUpdateCallback('update', 'baby_needs');
+  pushStateToServer();
+}
