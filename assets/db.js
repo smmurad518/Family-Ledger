@@ -467,6 +467,35 @@ export async function markAllShoppingItemsBought(ids) {
   }
 }
 
+export async function unmarkAllShoppingItemsBought(ids) {
+  isWriting = true;
+  if (writeCooldownTimer) clearTimeout(writeCooldownTimer);
+
+  const items = getShoppingItems();
+  let updatedCount = 0;
+
+  items.forEach(item => {
+    if (ids.includes(item.id) && item.bought) {
+      item.bought = false;
+      item.boughtBy = null;
+      item.timestamp = Date.now();
+      updatedCount++;
+
+      if (firestoreDb) {
+        setDoc(doc(firestoreDb, 'shopping_list', item.id), item, { merge: true }).catch(e => {
+          console.error('Firebase update failed:', e);
+        });
+      }
+    }
+  });
+
+  if (updatedCount > 0) {
+    setLocal(KEYS.SHOPPING, items);
+    if (onUpdateCallback) onUpdateCallback('update', 'shopping_list');
+    pushStateToServer();
+  }
+}
+
 export async function deleteAllShoppingItems(ids) {
   isWriting = true;
   if (writeCooldownTimer) clearTimeout(writeCooldownTimer);

@@ -11,6 +11,7 @@ import {
   addShoppingItem,
   toggleShoppingItem,
   markAllShoppingItemsBought,
+  unmarkAllShoppingItemsBought,
   deleteAllShoppingItems,
   deleteShoppingItem,
   updateShoppingItem,
@@ -1704,8 +1705,25 @@ function renderShoppingList() {
   const selectAllBtn = document.getElementById('btn-select-all-shopping');
   if (selectAllBtn) {
     const hasPending = items.some(item => !item.bought);
-    if (hasPending && (activeShoppingFilter === 'all' || activeShoppingFilter === 'pending')) {
+    if (items.length > 0 && (activeShoppingFilter === 'all' || activeShoppingFilter === 'pending' || activeShoppingFilter === 'bought')) {
       selectAllBtn.style.display = 'flex';
+      if (hasPending) {
+        selectAllBtn.setAttribute('aria-label', 'Select All');
+        selectAllBtn.innerHTML = `
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M7 12l5 5L22 7" />
+            <path d="M2 12l5 5L17 7" opacity="0.5" />
+          </svg>
+        `;
+      } else {
+        selectAllBtn.setAttribute('aria-label', 'Deselect All');
+        selectAllBtn.innerHTML = `
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+            <polyline points="3 3 3 8 8 8" />
+          </svg>
+        `;
+      }
     } else {
       selectAllBtn.style.display = 'none';
     }
@@ -2021,10 +2039,17 @@ window.handleSelectAllShopping = async () => {
     return true;
   });
 
-  const pendingIds = filteredItems.filter(item => !item.bought).map(item => item.id);
-  if (pendingIds.length === 0) return;
+  const pendingItems = filteredItems.filter(item => !item.bought);
+  
+  if (pendingItems.length > 0) {
+    const pendingIds = pendingItems.map(item => item.id);
+    await markAllShoppingItemsBought(pendingIds);
+  } else {
+    const boughtIds = filteredItems.filter(item => item.bought).map(item => item.id);
+    if (boughtIds.length === 0) return;
+    await unmarkAllShoppingItemsBought(boughtIds);
+  }
 
-  await markAllShoppingItemsBought(pendingIds);
   renderShoppingList();
   renderDashboard();
 };
