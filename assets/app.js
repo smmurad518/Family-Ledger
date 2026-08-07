@@ -39,7 +39,13 @@ import {
   addMovie,
   toggleWatchedMovie,
   deleteMovie,
-  updateMovie
+  updateMovie,
+  getBabyNeeds,
+  addBabyNeed,
+  deleteBabyNeed,
+  updateBabyNeed,
+  getDeleteLogs,
+  addDeleteLog
 } from './db.js';
 
 // DOM Element Selectors
@@ -160,7 +166,12 @@ const DOM = {
   // Profile Chooser Modal
   profileModal: document.getElementById('profile-modal'),
   profileModalClose: document.getElementById('profile-modal-close'),
-  profileCards: document.querySelectorAll('.profile-select-card')
+  profileCards: document.querySelectorAll('.profile-select-card'),
+
+  // Delete History Selectors
+  deleteHistoryHeader: document.getElementById('delete-history-header'),
+  deleteHistoryContent: document.getElementById('delete-history-content'),
+  deleteHistoryList: document.getElementById('delete-history-list')
 };
 
 // UI Active State Filters
@@ -1394,6 +1405,8 @@ function openSettingsModal() {
   DOM.fbAuthDomain.value = fbConfig.authDomain || '';
   DOM.fbAppId.value = fbConfig.appId || '';
 
+  renderDeleteHistoryLogs();
+
   DOM.settingsModal.classList.add('active');
 }
 
@@ -1581,6 +1594,7 @@ function handleDataUpdate(type, sourceCollection) {
   if (!sourceCollection || sourceCollection === 'baby_names') renderBabyNamesList();
   if (!sourceCollection || sourceCollection === 'movies') renderMoviesList();
   if (!sourceCollection || sourceCollection === 'baby_needs') renderBabyNeedsList();
+  if (!sourceCollection || sourceCollection === 'delete_history') renderDeleteHistoryLogs();
 
   // If this is the initial load, just update cache and return
   if (isFirstLoad) {
@@ -2171,6 +2185,42 @@ async function handleBabyNeedsClick(e) {
 }
 
 // ----------------------------------------------------
+// SCREEN RENDERS: DELETE HISTORY LOGS
+// ----------------------------------------------------
+function renderDeleteHistoryLogs() {
+  if (!DOM.deleteHistoryList) return;
+
+  const logs = getDeleteLogs();
+  
+  // Sort logs by timestamp (newest first)
+  logs.sort((a, b) => b.timestamp - a.timestamp);
+
+  if (logs.length === 0) {
+    DOM.deleteHistoryList.innerHTML = `
+      <li style="text-align: center; padding: 10px; color: var(--text-muted);">No deletion logs found.</li>
+    `;
+    return;
+  }
+
+  DOM.deleteHistoryList.innerHTML = logs.map(log => {
+    const date = new Date(log.timestamp);
+    const dateStr = date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const timeStr = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+    
+    // Choose appropriate avatar
+    const avatar = log.deletedBy === 'Husband' ? '🧔' : (log.deletedBy === 'Wife' ? '👩' : '👶');
+
+    return `
+      <li style="padding: 8px 10px; background: var(--bg-body); border-radius: 8px; border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 2px; text-align: left;">
+        <span style="font-weight: 700; color: var(--text-dark);">${avatar} ${log.deletedBy} deleted ${log.itemType}:</span>
+        <span style="font-style: italic; color: var(--color-danger); word-break: break-all;">"${log.itemName}"</span>
+        <span style="font-size: 9px; color: var(--text-muted); text-align: right; margin-top: 2px;">${dateStr} at ${timeStr}</span>
+      </li>
+    `;
+  }).join('');
+}
+
+// ----------------------------------------------------
 // SCREEN RENDERS: DHAR-DENA (LOANS & DUES)
 // ----------------------------------------------------
 function formatDueDate(dateStr) {
@@ -2556,7 +2606,8 @@ function setupCollapsibleCards() {
     { headerId: 'expense-form-header', contentId: 'expense-form-content' },
     { headerId: 'due-form-header', contentId: 'due-form-content' },
     { headerId: 'baby-form-header', contentId: 'baby-form-content' },
-    { headerId: 'baby-needs-form-header', contentId: 'baby-needs-form-content' }
+    { headerId: 'baby-needs-form-header', contentId: 'baby-needs-form-content' },
+    { headerId: 'delete-history-header', contentId: 'delete-history-content' }
   ];
 
   togglers.forEach(({ headerId, contentId }) => {

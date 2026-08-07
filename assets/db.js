@@ -24,7 +24,8 @@ const KEYS = {
   WIFE_CAN_SWITCH: 'mm_wife_can_switch',
   BABY_NAMES: 'mm_baby_names',
   MOVIES: 'mm_movies',
-  BABY_NEEDS: 'mm_baby_needs'
+  BABY_NEEDS: 'mm_baby_needs',
+  DELETE_HISTORY: 'mm_delete_history'
 };
 
 // Global application state for db
@@ -101,6 +102,7 @@ export async function pollServerData() {
         const localBabyNames = getLocal(KEYS.BABY_NAMES, []);
         const localMovies = getLocal(KEYS.MOVIES, []);
         const localBabyNeeds = getLocal(KEYS.BABY_NEEDS, []);
+        const localDeleteHistory = getLocal(KEYS.DELETE_HISTORY, []);
 
         const remoteShopping = serverData.shopping || [];
         const remoteExpenses = serverData.expenses || [];
@@ -109,6 +111,7 @@ export async function pollServerData() {
         const remoteBabyNames = serverData.babyNames || [];
         const remoteMovies = serverData.movies || [];
         const remoteBabyNeeds = serverData.babyNeeds || [];
+        const remoteDeleteHistory = serverData.deleteHistory || [];
 
         let updated = false;
 
@@ -140,6 +143,10 @@ export async function pollServerData() {
           setLocal(KEYS.BABY_NEEDS, remoteBabyNeeds);
           updated = true;
         }
+        if (JSON.stringify(localDeleteHistory) !== JSON.stringify(remoteDeleteHistory)) {
+          setLocal(KEYS.DELETE_HISTORY, remoteDeleteHistory);
+          updated = true;
+        }
 
         if (updated && onUpdateCallback) {
           onUpdateCallback('update', 'all');
@@ -167,6 +174,7 @@ export async function pushStateToServer() {
     const localBabyNames = getLocal(KEYS.BABY_NAMES, []);
     const localMovies = getLocal(KEYS.MOVIES, []);
     const localBabyNeeds = getLocal(KEYS.BABY_NEEDS, []);
+    const localDeleteHistory = getLocal(KEYS.DELETE_HISTORY, []);
 
     const payload = {
       shopping: localShopping,
@@ -176,6 +184,7 @@ export async function pushStateToServer() {
       babyNames: localBabyNames,
       movies: localMovies,
       babyNeeds: localBabyNeeds,
+      deleteHistory: localDeleteHistory,
       updatedAt: Date.now()
     };
 
@@ -282,6 +291,7 @@ export async function connectFirebase(config, onSyncStateChange) {
     setupCollectionListener('baby_names', KEYS.BABY_NAMES, onSyncStateChange);
     setupCollectionListener('movies', KEYS.MOVIES, onSyncStateChange);
     setupCollectionListener('baby_needs', KEYS.BABY_NEEDS, onSyncStateChange);
+    setupCollectionListener('delete_history', KEYS.DELETE_HISTORY, onSyncStateChange);
 
     if (onSyncStateChange) onSyncStateChange('connected');
     return true;
@@ -330,7 +340,8 @@ async function uploadLocalDataToCloud() {
     { name: 'suggestions', localKey: KEYS.SUGGESTIONS },
     { name: 'baby_names', localKey: KEYS.BABY_NAMES },
     { name: 'movies', localKey: KEYS.MOVIES },
-    { name: 'baby_needs', localKey: KEYS.BABY_NEEDS }
+    { name: 'baby_needs', localKey: KEYS.BABY_NEEDS },
+    { name: 'delete_history', localKey: KEYS.DELETE_HISTORY }
   ];
 
   for (const col of collectionsToSync) {
@@ -512,6 +523,10 @@ export async function deleteAllShoppingItems(ids) {
   if (writeCooldownTimer) clearTimeout(writeCooldownTimer);
 
   const items = getShoppingItems();
+  const deletedItems = items.filter(item => ids.includes(item.id));
+  if (deletedItems.length > 0) {
+    await addDeleteLog('Shopping Item', `${deletedItems.length} items (Bulk Delete)`);
+  }
   const filtered = items.filter(item => !ids.includes(item.id));
   setLocal(KEYS.SHOPPING, filtered);
 
@@ -532,6 +547,10 @@ export async function deleteShoppingItem(id) {
   if (writeCooldownTimer) clearTimeout(writeCooldownTimer);
 
   const items = getShoppingItems();
+  const item = items.find(i => i.id === id);
+  if (item) {
+    await addDeleteLog('Shopping Item', item.name);
+  }
   const filtered = items.filter(item => item.id !== id);
   setLocal(KEYS.SHOPPING, filtered);
 
@@ -586,6 +605,10 @@ export async function deleteExpense(id) {
   if (writeCooldownTimer) clearTimeout(writeCooldownTimer);
 
   const expenses = getExpenses();
+  const exp = expenses.find(e => e.id === id);
+  if (exp) {
+    await addDeleteLog('Need (Expense)', exp.notes);
+  }
   const filtered = expenses.filter(exp => exp.id !== id);
   setLocal(KEYS.EXPENSES, filtered);
 
@@ -663,6 +686,10 @@ export async function deleteDue(id) {
   if (writeCooldownTimer) clearTimeout(writeCooldownTimer);
 
   const dues = getDues();
+  const due = dues.find(d => d.id === id);
+  if (due) {
+    await addDeleteLog('Due Entry', `${due.person} (৳${due.amount})`);
+  }
   const filtered = dues.filter(due => due.id !== id);
   setLocal(KEYS.DUES, filtered);
 
@@ -814,6 +841,10 @@ export async function deleteSuggestion(id) {
   if (writeCooldownTimer) clearTimeout(writeCooldownTimer);
 
   const list = getSuggestions();
+  const item = list.find(i => i.id === id);
+  if (item) {
+    await addDeleteLog('Suggestion', item.text);
+  }
   const filtered = list.filter(item => item.id !== id);
   setLocal(KEYS.SUGGESTIONS, filtered);
 
@@ -1027,6 +1058,10 @@ export async function deleteBabyName(id) {
   if (writeCooldownTimer) clearTimeout(writeCooldownTimer);
 
   const items = getBabyNames();
+  const item = items.find(i => i.id === id);
+  if (item) {
+    await addDeleteLog('Baby Name', `${item.name} (${item.gender === 'boy' ? 'Boy' : 'Girl'})`);
+  }
   const filtered = items.filter(item => item.id !== id);
   setLocal(KEYS.BABY_NAMES, filtered);
 
@@ -1126,6 +1161,10 @@ export async function deleteMovie(id) {
   if (writeCooldownTimer) clearTimeout(writeCooldownTimer);
 
   const items = getMovies();
+  const item = items.find(i => i.id === id);
+  if (item) {
+    await addDeleteLog('Movie/Series', item.name);
+  }
   const filtered = items.filter(item => item.id !== id);
   setLocal(KEYS.MOVIES, filtered);
 
@@ -1199,6 +1238,10 @@ export async function deleteBabyNeed(id) {
   if (writeCooldownTimer) clearTimeout(writeCooldownTimer);
 
   const items = getBabyNeeds();
+  const item = items.find(i => i.id === id);
+  if (item) {
+    await addDeleteLog('Baby Need', item.name);
+  }
   const filtered = items.filter(item => item.id !== id);
   setLocal(KEYS.BABY_NEEDS, filtered);
 
@@ -1233,4 +1276,36 @@ export async function updateBabyNeed(id, name) {
 
   if (onUpdateCallback) onUpdateCallback('update', 'baby_needs');
   pushStateToServer();
+}
+
+export async function addDeleteLog(itemType, itemName) {
+  const logs = getDeleteLogs();
+  const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const filtered = logs.filter(log => log.timestamp >= sevenDaysAgo);
+
+  const newLog = {
+    id: generateId(),
+    itemType: itemType,
+    itemName: itemName,
+    deletedBy: getCurrentProfile(),
+    timestamp: Date.now()
+  };
+
+  filtered.push(newLog);
+  setLocal(KEYS.DELETE_HISTORY, filtered);
+
+  if (firestoreDb) {
+    setDoc(doc(firestoreDb, 'delete_history', newLog.id), newLog).catch(e => {
+      console.error('Firebase save log failed:', e);
+    });
+  }
+
+  if (onUpdateCallback) onUpdateCallback('update', 'delete_history');
+  pushStateToServer();
+}
+
+export function getDeleteLogs() {
+  const logs = getLocal(KEYS.DELETE_HISTORY, []);
+  const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  return logs.filter(log => log.timestamp >= sevenDaysAgo);
 }

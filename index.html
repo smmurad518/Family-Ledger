@@ -16,7 +16,7 @@
   <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
 
   <!-- Main Styling -->
-  <link rel="stylesheet" href="assets/style.css?v=1786120007072">
+  <link rel="stylesheet" href="assets/style.css?v=1786120237447">
 </head>
 
 <body>
@@ -645,6 +645,29 @@
           </div>
         </div>
 
+        <!-- Delete History Card -->
+        <div class="card" style="margin-top: 15px; padding: 14px; border: 1px solid var(--border-color); background: var(--bg-card); box-shadow: none;">
+          <h3 class="card-title" id="delete-history-header" style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; width: 100%; margin-bottom: 0; font-size: 14px;">
+            <span style="display: flex; align-items: center; gap: 8px; color: var(--color-danger);">
+              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+              </svg>
+              Delete History Log (7 Days)
+            </span>
+            <button type="button" class="btn-toggle-collapse" aria-label="Toggle Log" style="background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center;">
+              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" style="transition: transform 0.3s ease;">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+          </h3>
+          <div id="delete-history-content" style="margin-top: 12px; max-height: 180px; overflow-y: auto; display: none;">
+            <ul id="delete-history-list" style="list-style: none; padding: 0; margin: 0; font-size: 11px; color: var(--text-muted); display: flex; flex-direction: column; gap: 8px;">
+              <!-- Inject via JS -->
+            </ul>
+          </div>
+        </div>
+
         <button id="btn-save-settings" class="btn-primary"
           style="margin-top: 15px; width: 100%; padding: 14px; border-radius: 14px; font-weight: 800;">
           Save Settings
@@ -854,8 +877,8 @@
   </script>
 
     <!-- Core Scripts -->
-    <script type="module" src="assets/db.js?v=1786120007072"></script>
-    <script type="module" src="assets/app.js?v=1786120007072"></script>
+    <script type="module" src="assets/db.js?v=1786120237447"></script>
+    <script type="module" src="assets/app.js?v=1786120237447"></script>
 
 </body>
 
