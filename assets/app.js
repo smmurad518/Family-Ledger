@@ -2227,12 +2227,12 @@ function renderDeleteHistoryLogs() {
       .replace(/â\u0087\u00B3/g, '৳');
 
     return `
-      <li class="baby-name-item" style="padding: 14px 16px; background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 8px; text-align: left; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
-        <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 6px; margin-bottom: 2px;">
+      <li class="baby-name-item" style="width: 100%; box-sizing: border-box; padding: 14px 16px; background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 8px; text-align: left; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; border-bottom: 1px solid var(--border-color); padding-bottom: 6px; margin-bottom: 2px; box-sizing: border-box;">
           <span style="font-weight: 800; color: var(--text-dark); font-size: 14px;">
             ${avatar} ${log.deletedBy}
           </span>
-          <span style="font-size: 11px; color: var(--text-muted); font-weight: 600;">
+          <span style="font-size: 11px; color: var(--text-muted); font-weight: 600; margin-left: 12px;">
             ${dateStr} | ${timeStr}
           </span>
         </div>
