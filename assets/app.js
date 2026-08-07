@@ -1182,6 +1182,10 @@ function openEditModal(type, id, title, label1, val1, label2, val2, label3 = '',
   DOM.editModalTitle.textContent = title;
   DOM.editLabel1.textContent = label1;
   DOM.editInput1.value = val1;
+  if (DOM.editSaveBtn) {
+    DOM.editSaveBtn.disabled = false;
+    DOM.editSaveBtn.textContent = 'Update';
+  }
   const formGroup2 = DOM.editInput2.closest('.form-group');
   if (type === 'suggestion' || type === 'baby_name' || type === 'movie' || type === 'baby_need') {
     if (formGroup2) formGroup2.style.display = 'none';
@@ -1268,6 +1272,11 @@ function closeEditModal() {
   if (editImageGroup) editImageGroup.style.display = 'none';
   if (editImagePreview) editImagePreview.src = '';
 
+  if (DOM.editSaveBtn) {
+    DOM.editSaveBtn.disabled = false;
+    DOM.editSaveBtn.textContent = 'Update';
+  }
+
   resetViewportScroll();
 }
 
@@ -1293,7 +1302,7 @@ async function handleEditSave() {
   }
 
   DOM.editSaveBtn.disabled = true;
-  DOM.editSaveBtn.textContent = 'Updating...';
+  DOM.editSaveBtn.textContent = 'Updated';
 
   // Determine active keys for serial reordering
   const keyMap = {
@@ -1313,7 +1322,7 @@ async function handleEditSave() {
     if (isNaN(val2) || parseFloat(val2) <= 0) {
       alert("Please enter a valid amount!");
       DOM.editSaveBtn.disabled = false;
-      DOM.editSaveBtn.textContent = 'Update Entry';
+      DOM.editSaveBtn.textContent = 'Update';
       return;
     }
     await updateExpense(currentEditId, val2, val1, editImageRemoved);
@@ -1321,7 +1330,7 @@ async function handleEditSave() {
     if (isNaN(val2) || parseFloat(val2) <= 0) {
       alert("Please enter a valid amount!");
       DOM.editSaveBtn.disabled = false;
-      DOM.editSaveBtn.textContent = 'Update Entry';
+      DOM.editSaveBtn.textContent = 'Update';
       return;
     }
     await updateDue(currentEditId, val1, val2, val3);
@@ -1358,7 +1367,7 @@ async function handleEditSave() {
   if (currentEditType === 'baby_need') renderBabyNeedsList();
 
   DOM.editSaveBtn.disabled = false;
-  DOM.editSaveBtn.textContent = 'Update Entry';
+  DOM.editSaveBtn.textContent = 'Update';
   closeEditModal();
   renderDashboard();
 }
