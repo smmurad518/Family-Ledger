@@ -16,7 +16,7 @@
   <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
 
   <!-- Main Styling -->
-  <link rel="stylesheet" href="assets/style.css?v=1786119505004">
+  <link rel="stylesheet" href="assets/style.css?v=1786119834703">
 </head>
 
 <body>
@@ -704,10 +704,10 @@
 
     <!-- Image Preview Modal -->
     <div class="modal-overlay" id="image-preview-modal" style="z-index: 2500;">
-      <div class="modal-content" style="max-width: 90vw; max-height: 90vh; background: transparent; border: none; box-shadow: none; display: flex; justify-content: center; align-items: center; padding: 0; position: relative;">
-        <button class="modal-close" id="image-preview-close" aria-label="Close preview" style="position: absolute; top: -45px; right: 0; color: white; background: rgba(0,0,0,0.6); border-radius: 50%; width: 36px; height: 36px; display: flex; justify-content: center; align-items: center; border: none; cursor: pointer; transition: transform var(--transition-fast);">
-          <svg viewBox="0 0 24 24" style="stroke: currentColor; stroke-width: 2.5; fill: none; width: 18px; height: 18px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
+      <button class="modal-close" id="image-preview-close" aria-label="Close preview" style="position: fixed; top: 20px; right: 20px; color: white; background: rgba(0, 0, 0, 0.75); border-radius: 50%; width: 44px; height: 44px; display: flex; justify-content: center; align-items: center; border: none; cursor: pointer; transition: all 0.2s ease; z-index: 2600; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+        <svg viewBox="0 0 24 24" style="stroke: currentColor; stroke-width: 3; fill: none; width: 22px; height: 22px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <div class="modal-content" style="max-width: 90vw; max-height: 90vh; background: transparent; border: none; box-shadow: none; display: flex; justify-content: center; align-items: center; padding: 0;">
         <img id="img-modal-target" src="" alt="Fullscreen Preview" style="max-width: 100%; max-height: 80vh; border-radius: 12px; border: 2px solid var(--border-color); box-shadow: 0 12px 40px rgba(0,0,0,0.45); object-fit: contain; background-color: var(--bg-card);">
       </div>
     </div>
@@ -854,8 +854,8 @@
   </script>
 
     <!-- Core Scripts -->
-    <script type="module" src="assets/db.js?v=1786119505004"></script>
-    <script type="module" src="assets/app.js?v=1786119505004"></script>
+    <script type="module" src="assets/db.js?v=1786119834703"></script>
+    <script type="module" src="assets/app.js?v=1786119834703"></script>
 
 </body>
 
