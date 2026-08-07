@@ -182,6 +182,7 @@ let currentEditType = ''; // 'shopping', 'expense', 'due', 'suggestion'
 let currentEditId = '';
 let selectedExpenseImageBase64 = '';
 let lastBabyNeedsList = [];
+let editImageRemoved = false;
 
 // Category colors for expense ledger and charts
 const CATEGORY_COLORS = {
@@ -762,6 +763,15 @@ function setupEventListeners() {
     });
   }
 
+  const btnRemoveEditImage = document.getElementById('btn-remove-edit-image');
+  if (btnRemoveEditImage) {
+    btnRemoveEditImage.addEventListener('click', () => {
+      editImageRemoved = true;
+      const editImageGroup = document.getElementById('edit-image-group');
+      if (editImageGroup) editImageGroup.style.display = 'none';
+    });
+  }
+
   const btnClearDueDate = document.getElementById('btn-clear-due-date');
   if (btnClearDueDate) {
     btnClearDueDate.addEventListener('click', () => {
@@ -1181,6 +1191,7 @@ function openEditModal(type, id, title, label1, val1, label2, val2, label3 = '',
     DOM.editInput2.value = val2;
   }
 
+  editImageRemoved = false;
   const editImageGroup = document.getElementById('edit-image-group');
   const editImagePreview = document.getElementById('edit-image-preview');
   if (editImageGroup && editImagePreview) {
@@ -1305,7 +1316,7 @@ async function handleEditSave() {
       DOM.editSaveBtn.textContent = 'Update Entry';
       return;
     }
-    await updateExpense(currentEditId, val2, val1);
+    await updateExpense(currentEditId, val2, val1, editImageRemoved);
   } else if (currentEditType === 'due') {
     if (isNaN(val2) || parseFloat(val2) <= 0) {
       alert("Please enter a valid amount!");

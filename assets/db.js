@@ -701,7 +701,7 @@ export async function updateShoppingItem(id, name, qty, amount = '') {
   pushStateToServer();
 }
 
-export async function updateExpense(id, amount, notes) {
+export async function updateExpense(id, amount, notes, removeImage = false) {
   isWriting = true;
   if (writeCooldownTimer) clearTimeout(writeCooldownTimer);
 
@@ -711,6 +711,9 @@ export async function updateExpense(id, amount, notes) {
 
   expenses[index].amount = parseFloat(amount);
   expenses[index].notes = notes.trim();
+  if (removeImage) {
+    expenses[index].image = '';
+  }
   expenses[index].timestamp = Date.now();
 
   setLocal(KEYS.EXPENSES, expenses);

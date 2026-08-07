@@ -16,7 +16,7 @@
   <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
 
   <!-- Main Styling -->
-  <link rel="stylesheet" href="assets/style.css?v=1786119273396">
+  <link rel="stylesheet" href="assets/style.css?v=1786119505004">
 </head>
 
 <body>
@@ -689,7 +689,10 @@
         </div>
 
         <div id="edit-image-group" style="display: none; margin-top: 14px; text-align: center;">
-          <label style="display: block; margin-bottom: 6px; text-align: left; font-weight: 700; font-size: 13px; color: var(--text-dark);">Current Attachment</label>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <label style="margin-bottom: 0; font-weight: 700; font-size: 13px; color: var(--text-dark);">Current Attachment</label>
+            <button type="button" id="btn-remove-edit-image" style="background: none; border: none; color: var(--color-danger); font-size: 12px; font-weight: 800; cursor: pointer; padding: 2px 4px;">Remove Image</button>
+          </div>
           <img id="edit-image-preview" src="" alt="Edit Attachment" style="max-height: 120px; border-radius: 8px; border: 1px solid var(--border-color); object-fit: contain; max-width: 100%; background: var(--bg-card);">
         </div>
 
@@ -851,8 +854,8 @@
   </script>
 
     <!-- Core Scripts -->
-    <script type="module" src="assets/db.js?v=1786119273396"></script>
-    <script type="module" src="assets/app.js?v=1786119273396"></script>
+    <script type="module" src="assets/db.js?v=1786119505004"></script>
+    <script type="module" src="assets/app.js?v=1786119505004"></script>
 
 </body>
 
