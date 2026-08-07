@@ -2220,14 +2220,25 @@ function renderDeleteHistoryLogs() {
     // Choose appropriate avatar
     const avatar = log.deletedBy === 'Husband' ? '🧔' : (log.deletedBy === 'Wife' ? '👩' : '👶');
 
+    // Clean up any historical encoding corruptions of BDT symbol
+    const cleanItemName = (log.itemName || '')
+      .replace(/[ÃÂÂ]*[§\s]*Â³/g, '৳')
+      .replace(/à§³/g, '৳')
+      .replace(/â\u0087\u00B3/g, '৳');
+
     return `
-      <li class="baby-name-item" style="padding: 10px 12px; background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 4px; text-align: left;">
-        <div style="display: flex; align-items: center; justify-content: space-between;">
-          <span style="font-weight: 700; color: var(--text-dark); font-size: 12px;">${avatar} ${log.deletedBy}</span>
-          <span style="font-size: 9px; color: var(--text-muted);">${dateStr} at ${timeStr}</span>
+      <li class="baby-name-item" style="padding: 14px 16px; background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 8px; text-align: left; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+        <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 6px; margin-bottom: 2px;">
+          <span style="font-weight: 800; color: var(--text-dark); font-size: 14px;">
+            ${avatar} ${log.deletedBy}
+          </span>
+          <span style="font-size: 11px; color: var(--text-muted); font-weight: 600;">
+            ${dateStr} | ${timeStr}
+          </span>
         </div>
-        <div style="font-size: 11px; color: var(--text-muted); line-height: 1.4;">
-          Deleted <strong style="color: var(--color-danger);">${log.itemType}</strong>: <span style="font-style: italic; color: var(--text-dark);">"${log.itemName}"</span>
+        <div style="font-size: 13px; color: var(--text-dark); line-height: 1.5;">
+          Deleted from <strong style="color: var(--color-primary-interactive); text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px;">${log.itemType}</strong>: 
+          <span style="font-weight: 700; color: var(--color-danger); margin-left: 4px; font-size: 14px;">"${cleanItemName}"</span>
         </div>
       </li>
     `;

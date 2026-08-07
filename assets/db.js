@@ -607,7 +607,7 @@ export async function deleteExpense(id) {
   const expenses = getExpenses();
   const exp = expenses.find(e => e.id === id);
   if (exp) {
-    await addDeleteLog('Need (Expense)', exp.notes);
+    await addDeleteLog('Need (Expense)', `${exp.notes} (Estimated \u09F3${exp.amount})`);
   }
   const filtered = expenses.filter(exp => exp.id !== id);
   setLocal(KEYS.EXPENSES, filtered);
@@ -688,7 +688,7 @@ export async function deleteDue(id) {
   const dues = getDues();
   const due = dues.find(d => d.id === id);
   if (due) {
-    await addDeleteLog('Due Entry', `${due.person} (৳${due.amount})`);
+    await addDeleteLog('Due Entry', `${due.person} (\u09F3${due.amount})`);
   }
   const filtered = dues.filter(due => due.id !== id);
   setLocal(KEYS.DUES, filtered);
