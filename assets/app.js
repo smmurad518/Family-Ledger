@@ -1705,7 +1705,7 @@ function renderShoppingList() {
   if (selectAllBtn) {
     const hasPending = items.some(item => !item.bought);
     if (hasPending && (activeShoppingFilter === 'all' || activeShoppingFilter === 'pending')) {
-      selectAllBtn.style.display = 'inline-block';
+      selectAllBtn.style.display = 'flex';
     } else {
       selectAllBtn.style.display = 'none';
     }
@@ -1719,11 +1719,12 @@ function renderShoppingList() {
     filteredItems = items.filter(item => item.bought);
   }
 
-  // Update delete all button visibility
+  // Update delete all button visibility: show only if all items in the current view are bought
   const deleteAllBtn = document.getElementById('btn-delete-all-shopping');
   if (deleteAllBtn) {
-    if (filteredItems.length > 0) {
-      deleteAllBtn.style.display = 'inline-block';
+    const allBought = filteredItems.length > 0 && filteredItems.every(item => item.bought);
+    if (allBought) {
+      deleteAllBtn.style.display = 'flex';
     } else {
       deleteAllBtn.style.display = 'none';
     }
