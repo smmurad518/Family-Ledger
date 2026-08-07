@@ -24,6 +24,15 @@ class _DuesScreenState extends State<DuesScreen> {
     super.dispose();
   }
 
+  String _formatDate(String dateStr) {
+    if (dateStr.isEmpty) return '';
+    final parts = dateStr.split('-');
+    if (parts.length == 3) {
+      return '${parts[2]}/${parts[1]}/${parts[0]}';
+    }
+    return dateStr;
+  }
+
   void _showEditDialog(DueItem item, AppState appState, Color primaryCol, Color textDark, Color cardBg, Color borderCol) {
     if (!appState.editDeleteAll) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -338,7 +347,7 @@ class _DuesScreenState extends State<DuesScreen> {
                                   ),
                                   const SizedBox(height: 1),
                                   Text(
-                                    'Recorded by ${item.addedBy} on ${item.date}',
+                                    'Recorded by ${item.addedBy}${item.date.isNotEmpty ? ' on ${_formatDate(item.date)}' : ''}',
                                     style: TextStyle(color: textMuted.withOpacity(0.7), fontSize: 10),
                                   ),
                                 ],

@@ -438,6 +438,35 @@ export async function toggleShoppingItem(id) {
   pushStateToServer();
 }
 
+export async function markAllShoppingItemsBought(ids) {
+  isWriting = true;
+  if (writeCooldownTimer) clearTimeout(writeCooldownTimer);
+
+  const items = getShoppingItems();
+  let updatedCount = 0;
+
+  items.forEach(item => {
+    if (ids.includes(item.id) && !item.bought) {
+      item.bought = true;
+      item.boughtBy = getCurrentProfile();
+      item.timestamp = Date.now();
+      updatedCount++;
+
+      if (firestoreDb) {
+        setDoc(doc(firestoreDb, 'shopping_list', item.id), item, { merge: true }).catch(e => {
+          console.error('Firebase update failed:', e);
+        });
+      }
+    }
+  });
+
+  if (updatedCount > 0) {
+    setLocal(KEYS.SHOPPING, items);
+    if (onUpdateCallback) onUpdateCallback('update', 'shopping_list');
+    pushStateToServer();
+  }
+}
+
 export async function deleteShoppingItem(id) {
   isWriting = true;
   if (writeCooldownTimer) clearTimeout(writeCooldownTimer);
@@ -528,7 +557,7 @@ export async function addDue(person, amount, type, status, date) {
     type: type,
     status: status,
     addedBy: getCurrentProfile(),
-    date: date || new Date().toISOString().split('T')[0],
+    date: date || '',
     timestamp: Date.now()
   };
 
@@ -645,9 +674,7 @@ export async function updateDue(id, person, amount, date) {
 
   dues[index].person = person.trim();
   dues[index].amount = parseFloat(amount);
-  if (date) {
-    dues[index].date = date;
-  }
+  dues[index].date = date || '';
   dues[index].timestamp = Date.now();
 
   setLocal(KEYS.DUES, dues);
@@ -768,14 +795,6 @@ export async function reorderItemToPosition(key, itemId, newPosition, filterType
   // Sort items by current order
   if (key === KEYS.EXPENSES) {
     items.sort((a, b) => b.date.localeCompare(a.date) || b.timestamp - a.timestamp);
-  } else if (key === KEYS.BABY_NAMES) {
-    // We sort baby names by likes then timestamp descending
-    items.sort((a, b) => {
-      const likesA = (a.likes || []).length;
-      const likesB = (b.likes || []).length;
-      if (likesB !== likesA) return likesB - likesA;
-      return b.timestamp - a.timestamp;
-    });
   } else {
     items.sort((a, b) => b.timestamp - a.timestamp);
   }

@@ -10,6 +10,7 @@ import {
   getShoppingItems,
   addShoppingItem,
   toggleShoppingItem,
+  markAllShoppingItemsBought,
   deleteShoppingItem,
   updateShoppingItem,
   getExpenses,
@@ -687,6 +688,25 @@ function setupEventListeners() {
   DOM.expenseForm.addEventListener('submit', handleAddExpenseItem);
   DOM.dueForm.addEventListener('submit', handleAddDueItem);
 
+  const btnSelectAllShopping = document.getElementById('btn-select-all-shopping');
+  if (btnSelectAllShopping) {
+    btnSelectAllShopping.addEventListener('click', handleSelectAllShopping);
+  }
+
+  const btnClearDueDate = document.getElementById('btn-clear-due-date');
+  if (btnClearDueDate) {
+    btnClearDueDate.addEventListener('click', () => {
+      if (DOM.dueDate) DOM.dueDate.value = '';
+    });
+  }
+  const btnClearEditDate = document.getElementById('btn-clear-edit-date');
+  if (btnClearEditDate) {
+    btnClearEditDate.addEventListener('click', () => {
+      const editInput3 = document.getElementById('edit-input-3');
+      if (editInput3) editInput3.value = '';
+    });
+  }
+
   // Shopping List Filter Tabs
   DOM.shoppingFilterTabs.forEach(tab => {
     tab.addEventListener('click', (e) => {
@@ -1048,12 +1068,7 @@ function getListForType(type, itemId) {
     const item = items.find(i => i.id === itemId);
     if (!item) return [];
     const filtered = items.filter(n => n.gender === item.gender);
-    filtered.sort((a, b) => {
-      const likesA = (a.likes || []).length;
-      const likesB = (b.likes || []).length;
-      if (likesB !== likesA) return likesB - likesA;
-      return b.timestamp - a.timestamp;
-    });
+    filtered.sort((a, b) => b.timestamp - a.timestamp);
     return filtered;
   }
   if (type === 'movie') {
@@ -1084,17 +1099,22 @@ function openEditModal(type, id, title, label1, val1, label2, val2, label3 = '',
     DOM.editInput2.value = val2;
   }
 
+  const btnClearEditDate = document.getElementById('btn-clear-edit-date');
   if (type === 'shopping' || type === 'due') {
     DOM.editLabel3.textContent = label3;
     DOM.editInput3.value = val3;
     if (type === 'due') {
       DOM.editInput3.type = 'date';
+      DOM.editInput3.setAttribute('lang', 'en-GB');
+      if (btnClearEditDate) btnClearEditDate.style.display = 'inline-block';
     } else {
       DOM.editInput3.type = 'text';
+      if (btnClearEditDate) btnClearEditDate.style.display = 'none';
     }
     if (DOM.editInputGroup3) DOM.editInputGroup3.style.display = 'block';
   } else {
     if (DOM.editInputGroup3) DOM.editInputGroup3.style.display = 'none';
+    if (btnClearEditDate) btnClearEditDate.style.display = 'none';
   }
 
   // Pre-fill serial number information
@@ -1124,9 +1144,14 @@ function closeEditModal() {
   currentEditId = '';
   const formGroup2 = DOM.editInput2.closest('.form-group');
   if (formGroup2) formGroup2.style.display = 'block';
-  if (DOM.editInput3) DOM.editInput3.type = 'text';
+  if (DOM.editInput3) {
+    DOM.editInput3.type = 'text';
+    DOM.editInput3.removeAttribute('lang');
+  }
   if (DOM.editInputGroup3) DOM.editInputGroup3.style.display = 'none';
   if (DOM.editInputGroupSerial) DOM.editInputGroupSerial.style.display = 'none';
+  const btnClearEditDate = document.getElementById('btn-clear-edit-date');
+  if (btnClearEditDate) btnClearEditDate.style.display = 'none';
   resetViewportScroll();
 }
 
@@ -1670,6 +1695,16 @@ function renderDashboard() {
 // ----------------------------------------------------
 function renderShoppingList() {
   const items = getShoppingItems();
+
+  const selectAllBtn = document.getElementById('btn-select-all-shopping');
+  if (selectAllBtn) {
+    const hasPending = items.some(item => !item.bought);
+    if (hasPending && (activeShoppingFilter === 'all' || activeShoppingFilter === 'pending')) {
+      selectAllBtn.style.display = 'inline-block';
+    } else {
+      selectAllBtn.style.display = 'none';
+    }
+  }
   
   // Filter items
   let filteredItems = items;
@@ -1835,6 +1870,15 @@ async function handleAddExpenseItem(e) {
 // ----------------------------------------------------
 // SCREEN RENDERS: DHAR-DENA (LOANS & DUES)
 // ----------------------------------------------------
+function formatDueDate(dateStr) {
+  if (!dateStr) return '';
+  const parts = dateStr.split('-');
+  if (parts.length === 3) {
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  }
+  return dateStr;
+}
+
 function calculateDaysPassed(dateStr) {
   if (!dateStr) return 0;
   const start = new Date(dateStr);
@@ -1894,20 +1938,22 @@ function renderDuesLedger() {
       </button>
     ` : '';
     
-    const daysPassed = calculateDaysPassed(due.date);
     let ageBadgeHtml = '';
-    if (daysPassed > 0) {
-      ageBadgeHtml = `
-        <span class="due-age-badge" style="background-color: var(--color-danger); color: white; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 12px; margin-left: 6px; display: inline-flex; align-items: center; justify-content: center; vertical-align: middle; box-shadow: 0 2px 4px rgba(239, 83, 80, 0.2);">
-          ${daysPassed}d
-        </span>
-      `;
-    } else {
-      ageBadgeHtml = `
-        <span class="due-age-badge" style="background-color: var(--color-primary-light); color: var(--color-primary-interactive); font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 12px; margin-left: 6px; display: inline-flex; align-items: center; justify-content: center; vertical-align: middle;">
-          Today
-        </span>
-      `;
+    if (due.date) {
+      const daysPassed = calculateDaysPassed(due.date);
+      if (daysPassed > 0) {
+        ageBadgeHtml = `
+          <span class="due-age-badge" style="background-color: var(--color-danger); color: white; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 12px; margin-left: 6px; display: inline-flex; align-items: center; justify-content: center; vertical-align: middle; box-shadow: 0 2px 4px rgba(239, 83, 80, 0.2);">
+            ${daysPassed}d
+          </span>
+        `;
+      } else {
+        ageBadgeHtml = `
+          <span class="due-age-badge" style="background-color: var(--color-primary-light); color: var(--color-primary-interactive); font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 12px; margin-left: 6px; display: inline-flex; align-items: center; justify-content: center; vertical-align: middle;">
+            Today
+          </span>
+        `;
+      }
     }
 
     return `
@@ -1919,7 +1965,7 @@ function renderDuesLedger() {
               ${ageBadgeHtml}
             </span>
             <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); margin-top: 2px;">
-              ${typeLabel} • ${due.date}
+              ${typeLabel}${due.date ? ` • ${formatDueDate(due.date)}` : ''}
             </span>
             <span style="font-size: 10px; color: var(--text-muted); margin-top: 1px;">by ${due.addedBy}</span>
           </div>
@@ -1945,6 +1991,22 @@ window.handleDeleteShopping = async (id) => {
 
 window.handleToggleShopping = async (id) => {
   await toggleShoppingItem(id);
+  renderShoppingList();
+  renderDashboard();
+};
+
+window.handleSelectAllShopping = async () => {
+  const items = getShoppingItems();
+  const filteredItems = items.filter(item => {
+    if (activeShoppingFilter === 'pending') return !item.bought;
+    if (activeShoppingFilter === 'bought') return item.bought;
+    return true;
+  });
+
+  const pendingIds = filteredItems.filter(item => !item.bought).map(item => item.id);
+  if (pendingIds.length === 0) return;
+
+  await markAllShoppingItemsBought(pendingIds);
   renderShoppingList();
   renderDashboard();
 };
@@ -2047,23 +2109,13 @@ function renderBabyNamesList() {
 
   const names = getBabyNames();
   
-  // Sort: most liked first, then newest first
-  names.sort((a, b) => {
-    const likesA = (a.likes || []).length;
-    const likesB = (b.likes || []).length;
-    if (likesB !== likesA) return likesB - likesA;
-    return b.timestamp - a.timestamp;
-  });
+  // Sort: newest first
+  names.sort((a, b) => b.timestamp - a.timestamp);
 
   const boyNames = names.filter(n => n.gender === 'boy');
   const girlNames = names.filter(n => n.gender === 'girl');
 
   const renderNameItem = (item) => {
-    const parent = localStorage.getItem('mm_parent_profile') || 'Husband';
-    const addedByLabel = parent === 'Husband' ? 'Father' : 'Mother';
-    const likes = item.likes || [];
-    const isLiked = likes.includes(addedByLabel);
-    const likeColorClass = isLiked ? 'liked' : '';
     const canAction = isEditDeleteAllEnabled();
     const actionButtonsHtml = canAction ? `
       <button class="btn-icon-edit" data-id="${item.id}" aria-label="Edit name" style="padding: 2px;">
@@ -2082,12 +2134,6 @@ function renderBabyNamesList() {
           <span class="baby-name-text">${item.name}</span>
         </div>
         <div class="baby-actions">
-          <button class="btn-like-heart ${likeColorClass}" data-id="${item.id}">
-            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none">
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-            </svg>
-            <span class="like-count">${likes.length}</span>
-          </button>
           ${actionButtonsHtml}
         </div>
       </li>

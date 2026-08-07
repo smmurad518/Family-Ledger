@@ -16,7 +16,7 @@
   <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
 
   <!-- Main Styling -->
-  <link rel="stylesheet" href="assets/style.css?v=1785432826818">
+  <link rel="stylesheet" href="assets/style.css?v=1786118164959">
 </head>
 
 <body>
@@ -134,10 +134,15 @@
           </div>
         </div>
 
-        <div class="tab-row" id="shopping-filter-tabs">
-          <button class="tab-btn active" data-filter="all" id="shop-tab-all">All Items</button>
-          <button class="tab-btn" data-filter="pending" id="shop-tab-pending">Pending</button>
-          <button class="tab-btn" data-filter="bought" id="shop-tab-bought">Bought</button>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 8px;">
+          <div class="tab-row" id="shopping-filter-tabs" style="margin-bottom: 0; flex: 1; padding-bottom: 0;">
+            <button class="tab-btn active" data-filter="all" id="shop-tab-all">All Items</button>
+            <button class="tab-btn" data-filter="pending" id="shop-tab-pending">Pending</button>
+            <button class="tab-btn" data-filter="bought" id="shop-tab-bought">Bought</button>
+          </div>
+          <button type="button" id="btn-select-all-shopping" class="btn-primary" style="padding: 8px 14px; font-size: 12px; font-weight: 800; border-radius: 20px; width: auto; margin-top: 0; white-space: nowrap; box-shadow: none; display: none;">
+            Select All
+          </button>
         </div>
 
         <ul class="item-list" id="shopping-list-container">
@@ -248,8 +253,11 @@
                   </select>
                 </div>
                 <div class="form-group">
-                  <label for="due-date">Date</label>
-                  <input type="date" id="due-date" required style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-dark);">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label for="due-date" style="margin-bottom: 0;">Date</label>
+                    <button type="button" id="btn-clear-due-date" style="background: none; border: none; color: var(--color-danger); font-size: 11px; font-weight: 800; cursor: pointer; padding: 2px 4px;">Clear Date</button>
+                  </div>
+                  <input type="date" id="due-date" lang="en-GB" style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-dark);">
                 </div>
               </div>
               <button type="submit" id="btn-add-due" class="btn-primary">
@@ -606,7 +614,10 @@
         </div>
 
         <div class="form-group" id="edit-group-3" style="display: none; margin-top: 14px;">
-          <label id="edit-label-3" for="edit-input-3">Field 3</label>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <label id="edit-label-3" for="edit-input-3" style="margin-bottom: 0;">Field 3</label>
+            <button type="button" id="btn-clear-edit-date" style="display: none; background: none; border: none; color: var(--color-danger); font-size: 11px; font-weight: 800; cursor: pointer; padding: 2px 4px;">Clear Date</button>
+          </div>
           <input type="text" id="edit-input-3" autocomplete="off">
         </div>
 
@@ -763,8 +774,8 @@
   </script>
 
     <!-- Core Scripts -->
-    <script type="module" src="assets/db.js?v=1785432826818"></script>
-    <script type="module" src="assets/app.js?v=1785432826818"></script>
+    <script type="module" src="assets/db.js?v=1786118164959"></script>
+    <script type="module" src="assets/app.js?v=1786118164959"></script>
 
 </body>
 
