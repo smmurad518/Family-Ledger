@@ -1,11 +1,11 @@
-const CACHE_NAME = 'mm-ledger-v1786121386833';
+const CACHE_NAME = 'mm-ledger-v1786121745456';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './manifest.json',
   './assets/style.css',
-  './assets/app.js?v=1786121386833',
-  './assets/db.js?v=1786121386833',
+  './assets/app.js?v=1786121745456',
+  './assets/db.js?v=1786121745456',
 ];
 
 self.addEventListener('install', (e) => {
@@ -37,7 +37,7 @@ self.addEventListener('fetch', (e) => {
   }
 
   e.respondWith(
-    caches.match(e.request).then((cachedResponse) => {
+    caches.match(e.request, { ignoreSearch: true }).then((cachedResponse) => {
       if (cachedResponse) {
         // Fetch in background to update cache for next load (Stale-While-Revalidate)
         fetch(e.request).then((networkResponse) => {
