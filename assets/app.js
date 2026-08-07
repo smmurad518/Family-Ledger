@@ -11,6 +11,7 @@ import {
   addShoppingItem,
   toggleShoppingItem,
   markAllShoppingItemsBought,
+  deleteAllShoppingItems,
   deleteShoppingItem,
   updateShoppingItem,
   getExpenses,
@@ -691,6 +692,10 @@ function setupEventListeners() {
   const btnSelectAllShopping = document.getElementById('btn-select-all-shopping');
   if (btnSelectAllShopping) {
     btnSelectAllShopping.addEventListener('click', handleSelectAllShopping);
+  }
+  const btnDeleteAllShopping = document.getElementById('btn-delete-all-shopping');
+  if (btnDeleteAllShopping) {
+    btnDeleteAllShopping.addEventListener('click', handleDeleteAllShoppingClick);
   }
 
   const btnClearDueDate = document.getElementById('btn-clear-due-date');
@@ -1714,6 +1719,16 @@ function renderShoppingList() {
     filteredItems = items.filter(item => item.bought);
   }
 
+  // Update delete all button visibility
+  const deleteAllBtn = document.getElementById('btn-delete-all-shopping');
+  if (deleteAllBtn) {
+    if (filteredItems.length > 0) {
+      deleteAllBtn.style.display = 'inline-block';
+    } else {
+      deleteAllBtn.style.display = 'none';
+    }
+  }
+
   // Sort: newest first
   filteredItems.sort((a, b) => b.timestamp - a.timestamp);
 
@@ -1740,6 +1755,8 @@ function renderShoppingList() {
       </button>
     ` : '';
     
+    const qtyHtml = item.qty ? `<span class="item-qty">${item.qty}</span>` : '';
+    
     const amountHtml = item.amount && item.amount > 0 ? `
       <span class="item-amount" style="font-family: var(--font-title); font-weight: 800; font-size: 13px; color: var(--color-primary-interactive); margin-right: 4px;">
         ৳${item.amount.toLocaleString('en-IN')}
@@ -1754,12 +1771,12 @@ function renderShoppingList() {
           </div>
           <div class="item-details">
             <span class="item-name">${item.name}</span>
+            ${qtyHtml}
             <span class="item-meta">${buyerInfo}</span>
           </div>
         </div>
         <div class="item-right" style="display: flex; align-items: center; gap: 8px;">
           ${amountHtml}
-          <span class="item-qty">${item.qty}</span>
           ${actionButtonsHtml}
         </div>
       </li>
@@ -1774,7 +1791,7 @@ async function handleAddShoppingItem(e) {
   const qty = DOM.shopItemQty.value;
   const amount = DOM.shopItemAmount.value;
 
-  if (!name.trim() || !qty.trim()) return;
+  if (!name.trim()) return;
 
   await addShoppingItem(name, qty, amount);
 
@@ -2007,6 +2024,31 @@ window.handleSelectAllShopping = async () => {
   if (pendingIds.length === 0) return;
 
   await markAllShoppingItemsBought(pendingIds);
+  renderShoppingList();
+  renderDashboard();
+};
+
+window.handleDeleteAllShoppingClick = async () => {
+  if (!isEditDeleteAllEnabled()) {
+    alert("Deletion is disabled! Enable Edit & Delete in Settings.");
+    return;
+  }
+
+  const items = getShoppingItems();
+  let filteredItems = items;
+  if (activeShoppingFilter === 'pending') {
+    filteredItems = items.filter(item => !item.bought);
+  } else if (activeShoppingFilter === 'bought') {
+    filteredItems = items.filter(item => item.bought);
+  }
+
+  const ids = filteredItems.map(item => item.id);
+  if (ids.length === 0) return;
+
+  const confirmDelete = confirm(`Are you sure you want to delete all ${ids.length} items in this view?`);
+  if (!confirmDelete) return;
+
+  await deleteAllShoppingItems(ids);
   renderShoppingList();
   renderDashboard();
 };

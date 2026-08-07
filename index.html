@@ -16,7 +16,7 @@
   <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
 
   <!-- Main Styling -->
-  <link rel="stylesheet" href="assets/style.css?v=1786118164959">
+  <link rel="stylesheet" href="assets/style.css?v=1786118380737">
 </head>
 
 <body>
@@ -116,7 +116,7 @@
               <div class="form-row">
                 <div class="form-group">
                   <label for="shop-item-qty">Quantity</label>
-                  <input type="text" id="shop-item-qty" placeholder="e.g. 2 kg, 1 Litre" required autocomplete="off">
+                  <input type="text" id="shop-item-qty" placeholder="e.g. 2 kg, 1 Litre" autocomplete="off">
                 </div>
                 <div class="form-group">
                   <label for="shop-item-amount">Amount (৳) - Optional</label>
@@ -134,15 +134,20 @@
           </div>
         </div>
 
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 8px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 8px; flex-wrap: wrap;">
           <div class="tab-row" id="shopping-filter-tabs" style="margin-bottom: 0; flex: 1; padding-bottom: 0;">
             <button class="tab-btn active" data-filter="all" id="shop-tab-all">All Items</button>
             <button class="tab-btn" data-filter="pending" id="shop-tab-pending">Pending</button>
             <button class="tab-btn" data-filter="bought" id="shop-tab-bought">Bought</button>
           </div>
-          <button type="button" id="btn-select-all-shopping" class="btn-primary" style="padding: 8px 14px; font-size: 12px; font-weight: 800; border-radius: 20px; width: auto; margin-top: 0; white-space: nowrap; box-shadow: none; display: none;">
-            Select All
-          </button>
+          <div style="display: flex; gap: 6px;">
+            <button type="button" id="btn-select-all-shopping" class="btn-primary" style="padding: 8px 14px; font-size: 12px; font-weight: 800; border-radius: 20px; width: auto; margin-top: 0; white-space: nowrap; box-shadow: none; display: none;">
+              Select All
+            </button>
+            <button type="button" id="btn-delete-all-shopping" class="btn-primary" style="padding: 8px 14px; font-size: 12px; font-weight: 800; border-radius: 20px; width: auto; margin-top: 0; white-space: nowrap; box-shadow: none; display: none; background-color: var(--color-danger); border-color: var(--color-danger); color: white;">
+              Delete All
+            </button>
+          </div>
         </div>
 
         <ul class="item-list" id="shopping-list-container">
@@ -774,8 +779,8 @@
   </script>
 
     <!-- Core Scripts -->
-    <script type="module" src="assets/db.js?v=1786118164959"></script>
-    <script type="module" src="assets/app.js?v=1786118164959"></script>
+    <script type="module" src="assets/db.js?v=1786118380737"></script>
+    <script type="module" src="assets/app.js?v=1786118380737"></script>
 
 </body>
 

@@ -64,7 +64,7 @@ class _ShoppingScreenState extends State<ShoppingScreen> {
             ),
             ElevatedButton(
               onPressed: () async {
-                if (editNameController.text.isNotEmpty && editQtyController.text.isNotEmpty) {
+                if (editNameController.text.isNotEmpty) {
                   await appState.updateShoppingItem(
                     item.id,
                     editNameController.text.trim(),
@@ -175,7 +175,7 @@ class _ShoppingScreenState extends State<ShoppingScreen> {
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: borderCol)),
                             contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                           ),
-                          validator: (value) => value == null || value.trim().isEmpty ? 'Enter qty' : null,
+                          // No validator so quantity is optional
                         ),
                       ),
                     ],
@@ -269,10 +269,11 @@ class _ShoppingScreenState extends State<ShoppingScreen> {
                                     ),
                                   ),
                                   const SizedBox(height: 2),
-                                  Text(
-                                    'Qty: ${item.qty}',
-                                    style: TextStyle(color: textMuted, fontSize: 12),
-                                  ),
+                                  if (item.qty.isNotEmpty)
+                                    Text(
+                                      'Qty: ${item.qty}',
+                                      style: TextStyle(color: textMuted, fontSize: 12),
+                                    ),
                                   const SizedBox(height: 1),
                                   Text(
                                     'Added by ${item.addedBy}' + (item.bought && item.boughtBy != null ? ' • Bought by ${item.boughtBy}' : ''),

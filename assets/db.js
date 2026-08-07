@@ -394,7 +394,7 @@ export async function addShoppingItem(name, qty, amount = '') {
   const newItem = {
     id: generateId(),
     name: name.trim(),
-    qty: qty.trim(),
+    qty: (qty || '').trim(),
     amount: amount ? parseFloat(amount) : 0,
     bought: false,
     addedBy: getCurrentProfile(),
@@ -465,6 +465,26 @@ export async function markAllShoppingItemsBought(ids) {
     if (onUpdateCallback) onUpdateCallback('update', 'shopping_list');
     pushStateToServer();
   }
+}
+
+export async function deleteAllShoppingItems(ids) {
+  isWriting = true;
+  if (writeCooldownTimer) clearTimeout(writeCooldownTimer);
+
+  const items = getShoppingItems();
+  const filtered = items.filter(item => !ids.includes(item.id));
+  setLocal(KEYS.SHOPPING, filtered);
+
+  if (firestoreDb) {
+    ids.forEach(id => {
+      deleteDoc(doc(firestoreDb, 'shopping_list', id)).catch(e => {
+        console.error('Firebase delete failed:', e);
+      });
+    });
+  }
+
+  if (onUpdateCallback) onUpdateCallback('update', 'shopping_list');
+  pushStateToServer();
 }
 
 export async function deleteShoppingItem(id) {
