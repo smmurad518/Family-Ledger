@@ -169,9 +169,8 @@ const DOM = {
   profileCards: document.querySelectorAll('.profile-select-card'),
 
   // Delete History Selectors
-  deleteHistoryHeader: document.getElementById('delete-history-header'),
-  deleteHistoryContent: document.getElementById('delete-history-content'),
-  deleteHistoryList: document.getElementById('delete-history-list')
+  btnGoDeleteHistory: document.getElementById('btn-go-delete-history'),
+  screenDeleteHistoryList: document.getElementById('screen-delete-history-list')
 };
 
 // UI Active State Filters
@@ -481,6 +480,8 @@ function renderActiveScreen() {
     renderBabyNeedsList();
   } else if (activeScreen === 'screen-movies') {
     renderMoviesList();
+  } else if (activeScreen === 'screen-delete-history') {
+    renderDeleteHistoryLogs();
   }
 }
 
@@ -1068,6 +1069,14 @@ function setupEventListeners() {
   DOM.profileCards.forEach(card => {
     card.addEventListener('click', handleProfileSelect);
   });
+
+  // Settings Delete History Page Redirection
+  if (DOM.btnGoDeleteHistory) {
+    DOM.btnGoDeleteHistory.addEventListener('click', () => {
+      closeSettingsModal();
+      switchScreen('delete-history');
+    });
+  }
   // Initialize default due date to today
   if (DOM.dueDate) {
     DOM.dueDate.value = new Date().toISOString().split('T')[0];
@@ -1404,8 +1413,6 @@ function openSettingsModal() {
   DOM.fbProjectId.value = fbConfig.projectId || '';
   DOM.fbAuthDomain.value = fbConfig.authDomain || '';
   DOM.fbAppId.value = fbConfig.appId || '';
-
-  renderDeleteHistoryLogs();
 
   DOM.settingsModal.classList.add('active');
 }
@@ -2188,7 +2195,7 @@ async function handleBabyNeedsClick(e) {
 // SCREEN RENDERS: DELETE HISTORY LOGS
 // ----------------------------------------------------
 function renderDeleteHistoryLogs() {
-  if (!DOM.deleteHistoryList) return;
+  if (!DOM.screenDeleteHistoryList) return;
 
   const logs = getDeleteLogs();
   
@@ -2196,13 +2203,16 @@ function renderDeleteHistoryLogs() {
   logs.sort((a, b) => b.timestamp - a.timestamp);
 
   if (logs.length === 0) {
-    DOM.deleteHistoryList.innerHTML = `
-      <li style="text-align: center; padding: 10px; color: var(--text-muted);">No deletion logs found.</li>
+    DOM.screenDeleteHistoryList.innerHTML = `
+      <div class="empty-state" style="padding: 20px 10px;">
+        <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <p style="font-size: 11px;">No deletion logs recorded yet.</p>
+      </div>
     `;
     return;
   }
 
-  DOM.deleteHistoryList.innerHTML = logs.map(log => {
+  DOM.screenDeleteHistoryList.innerHTML = logs.map(log => {
     const date = new Date(log.timestamp);
     const dateStr = date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
     const timeStr = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
@@ -2211,10 +2221,14 @@ function renderDeleteHistoryLogs() {
     const avatar = log.deletedBy === 'Husband' ? '🧔' : (log.deletedBy === 'Wife' ? '👩' : '👶');
 
     return `
-      <li style="padding: 8px 10px; background: var(--bg-body); border-radius: 8px; border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 2px; text-align: left;">
-        <span style="font-weight: 700; color: var(--text-dark);">${avatar} ${log.deletedBy} deleted ${log.itemType}:</span>
-        <span style="font-style: italic; color: var(--color-danger); word-break: break-all;">"${log.itemName}"</span>
-        <span style="font-size: 9px; color: var(--text-muted); text-align: right; margin-top: 2px;">${dateStr} at ${timeStr}</span>
+      <li class="baby-name-item" style="padding: 10px 12px; background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 4px; text-align: left;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <span style="font-weight: 700; color: var(--text-dark); font-size: 12px;">${avatar} ${log.deletedBy}</span>
+          <span style="font-size: 9px; color: var(--text-muted);">${dateStr} at ${timeStr}</span>
+        </div>
+        <div style="font-size: 11px; color: var(--text-muted); line-height: 1.4;">
+          Deleted <strong style="color: var(--color-danger);">${log.itemType}</strong>: <span style="font-style: italic; color: var(--text-dark);">"${log.itemName}"</span>
+        </div>
       </li>
     `;
   }).join('');
@@ -2606,8 +2620,7 @@ function setupCollapsibleCards() {
     { headerId: 'expense-form-header', contentId: 'expense-form-content' },
     { headerId: 'due-form-header', contentId: 'due-form-content' },
     { headerId: 'baby-form-header', contentId: 'baby-form-content' },
-    { headerId: 'baby-needs-form-header', contentId: 'baby-needs-form-content' },
-    { headerId: 'delete-history-header', contentId: 'delete-history-content' }
+    { headerId: 'baby-needs-form-header', contentId: 'baby-needs-form-content' }
   ];
 
   togglers.forEach(({ headerId, contentId }) => {
