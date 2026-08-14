@@ -709,10 +709,11 @@ main::-webkit-scrollbar {
 
 .stat-value {
   font-family: var(--font-title);
-  font-size: 18px;
+  font-size: 22px;
   font-weight: 800;
-  color: var(--text-dark);
-  line-height: 1.1;
+  color: var(--stat-color);
+  line-height: 1.2;
+  letter-spacing: -0.2px;
 }
 
 .stat-subtext {
@@ -2296,13 +2297,20 @@ button.btn-primary:active {
 /* Important Date Card Design matching the image */
 .important-date-card {
   position: relative;
-  background: #1C1D22; /* Dark background matching the image */
+  background: linear-gradient(135deg, #1C1D22 0%, #15161A 100%);
   border-radius: 20px;
   padding: 24px;
   overflow: hidden;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
   margin-top: 20px;
   border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all var(--transition-normal);
+}
+
+.important-date-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(251, 191, 36, 0.3);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.5), 0 0 15px rgba(251, 191, 36, 0.05);
 }
 
 .important-date-card-title {
@@ -2311,6 +2319,7 @@ button.btn-primary:active {
   font-weight: 800;
   color: #FFFFFF;
   margin: 0 0 16px 0;
+  padding-right: 80px; /* Leave space for the floating badge */
 }
 
 .important-date-card-content {
@@ -2330,7 +2339,7 @@ button.btn-primary:active {
   font-family: var(--font-title);
   font-size: 26px;
   font-weight: 800;
-  color: #FBBF24; /* Yellow/Gold date emphasis matching price in image */
+  color: #FBBF24; /* Yellow/Gold date emphasis */
 }
 
 .important-date-card-subtext {
@@ -2346,44 +2355,60 @@ button.btn-primary:active {
   opacity: 0.9;
 }
 
-/* S-Curve top-right badge matching the image */
+/* Floating capsule badge with pulsing gold dot */
 .important-date-card-badge {
   position: absolute;
-  top: 0;
-  right: 0;
-  height: 38px;
-  padding: 0 24px 0 36px;
-  background: #FBBF24; /* Bright Yellow/Gold */
-  /* Slashed diagonal stripe pattern matching the image */
-  background-image: repeating-linear-gradient(
-    -45deg,
-    rgba(0, 0, 0, 0.06),
-    rgba(0, 0, 0, 0.06) 6px,
-    transparent 6px,
-    transparent 12px
-  );
-  color: #000000;
-  font-size: 11px;
+  top: 16px;
+  right: 16px;
+  padding: 4px 10px 4px 22px; /* Extra left padding for pulsing dot */
+  font-size: 10px;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.8px;
+  color: #FBBF24; /* Gold text */
+  background: rgba(251, 191, 36, 0.08); /* Soft transparent gold */
+  border: 1px solid rgba(251, 191, 36, 0.25);
+  border-radius: 20px;
+  font-family: var(--font-title);
   display: flex;
   align-items: center;
   justify-content: center;
-  border-bottom-left-radius: 20px;
+  z-index: 2;
+  box-shadow: 0 2px 10px rgba(251, 191, 36, 0.05);
+  transition: all var(--transition-normal);
 }
 
-/* Inverted rounded corners for the S-curve transition */
 .important-date-card-badge::before {
   content: '';
   position: absolute;
-  left: -20px;
-  top: 0;
-  width: 20px;
-  height: 20px;
-  background: transparent;
-  border-top-right-radius: 20px;
-  box-shadow: 10px -10px 0 0 #FBBF24; /* Inverted curve blending badge into top edge */
+  left: 8px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #FBBF24;
+  box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.7);
+  animation: pulse-gold 1.8s infinite;
+}
+
+.important-date-card:hover .important-date-card-badge {
+  background: rgba(251, 191, 36, 0.15);
+  border-color: rgba(251, 191, 36, 0.5);
+  box-shadow: 0 4px 15px rgba(251, 191, 36, 0.15);
+}
+
+@keyframes pulse-gold {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 6px rgba(251, 191, 36, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(251, 191, 36, 0);
+  }
 }
 
 
