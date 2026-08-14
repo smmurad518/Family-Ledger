@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
+import '../models/important_date_item.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({Key? key}) : super(key: key);
@@ -9,6 +10,8 @@ class DashboardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
     final isDark = appState.theme == 'dark';
+    
+    final recentDateItem = _getRecentImportantDate(appState.importantDates);
 
     // Theme tokens
     final textDark = isDark ? const Color(0xFFF3F4F6) : const Color(0xFF1F2937);
@@ -217,6 +220,10 @@ class DashboardScreen extends StatelessWidget {
               ],
             ),
           ),
+          if (recentDateItem != null) ...[
+            const SizedBox(height: 20),
+            _buildImportantDateCard(recentDateItem, textMuted),
+          ],
         ],
       ),
     );
@@ -284,4 +291,203 @@ class DashboardScreen extends StatelessWidget {
       ),
     );
   }
+
+  ImportantDateItem? _getRecentImportantDate(List<ImportantDateItem> dates) {
+    if (dates.isEmpty) return null;
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    final List<Map<String, dynamic>> upcoming = [];
+    final List<Map<String, dynamic>> past = [];
+
+    for (final d in dates) {
+      final itemDate = DateTime.tryParse(d.date);
+      if (itemDate == null) continue;
+      final cleanItemDate = DateTime(itemDate.year, itemDate.month, itemDate.day);
+      final diff = cleanItemDate.difference(today).inDays;
+
+      if (diff >= 0) {
+        upcoming.add({'item': d, 'diff': diff});
+      } else {
+        past.add({'item': d, 'diff': diff});
+      }
+    }
+
+    // Sort upcoming ascending (closest upcoming first)
+    upcoming.sort((a, b) => (a['diff'] as int).compareTo(b['diff'] as int));
+
+    // Sort past descending (closest past first, e.g. -1 comes before -5)
+    past.sort((a, b) => (b['diff'] as int).compareTo(a['diff'] as int));
+
+    if (upcoming.isNotEmpty) {
+      return upcoming.first['item'] as ImportantDateItem;
+    } else if (past.isNotEmpty) {
+      return past.first['item'] as ImportantDateItem;
+    }
+    return null;
+  }
+
+  String _formatNiceDate(DateTime dt) {
+    final months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    final weekdays = [
+      'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'
+    ];
+    return '${weekdays[dt.weekday - 1]}, ${dt.day} ${months[dt.month - 1]} ${dt.year}';
+  }
+
+  Widget _buildImportantDateCard(ImportantDateItem item, Color textMuted) {
+    final today = DateTime.now();
+    final cleanToday = DateTime(today.year, today.month, today.day);
+    final itemDate = DateTime.tryParse(item.date) ?? DateTime.now();
+    final cleanItemDate = DateTime(itemDate.year, itemDate.month, itemDate.day);
+    final diffDays = cleanItemDate.difference(cleanToday).inDays;
+
+    String countdownText = '';
+    String badgeText = 'Important Date';
+    if (diffDays == 0) {
+      countdownText = 'Today!';
+      badgeText = 'Today';
+    } else if (diffDays == 1) {
+      countdownText = 'Tomorrow';
+      badgeText = 'Upcoming';
+    } else if (diffDays > 1) {
+      countdownText = 'In $diffDays Days';
+      badgeText = 'Upcoming';
+    } else {
+      countdownText = '${diffDays.abs()} Days Ago';
+      badgeText = 'Recent';
+    }
+
+    final niceDateStr = _formatNiceDate(itemDate);
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: Stack(
+        children: [
+          // Main Card background & content
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(24.0),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1C1D22), // Premium Dark background matching image
+              borderRadius: BorderRadius.circular(20),
+              border: BorderSide(
+                color: Colors.white.withOpacity(0.05),
+                width: 1.0,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 12), // Give space for the absolute-positioned badge
+                Text(
+                  item.title,
+                  style: const TextStyle(
+                    fontFamily: 'Outfit',
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  niceDateStr,
+                  style: const TextStyle(
+                    fontFamily: 'Outfit',
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFFFBBF24), // Gold highlight matching image pricing
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  countdownText,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: textMuted.withOpacity(0.8),
+                  ),
+                ),
+                if (item.description != null && item.description!.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    item.description!,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.white.withOpacity(0.7),
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 6),
+                Text(
+                  'Added by ${item.addedBy}',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: textMuted.withOpacity(0.5),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Curved striped top-right badge matching image
+          Positioned(
+            top: 0,
+            right: 0,
+            child: ClipRRect(
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(20),
+              ),
+              child: Container(
+                height: 38,
+                color: const Color(0xFFFBBF24), // Gold badge matching image
+                child: CustomPaint(
+                  painter: StripesPainter(),
+                  child: Container(
+                    padding: const EdgeInsets.only(left: 36, right: 24),
+                    alignment: Alignment.center,
+                    child: Text(
+                      badgeText.toUpperCase(),
+                      style: const TextStyle(
+                        color: Colors.black,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
+
+class StripesPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.black.withOpacity(0.06)
+      ..strokeWidth = 2.0;
+
+    const gap = 8.0;
+    for (double i = -size.height; i < size.width; i += gap) {
+      canvas.drawLine(
+        Offset(i, 0),
+        Offset(i + size.height, size.height),
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+

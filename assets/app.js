@@ -45,7 +45,12 @@ import {
   deleteBabyNeed,
   updateBabyNeed,
   getDeleteLogs,
-  addDeleteLog
+  addDeleteLog,
+  getImportantDates,
+  addImportantDate,
+  deleteImportantDate,
+  updateImportantDate,
+  getRecentImportantDate
 } from './db.js';
 
 // DOM Element Selectors
@@ -163,6 +168,14 @@ const DOM = {
   moviesContainer: document.getElementById('movies-list-container'),
   seriesContainer: document.getElementById('series-list-container'),
 
+  // Important Dates Selectors
+  importantDateForm: document.getElementById('important-date-form'),
+  importantDateInput: document.getElementById('important-date-input'),
+  importantDateTitle: document.getElementById('important-date-title'),
+  importantDateDesc: document.getElementById('important-date-desc'),
+  importantDatesContainer: document.getElementById('important-dates-list-container'),
+  dashImportantDateContainer: document.getElementById('dash-important-date-container'),
+
   // Profile Chooser Modal
   profileModal: document.getElementById('profile-modal'),
   profileModalClose: document.getElementById('profile-modal-close'),
@@ -185,6 +198,7 @@ let lastDuesList = [];
 let lastSuggestionsList = [];
 let lastBabyNamesList = [];
 let lastMoviesList = [];
+let lastImportantDatesList = [];
 let isFirstLoad = true;
 
 // Active Edit Context
@@ -275,6 +289,7 @@ document.addEventListener('DOMContentLoaded', () => {
   lastDuesList = getDues();
   lastSuggestionsList = getSuggestions();
   lastBabyNeedsList = getBabyNeeds();
+  lastImportantDatesList = getImportantDates();
 
   // Set isFirstLoad to false after 4 seconds to ignore initial data sync events
   setTimeout(() => {
@@ -480,6 +495,8 @@ function renderActiveScreen() {
     renderBabyNeedsList();
   } else if (activeScreen === 'screen-movies') {
     renderMoviesList();
+  } else if (activeScreen === 'screen-important-dates') {
+    renderImportantDatesList();
   } else if (activeScreen === 'screen-delete-history') {
     renderDeleteHistoryLogs();
   }
@@ -711,6 +728,12 @@ function setupEventListeners() {
   DOM.shoppingForm.addEventListener('submit', handleAddShoppingItem);
   DOM.expenseForm.addEventListener('submit', handleAddExpenseItem);
   DOM.dueForm.addEventListener('submit', handleAddDueItem);
+  if (DOM.importantDateForm) {
+    DOM.importantDateForm.addEventListener('submit', handleAddImportantDateItem);
+  }
+  if (DOM.importantDatesContainer) {
+    DOM.importantDatesContainer.addEventListener('click', handleImportantDatesClick);
+  }
 
   const btnSelectAllShopping = document.getElementById('btn-select-all-shopping');
   if (btnSelectAllShopping) {
@@ -1192,6 +1215,11 @@ function getListForType(type, itemId) {
     items.sort((a, b) => b.timestamp - a.timestamp);
     return items;
   }
+  if (type === 'important_date') {
+    const items = getImportantDates();
+    items.sort((a, b) => b.timestamp - a.timestamp);
+    return items;
+  }
   return [];
 }
 
@@ -1207,7 +1235,7 @@ function openEditModal(type, id, title, label1, val1, label2, val2, label3 = '',
     DOM.editSaveBtn.textContent = 'Update';
   }
   const formGroup2 = DOM.editInput2.closest('.form-group');
-  if (type === 'suggestion' || type === 'baby_name' || type === 'movie' || type === 'baby_need') {
+  if (type === 'suggestion' || type === 'baby_name' || type === 'movie' || type === 'baby_need' || type === 'important_date') {
     if (formGroup2) formGroup2.style.display = 'none';
   } else {
     if (formGroup2) formGroup2.style.display = 'block';
@@ -1234,10 +1262,10 @@ function openEditModal(type, id, title, label1, val1, label2, val2, label3 = '',
   }
 
   const btnClearEditDate = document.getElementById('btn-clear-edit-date');
-  if (type === 'shopping' || type === 'due') {
+  if (type === 'shopping' || type === 'due' || type === 'important_date') {
     DOM.editLabel3.textContent = label3;
     DOM.editInput3.value = val3;
-    if (type === 'due') {
+    if (type === 'due' || type === 'important_date') {
       DOM.editInput3.type = 'date';
       DOM.editInput3.setAttribute('lang', 'en-GB');
       if (btnClearEditDate) btnClearEditDate.style.display = 'inline-block';
@@ -1306,9 +1334,14 @@ async function handleEditSave() {
   const val3 = DOM.editInput3 ? DOM.editInput3.value.trim() : '';
   const newSerialVal = DOM.editInputSerial ? DOM.editInputSerial.value.trim() : '';
 
-  const isOneFieldOnly = currentEditType === 'suggestion' || currentEditType === 'baby_name';
+  const isOneFieldOnly = currentEditType === 'suggestion' || currentEditType === 'baby_name' || currentEditType === 'movie' || currentEditType === 'baby_need';
 
-  if (!isOneFieldOnly && currentEditType !== 'shopping' && (!val1 || !val2)) {
+  if (currentEditType === 'important_date') {
+    if (!val1 || !val3) {
+      alert("Please enter a title and date!");
+      return;
+    }
+  } else if (!isOneFieldOnly && currentEditType !== 'shopping' && (!val1 || !val2)) {
     alert("Please fill in all fields!");
     return;
   }
@@ -1332,7 +1365,8 @@ async function handleEditSave() {
     'suggestion': 'mm_suggestions',
     'baby_name': 'mm_baby_names',
     'movie': 'mm_movies',
-    'baby_need': 'mm_baby_needs'
+    'baby_need': 'mm_baby_needs',
+    'important_date': 'mm_important_dates'
   };
 
   // Perform updates
@@ -1362,6 +1396,8 @@ async function handleEditSave() {
     await updateMovie(currentEditId, val1);
   } else if (currentEditType === 'baby_need') {
     await updateBabyNeed(currentEditId, val1);
+  } else if (currentEditType === 'important_date') {
+    await updateImportantDate(currentEditId, val3, val1, val2);
   }
 
   // Handle Serial reordering if requested and valid
@@ -1385,6 +1421,7 @@ async function handleEditSave() {
   if (currentEditType === 'baby_name') renderBabyNamesList();
   if (currentEditType === 'movie') renderMoviesList();
   if (currentEditType === 'baby_need') renderBabyNeedsList();
+  if (currentEditType === 'important_date') renderImportantDatesList();
 
   DOM.editSaveBtn.disabled = false;
   DOM.editSaveBtn.textContent = 'Update';
@@ -1750,6 +1787,8 @@ function handleSyncStateChange(state, errorMessage = '') {
 // SCREEN RENDERS: DASHBOARD
 // ----------------------------------------------------
 function renderDashboard() {
+  renderRecentImportantDateCard();
+
   // 1. Calculate Grand Total of Needs
   const expenses = getExpenses();
   const totalNeeded = expenses.reduce((sum, exp) => sum + exp.amount, 0);
@@ -2631,7 +2670,8 @@ function setupCollapsibleCards() {
     { headerId: 'expense-form-header', contentId: 'expense-form-content' },
     { headerId: 'due-form-header', contentId: 'due-form-content' },
     { headerId: 'baby-form-header', contentId: 'baby-form-content' },
-    { headerId: 'baby-needs-form-header', contentId: 'baby-needs-form-content' }
+    { headerId: 'baby-needs-form-header', contentId: 'baby-needs-form-content' },
+    { headerId: 'important-date-form-header', contentId: 'important-date-form-content' }
   ];
 
   togglers.forEach(({ headerId, contentId }) => {
@@ -2809,4 +2849,185 @@ function renderMoviesList() {
   renderList(movies, DOM.moviesContainer, "No movies added yet.");
   renderList(series, DOM.seriesContainer, "No series added yet.");
 }
+
+// ----------------------------------------------------
+// SCREEN RENDERS: IMPORTANT DATES
+// ----------------------------------------------------
+function renderImportantDatesList() {
+  if (!DOM.importantDatesContainer) return;
+  const items = getImportantDates();
+  items.sort((a, b) => b.timestamp - a.timestamp);
+
+  if (items.length === 0) {
+    DOM.importantDatesContainer.innerHTML = `
+      <div class="empty-state" style="padding: 20px 10px;">
+        <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <p style="font-size: 11px;">No important dates added yet.</p>
+      </div>
+    `;
+    return;
+  }
+
+  DOM.importantDatesContainer.innerHTML = items.map(item => {
+    const canAction = isEditDeleteAllEnabled();
+    const actionButtonsHtml = canAction ? `
+      <button class="btn-icon-edit" data-id="${item.id}" aria-label="Edit date" style="padding: 2px;">
+        <svg viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      </button>
+      <button class="btn-icon-delete" data-id="${item.id}" aria-label="Delete date" style="padding: 2px;">
+        <svg viewBox="0 0 24 24" style="width: 14px; height: 14px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      </button>
+    ` : '';
+
+    const dateParts = item.date.split('-');
+    const monthsShort = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+    const monthShort = dateParts.length === 3 ? monthsShort[parseInt(dateParts[1]) - 1] : 'DATE';
+    const dayNum = dateParts.length === 3 ? dateParts[2] : '??';
+
+    const dObj = new Date(item.date);
+    const dayName = dObj.toLocaleDateString('en-US', { weekday: 'short' });
+    const niceDisplayDate = dateParts.length === 3 ? `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}` : item.date;
+
+    const descHtml = item.description ? `<span style="font-size: 13px; color: var(--text-dark); opacity: 0.8; margin-top: 4px; line-height: 1.3;">${item.description}</span>` : '';
+
+    return `
+      <li class="list-item" data-id="${item.id}" style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: var(--bg-card); border-radius: 14px; margin-bottom: 12px; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm); transition: all 0.2s ease;">
+        <div class="item-left" style="display: flex; align-items: center; gap: 14px; width: 100%; overflow: hidden;">
+          <!-- Calendar Card Badge -->
+          <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 50px; height: 52px; background: var(--bg-body); border-radius: 12px; border: 1px solid var(--border-color); flex-shrink: 0; user-select: none;">
+            <span style="font-size: 9px; font-weight: 800; text-transform: uppercase; color: var(--color-primary-interactive); letter-spacing: 0.5px; opacity: 0.9;">${monthShort}</span>
+            <span style="font-size: 18px; font-weight: 900; color: var(--text-dark); line-height: 1.1; margin-top: 1px;">${dayNum}</span>
+          </div>
+
+          <!-- Details block -->
+          <div style="display: flex; flex-direction: column; flex-grow: 1; min-width: 0;">
+            <span class="item-name" style="font-size: 15px; font-weight: 800; color: var(--text-dark); line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${item.title || item.description}</span>
+            ${descHtml}
+            <span style="font-size: 11px; color: var(--text-muted); font-weight: 600; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
+              <span>📅 ${dayName}, ${niceDisplayDate}</span>
+              <span>•</span>
+              <span>added by ${item.addedBy}</span>
+            </span>
+          </div>
+        </div>
+        <div class="item-right" style="display: flex; gap: 6px; flex-shrink: 0; align-items: center;">
+          ${actionButtonsHtml}
+        </div>
+      </li>
+    `;
+  }).join('');
+}
+
+async function handleAddImportantDateItem(e) {
+  e.preventDefault();
+
+  const date = DOM.importantDateInput.value;
+  const title = DOM.importantDateTitle.value.trim();
+  const desc = DOM.importantDateDesc.value.trim();
+  if (!date || !title) return;
+
+  await addImportantDate(date, title, desc);
+
+  DOM.importantDateInput.value = '';
+  DOM.importantDateTitle.value = '';
+  DOM.importantDateDesc.value = '';
+  DOM.importantDateTitle.blur();
+
+  renderImportantDatesList();
+  renderDashboard();
+}
+
+async function handleImportantDatesClick(e) {
+  // 1. Edit Button
+  const editBtn = e.target.closest('.btn-icon-edit');
+  if (editBtn && editBtn.dataset.id) {
+    e.stopPropagation();
+    
+    if (!isEditDeleteAllEnabled()) {
+      alert("Editing is disabled! Enable Edit & Delete in Settings.");
+      return;
+    }
+
+    const items = getImportantDates();
+    const item = items.find(i => i.id === editBtn.dataset.id);
+    if (item) {
+      openEditModal('important_date', item.id, 'Edit Important Date', 'Title', item.title || item.description, 'Description (Optional)', item.description || '', 'Date', item.date);
+    }
+    return;
+  }
+
+  // 2. Delete Button
+  const deleteBtn = e.target.closest('.btn-icon-delete');
+  if (deleteBtn && deleteBtn.dataset.id) {
+    e.stopPropagation();
+    
+    if (!isEditDeleteAllEnabled()) {
+      alert("Deletion is disabled! Enable Edit & Delete in Settings.");
+      return;
+    }
+
+    const itemRow = deleteBtn.closest('.list-item');
+    if (itemRow) {
+      itemRow.classList.add('deleting');
+      await new Promise(r => setTimeout(r, 400));
+    }
+
+    await deleteImportantDate(deleteBtn.dataset.id);
+    renderImportantDatesList();
+    renderDashboard();
+  }
+}
+
+function renderRecentImportantDateCard() {
+  if (!DOM.dashImportantDateContainer) return;
+  const item = getRecentImportantDate();
+  if (!item) {
+    DOM.dashImportantDateContainer.style.display = 'none';
+    return;
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const itemDate = new Date(item.date);
+  itemDate.setHours(0, 0, 0, 0);
+  const diffTime = itemDate.getTime() - today.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  let countdownText = '';
+  let badgeText = 'Important Date';
+  if (diffDays === 0) {
+    countdownText = 'Today!';
+    badgeText = 'Today';
+  } else if (diffDays === 1) {
+    countdownText = 'Tomorrow';
+    badgeText = 'Upcoming';
+  } else if (diffDays > 1) {
+    countdownText = `In ${diffDays} Days`;
+    badgeText = 'Upcoming';
+  } else {
+    countdownText = `${Math.abs(diffDays)} Days Ago`;
+    badgeText = 'Recent';
+  }
+
+  const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+  const niceDateStr = itemDate.toLocaleDateString('en-US', options);
+  const descHtml = item.description ? `<span class="important-date-card-desc">${item.description}</span>` : '';
+
+  DOM.dashImportantDateContainer.innerHTML = `
+    <div class="important-date-card">
+      <div class="important-date-card-badge">${badgeText}</div>
+      <div class="important-date-card-title" style="margin-bottom: 8px;">${item.title || item.description}</div>
+      <div class="important-date-card-content">
+        <div class="important-date-card-value-row" style="flex-direction: column; align-items: flex-start; gap: 2px;">
+          <span class="important-date-card-value" style="font-size: 24px; color: #FBBF24; font-weight: 800; font-family: var(--font-title);">${niceDateStr}</span>
+          <span class="important-date-card-countdown" style="font-size: 13px; color: var(--text-muted); font-weight: 600;">${countdownText}</span>
+        </div>
+        ${descHtml}
+        <span class="important-date-card-meta" style="font-size: 10px; color: var(--text-muted); opacity: 0.6; display: block; margin-top: 6px;">added by ${item.addedBy}</span>
+      </div>
+    </div>
+  `;
+  DOM.dashImportantDateContainer.style.display = 'block';
+}
+
 

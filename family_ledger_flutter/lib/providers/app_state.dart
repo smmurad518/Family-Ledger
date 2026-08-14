@@ -4,6 +4,7 @@ import '../models/shopping_item.dart';
 import '../models/expense_item.dart';
 import '../models/due_item.dart';
 import '../models/suggestion_item.dart';
+import '../models/important_date_item.dart';
 import '../services/db_service.dart';
 import '../services/sync_service.dart';
 
@@ -25,6 +26,7 @@ class AppState extends ChangeNotifier {
   List<ExpenseItem> _expenseItems = [];
   List<DueItem> _dueItems = [];
   List<SuggestionItem> _suggestionItems = [];
+  List<ImportantDateItem> _importantDates = [];
 
   String _syncState = 'disconnected';
   String? _syncError;
@@ -42,6 +44,7 @@ class AppState extends ChangeNotifier {
   List<ExpenseItem> get expenseItems => _expenseItems;
   List<DueItem> get dueItems => _dueItems;
   List<SuggestionItem> get suggestionItems => _suggestionItems;
+  List<ImportantDateItem> get importantDates => _importantDates;
 
   String get syncState => _syncState;
   String? get syncError => _syncError;
@@ -77,6 +80,7 @@ class AppState extends ChangeNotifier {
     _expenseItems = _dbService.getExpenses();
     _dueItems = _dbService.getDues();
     _suggestionItems = _dbService.getSuggestions();
+    _importantDates = _dbService.getImportantDates();
     notifyListeners();
   }
 
@@ -430,6 +434,61 @@ class AppState extends ChangeNotifier {
 
     if (_firebaseEnabled) {
       await _syncService.writeDoc('suggestions', id, updated.toJson());
+    } else {
+      await _syncService.pushStateToServer(_localServerUrl, _dbService);
+    }
+  }
+
+  Future<void> addImportantDate(String date, String title, String? description) async {
+    final newItem = ImportantDateItem(
+      id: _uuid.v4(),
+      date: date.trim(),
+      title: title.trim(),
+      description: description != null && description.trim().isNotEmpty ? description.trim() : null,
+      addedBy: _currentProfile,
+      timestamp: DateTime.now().millisecondsSinceEpoch,
+    );
+
+    _importantDates.add(newItem);
+    await _dbService.setImportantDates(_importantDates);
+    notifyListeners();
+
+    if (_firebaseEnabled) {
+      await _syncService.writeDoc('important_dates', newItem.id, newItem.toJson());
+    } else {
+      await _syncService.pushStateToServer(_localServerUrl, _dbService);
+    }
+  }
+
+  Future<void> deleteImportantDate(String id) async {
+    _importantDates.removeWhere((item) => item.id == id);
+    await _dbService.setImportantDates(_importantDates);
+    notifyListeners();
+
+    if (_firebaseEnabled) {
+      await _syncService.deleteDoc('important_dates', id);
+    } else {
+      await _syncService.pushStateToServer(_localServerUrl, _dbService);
+    }
+  }
+
+  Future<void> updateImportantDate(String id, String date, String title, String? description) async {
+    final index = _importantDates.indexWhere((item) => item.id == id);
+    if (index == -1) return;
+
+    final updated = _importantDates[index].copyWith(
+      date: date.trim(),
+      title: title.trim(),
+      description: description != null && description.trim().isNotEmpty ? description.trim() : null,
+      timestamp: DateTime.now().millisecondsSinceEpoch,
+    );
+
+    _importantDates[index] = updated;
+    await _dbService.setImportantDates(_importantDates);
+    notifyListeners();
+
+    if (_firebaseEnabled) {
+      await _syncService.writeDoc('important_dates', id, updated.toJson());
     } else {
       await _syncService.pushStateToServer(_localServerUrl, _dbService);
     }

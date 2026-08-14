@@ -25,7 +25,8 @@ const KEYS = {
   BABY_NAMES: 'mm_baby_names',
   MOVIES: 'mm_movies',
   BABY_NEEDS: 'mm_baby_needs',
-  DELETE_HISTORY: 'mm_delete_history'
+  DELETE_HISTORY: 'mm_delete_history',
+  IMPORTANT_DATES: 'mm_important_dates'
 };
 
 // Global application state for db
@@ -103,6 +104,7 @@ export async function pollServerData() {
         const localMovies = getLocal(KEYS.MOVIES, []);
         const localBabyNeeds = getLocal(KEYS.BABY_NEEDS, []);
         const localDeleteHistory = getLocal(KEYS.DELETE_HISTORY, []);
+        const localImportantDates = getLocal(KEYS.IMPORTANT_DATES, []);
 
         const remoteShopping = serverData.shopping || [];
         const remoteExpenses = serverData.expenses || [];
@@ -112,6 +114,7 @@ export async function pollServerData() {
         const remoteMovies = serverData.movies || [];
         const remoteBabyNeeds = serverData.babyNeeds || [];
         const remoteDeleteHistory = serverData.deleteHistory || [];
+        const remoteImportantDates = serverData.importantDates || [];
 
         let updated = false;
 
@@ -147,6 +150,10 @@ export async function pollServerData() {
           setLocal(KEYS.DELETE_HISTORY, remoteDeleteHistory);
           updated = true;
         }
+        if (JSON.stringify(localImportantDates) !== JSON.stringify(remoteImportantDates)) {
+          setLocal(KEYS.IMPORTANT_DATES, remoteImportantDates);
+          updated = true;
+        }
 
         if (updated && onUpdateCallback) {
           onUpdateCallback('update', 'all');
@@ -175,6 +182,7 @@ export async function pushStateToServer() {
     const localMovies = getLocal(KEYS.MOVIES, []);
     const localBabyNeeds = getLocal(KEYS.BABY_NEEDS, []);
     const localDeleteHistory = getLocal(KEYS.DELETE_HISTORY, []);
+    const localImportantDates = getLocal(KEYS.IMPORTANT_DATES, []);
 
     const payload = {
       shopping: localShopping,
@@ -185,6 +193,7 @@ export async function pushStateToServer() {
       movies: localMovies,
       babyNeeds: localBabyNeeds,
       deleteHistory: localDeleteHistory,
+      importantDates: localImportantDates,
       updatedAt: Date.now()
     };
 
@@ -292,6 +301,7 @@ export async function connectFirebase(config, onSyncStateChange) {
     setupCollectionListener('movies', KEYS.MOVIES, onSyncStateChange);
     setupCollectionListener('baby_needs', KEYS.BABY_NEEDS, onSyncStateChange);
     setupCollectionListener('delete_history', KEYS.DELETE_HISTORY, onSyncStateChange);
+    setupCollectionListener('important_dates', KEYS.IMPORTANT_DATES, onSyncStateChange);
 
     if (onSyncStateChange) onSyncStateChange('connected');
     return true;
@@ -341,7 +351,8 @@ async function uploadLocalDataToCloud() {
     { name: 'baby_names', localKey: KEYS.BABY_NAMES },
     { name: 'movies', localKey: KEYS.MOVIES },
     { name: 'baby_needs', localKey: KEYS.BABY_NEEDS },
-    { name: 'delete_history', localKey: KEYS.DELETE_HISTORY }
+    { name: 'delete_history', localKey: KEYS.DELETE_HISTORY },
+    { name: 'important_dates', localKey: KEYS.IMPORTANT_DATES }
   ];
 
   for (const col of collectionsToSync) {
@@ -1309,3 +1320,125 @@ export function getDeleteLogs() {
   const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
   return logs.filter(log => log.timestamp >= sevenDaysAgo);
 }
+
+// ----------------------------------------------------
+// APIS: IMPORTANT DATES
+// ----------------------------------------------------
+export function getImportantDates() {
+  return getLocal(KEYS.IMPORTANT_DATES, []);
+}
+
+export async function addImportantDate(date, title, description = '') {
+  isWriting = true;
+  if (writeCooldownTimer) clearTimeout(writeCooldownTimer);
+
+  const items = getImportantDates();
+  const newItem = {
+    id: generateId(),
+    date: date.trim(),
+    title: title.trim(),
+    description: description.trim(),
+    addedBy: getCurrentProfile(),
+    timestamp: Date.now()
+  };
+
+  items.push(newItem);
+  setLocal(KEYS.IMPORTANT_DATES, items);
+
+  if (firestoreDb) {
+    setDoc(doc(firestoreDb, 'important_dates', newItem.id), newItem).catch(e => {
+      console.error('Firebase save failed:', e);
+    });
+  }
+
+  if (onUpdateCallback) onUpdateCallback('update', 'important_dates');
+  pushStateToServer();
+}
+
+export async function deleteImportantDate(id) {
+  isWriting = true;
+  if (writeCooldownTimer) clearTimeout(writeCooldownTimer);
+
+  const items = getImportantDates();
+  const item = items.find(i => i.id === id);
+  if (item) {
+    await addDeleteLog('Important Date', `${item.title || item.description} (${item.date})`);
+  }
+  const filtered = items.filter(item => item.id !== id);
+  setLocal(KEYS.IMPORTANT_DATES, filtered);
+
+  if (firestoreDb) {
+    deleteDoc(doc(firestoreDb, 'important_dates', id)).catch(e => {
+      console.error('Firebase delete failed:', e);
+    });
+  }
+
+  if (onUpdateCallback) onUpdateCallback('update', 'important_dates');
+  pushStateToServer();
+}
+
+export async function updateImportantDate(id, date, title, description = '') {
+  isWriting = true;
+  if (writeCooldownTimer) clearTimeout(writeCooldownTimer);
+
+  const items = getImportantDates();
+  const index = items.findIndex(item => item.id === id);
+  if (index === -1) { isWriting = false; return; }
+
+  items[index].date = date.trim();
+  items[index].title = title.trim();
+  items[index].description = description.trim();
+  items[index].timestamp = Date.now();
+
+  setLocal(KEYS.IMPORTANT_DATES, items);
+
+  if (firestoreDb) {
+    setDoc(doc(firestoreDb, 'important_dates', id), items[index], { merge: true }).catch(e => {
+      console.error('Firebase update failed:', e);
+    });
+  }
+
+  if (onUpdateCallback) onUpdateCallback('update', 'important_dates');
+  pushStateToServer();
+}
+
+export function getRecentImportantDate() {
+  const dates = getImportantDates();
+  if (dates.length === 0) return null;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const upcoming = [];
+  const past = [];
+
+  dates.forEach(d => {
+    const itemDate = new Date(d.date);
+    itemDate.setHours(0, 0, 0, 0);
+    const diffTime = itemDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    const dateObj = {
+      ...d,
+      daysDiff: diffDays
+    };
+
+    if (diffDays >= 0) {
+      upcoming.push(dateObj);
+    } else {
+      past.push(dateObj);
+    }
+  });
+
+  // Sort upcoming ascending (closest upcoming first)
+  upcoming.sort((a, b) => a.daysDiff - b.daysDiff);
+  
+  // Sort past descending (closest past first, e.g. -1 comes before -5)
+  past.sort((a, b) => b.daysDiff - a.daysDiff);
+
+  if (upcoming.length > 0) {
+    return upcoming[0];
+  }
+  return past[0];
+}
+

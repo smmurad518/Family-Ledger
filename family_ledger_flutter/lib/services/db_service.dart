@@ -3,6 +3,7 @@ import '../models/shopping_item.dart';
 import '../models/expense_item.dart';
 import '../models/due_item.dart';
 import '../models/suggestion_item.dart';
+import '../models/important_date_item.dart';
 
 class DbService {
   static const String _boxName = 'family_ledger_box';
@@ -18,6 +19,7 @@ class DbService {
   static const String keyEditDeleteAll = 'mm_edit_delete_all';
   static const String keyWifeCanSwitch = 'mm_wife_can_switch';
   static const String keyTheme = 'mm_theme';
+  static const String keyImportantDates = 'mm_important_dates';
 
   late Box _box;
 
@@ -63,6 +65,12 @@ class DbService {
     return list.map((item) => SuggestionItem.fromJson(Map<String, dynamic>.from(item))).toList();
   }
 
+  List<ImportantDateItem> getImportantDates() {
+    final List? list = _box.get(keyImportantDates);
+    if (list == null) return [];
+    return list.map((item) => ImportantDateItem.fromJson(Map<String, dynamic>.from(item))).toList();
+  }
+
   // --- Setters ---
   Future<void> setProfile(String value) async => await _box.put(keyProfile, value);
   Future<void> setFirebaseEnabled(bool value) async => await _box.put(keyFbEnabled, value);
@@ -92,5 +100,10 @@ class DbService {
   Future<void> setSuggestions(List<SuggestionItem> items) async {
     final list = items.map((item) => item.toJson()).toList();
     await _box.put(keySuggestions, list);
+  }
+
+  Future<void> setImportantDates(List<ImportantDateItem> items) async {
+    final list = items.map((item) => item.toJson()).toList();
+    await _box.put(keyImportantDates, list);
   }
 }

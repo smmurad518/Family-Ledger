@@ -8,6 +8,7 @@ import '../models/shopping_item.dart';
 import '../models/expense_item.dart';
 import '../models/due_item.dart';
 import '../models/suggestion_item.dart';
+import '../models/important_date_item.dart';
 
 class SyncService {
   FirebaseApp? _firebaseApp;
@@ -52,16 +53,19 @@ class SyncService {
           final localExpenses = dbService.getExpenses();
           final localDues = dbService.getDues();
           final localSuggestions = dbService.getSuggestions();
+          final localImportantDates = dbService.getImportantDates();
 
           final List remoteShoppingJson = serverData['shopping'] ?? [];
           final List remoteExpensesJson = serverData['expenses'] ?? [];
           final List remoteDuesJson = serverData['dues'] ?? [];
           final List remoteSuggestionsJson = serverData['suggestions'] ?? [];
+          final List remoteImportantDatesJson = serverData['importantDates'] ?? [];
 
           final remoteShopping = remoteShoppingJson.map((item) => ShoppingItem.fromJson(Map<String, dynamic>.from(item))).toList();
           final remoteExpenses = remoteExpensesJson.map((item) => ExpenseItem.fromJson(Map<String, dynamic>.from(item))).toList();
           final remoteDues = remoteDuesJson.map((item) => DueItem.fromJson(Map<String, dynamic>.from(item))).toList();
           final remoteSuggestions = remoteSuggestionsJson.map((item) => SuggestionItem.fromJson(Map<String, dynamic>.from(item))).toList();
+          final remoteImportantDates = remoteImportantDatesJson.map((item) => ImportantDateItem.fromJson(Map<String, dynamic>.from(item))).toList();
 
           bool updated = false;
 
@@ -79,6 +83,10 @@ class SyncService {
           }
           if (jsonEncode(localSuggestions) != jsonEncode(remoteSuggestions)) {
             await dbService.setSuggestions(remoteSuggestions);
+            updated = true;
+          }
+          if (jsonEncode(localImportantDates) != jsonEncode(remoteImportantDates)) {
+            await dbService.setImportantDates(remoteImportantDates);
             updated = true;
           }
 
@@ -105,6 +113,7 @@ class SyncService {
         'expenses': dbService.getExpenses().map((i) => i.toJson()).toList(),
         'dues': dbService.getDues().map((i) => i.toJson()).toList(),
         'suggestions': dbService.getSuggestions().map((i) => i.toJson()).toList(),
+        'importantDates': dbService.getImportantDates().map((i) => i.toJson()).toList(),
         'updatedAt': DateTime.now().millisecondsSinceEpoch,
       };
 
@@ -183,6 +192,11 @@ class SyncService {
         await dbService.setSuggestions(items);
       });
 
+      _setupCollectionListener('important_dates', dbService, onUpdate, (jsonList) async {
+        final items = jsonList.map((j) => ImportantDateItem.fromJson(j)).toList();
+        await dbService.setImportantDates(items);
+      });
+
       onSyncStateChange('connected');
       return true;
     } catch (e) {
@@ -210,6 +224,7 @@ class SyncService {
       {'name': 'expenses', 'items': dbService.getExpenses().map((i) => i.toJson()).toList()},
       {'name': 'dues', 'items': dbService.getDues().map((i) => i.toJson()).toList()},
       {'name': 'suggestions', 'items': dbService.getSuggestions().map((i) => i.toJson()).toList()},
+      {'name': 'important_dates', 'items': dbService.getImportantDates().map((i) => i.toJson()).toList()},
     ];
 
     for (final col in collections) {

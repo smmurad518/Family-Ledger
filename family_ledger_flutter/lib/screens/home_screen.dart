@@ -9,6 +9,7 @@ import 'shopping_screen.dart';
 import 'expense_screen.dart';
 import 'dues_screen.dart';
 import 'suggestions_screen.dart';
+import 'important_dates_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -27,6 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
     DuesScreen(),
     ExpenseScreen(),
     SuggestionsScreen(), // Suggestion screen is linked from drawer
+    ImportantDatesScreen(),
   ];
 
   void _onNavTap(int index) {
@@ -261,6 +263,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   _buildDrawerTile(2, Icons.monetization_on_outlined, 'DenaPawna (Dues)', textDark, primaryInteractive),
                   _buildDrawerTile(3, Icons.list_alt_outlined, 'Needs (Expenses)', textDark, primaryInteractive),
                   _buildDrawerTile(4, Icons.lightbulb_outline, 'Next Suggestions', textDark, primaryInteractive),
+                  _buildDrawerTile(5, Icons.calendar_today_outlined, 'Important Dates', textDark, primaryInteractive),
                 ],
               ),
             ),
