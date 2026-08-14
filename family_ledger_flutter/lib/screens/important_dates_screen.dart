@@ -322,7 +322,15 @@ class _ImportantDatesScreenState extends State<ImportantDatesScreen> {
                     itemCount: sortedItems.length,
                     itemBuilder: (context, index) {
                       final item = sortedItems[index];
-                      final displayDate = _formatDmy(DateTime.tryParse(item.date) ?? DateTime.now());
+                      final parsedDate = DateTime.tryParse(item.date) ?? DateTime.now();
+                      final displayDate = _formatDmy(parsedDate);
+
+                      const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+                      final monthShort = months[parsedDate.month - 1];
+                      final dayNum = parsedDate.day.toString();
+
+                      const weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+                      final dayName = weekdays[parsedDate.weekday - 1];
 
                       return Card(
                         color: cardBg,
