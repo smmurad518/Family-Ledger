@@ -2388,29 +2388,7 @@ button.btn-primary:active {
   transition: all var(--transition-normal);
 }
 
-/* Concave corner cutout - Left */
-.important-date-card-badge::before {
-  content: '';
-  position: absolute;
-  left: -20px;
-  top: 1px;
-  width: 20px;
-  height: 20px;
-  background: radial-gradient(circle at 100% 0%, transparent 19px, #FBBF24 20px);
-  pointer-events: none;
-}
 
-/* Concave corner cutout - Bottom */
-.important-date-card-badge::after {
-  content: '';
-  position: absolute;
-  right: 1px;
-  bottom: -20px;
-  width: 20px;
-  height: 20px;
-  background: radial-gradient(circle at 0% 0%, transparent 19px, #FBBF24 20px);
-  pointer-events: none;
-}
 
 /* Micro-interaction: stripes slide on hover */
 @keyframes slide-stripes-dark {
