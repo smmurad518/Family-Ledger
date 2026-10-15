@@ -20,6 +20,8 @@ class DbService {
   static const String keyWifeCanSwitch = 'mm_wife_can_switch';
   static const String keyTheme = 'mm_theme';
   static const String keyImportantDates = 'mm_important_dates';
+  static const String keyUsers = 'mm_users';
+  static const String keyLoggedIn = 'mm_logged_in_user';
 
   late Box _box;
 
@@ -71,6 +73,14 @@ class DbService {
     return list.map((item) => ImportantDateItem.fromJson(Map<String, dynamic>.from(item))).toList();
   }
 
+  Map<String, String> getUsers() {
+    final Map? users = _box.get(keyUsers);
+    if (users == null) return {'Husband': '12345', 'Wife': '12345'};
+    return Map<String, String>.from(users);
+  }
+
+  String? getLoggedInUser() => _box.get(keyLoggedIn);
+
   // --- Setters ---
   Future<void> setProfile(String value) async => await _box.put(keyProfile, value);
   Future<void> setFirebaseEnabled(bool value) async => await _box.put(keyFbEnabled, value);
@@ -105,5 +115,13 @@ class DbService {
   Future<void> setImportantDates(List<ImportantDateItem> items) async {
     final list = items.map((item) => item.toJson()).toList();
     await _box.put(keyImportantDates, list);
+  }
+
+  Future<void> setUsers(Map<String, String> users) async {
+    await _box.put(keyUsers, users);
+  }
+
+  Future<void> setLoggedInUser(String? user) async {
+    await _box.put(keyLoggedIn, user);
   }
 }

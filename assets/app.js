@@ -50,17 +50,33 @@ import {
   addImportantDate,
   deleteImportantDate,
   updateImportantDate,
-  getRecentImportantDate
+  getRecentImportantDate,
+  getUsers,
+  updateUserPassword
 } from './db.js';
 
 // DOM Element Selectors
 const DOM = {
+  // Auth & Overlays
+  loginOverlay: document.getElementById('login-overlay'),
+  loginForm: document.getElementById('login-form'),
+  loginProfile: document.getElementById('login-profile'),
+  loginPassword: document.getElementById('login-password'),
+  appContainer: document.getElementById('app-container'),
+  drawerChangePasswordBtn: document.getElementById('drawer-change-password-btn'),
+  drawerResetPartnerPasswordBtn: document.getElementById('drawer-reset-partner-password-btn'),
+  drawerLogoutBtn: document.getElementById('drawer-logout-btn'),
+  changePasswordModal: document.getElementById('change-password-modal'),
+  changePasswordClose: document.getElementById('change-password-close'),
+  changePasswordForm: document.getElementById('change-password-form'),
+  newPasswordInput: document.getElementById('new-password'),
+  changePasswordTarget: document.getElementById('change-password-target'),
+
   // Navigation & Screen Switcher
   navItems: document.querySelectorAll('.curved-nav-item'),
   screens: document.querySelectorAll('.screen'),
   
   // Header / Profiles
-  profileBtn: document.getElementById('profile-btn'),
   profileAvatar: document.getElementById('profile-avatar'),
   profileName: document.getElementById('profile-name'),
   welcomeUser: document.getElementById('welcome-user'),
@@ -176,11 +192,6 @@ const DOM = {
   importantDatesContainer: document.getElementById('important-dates-list-container'),
   dashImportantDateContainer: document.getElementById('dash-important-date-container'),
 
-  // Profile Chooser Modal
-  profileModal: document.getElementById('profile-modal'),
-  profileModalClose: document.getElementById('profile-modal-close'),
-  profileCards: document.querySelectorAll('.profile-select-card'),
-
   // Delete History Selectors
   btnGoDeleteHistory: document.getElementById('btn-go-delete-history'),
   screenDeleteHistoryList: document.getElementById('screen-delete-history-list')
@@ -260,6 +271,16 @@ function resetViewportScroll() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+
+  // Check auth
+  const loggedIn = localStorage.getItem('mm_logged_in_user');
+  if (!loggedIn) {
+    DOM.loginOverlay.style.display = 'flex';
+    DOM.appContainer.style.display = 'none';
+  } else {
+    DOM.loginOverlay.style.display = 'none';
+    DOM.appContainer.style.display = 'block';
+  }
 
   // Initialize DB state
   initializeDB(handleDataUpdate, handleSyncStateChange);
@@ -647,6 +668,77 @@ document.addEventListener('touchend', (e) => {
 // EVENT LISTENERS SETUP
 // ----------------------------------------------------
 function setupEventListeners() {
+  // Auth Listeners
+  if (DOM.loginForm) {
+    DOM.loginForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const profile = DOM.loginProfile.value;
+      const pass = DOM.loginPassword.value;
+      const users = getUsers();
+      if (users[profile] === pass) {
+        localStorage.setItem('mm_logged_in_user', profile);
+        setCurrentProfile(profile);
+        DOM.loginOverlay.style.display = 'none';
+        DOM.appContainer.style.display = 'block';
+        updateProfileUI();
+        renderActiveScreen();
+      } else {
+        alert('Incorrect password!');
+      }
+    });
+  }
+
+  if (DOM.drawerChangePasswordBtn) {
+    DOM.drawerChangePasswordBtn.addEventListener('click', () => {
+      closeDrawer();
+      DOM.changePasswordTarget.value = getCurrentProfile();
+      document.getElementById('change-password-title').innerText = 'Change My Password';
+      DOM.changePasswordModal.classList.add('active');
+    });
+  }
+
+  if (DOM.drawerResetPartnerPasswordBtn) {
+    DOM.drawerResetPartnerPasswordBtn.addEventListener('click', () => {
+      closeDrawer();
+      const current = getCurrentProfile();
+      const target = current === 'Husband' ? 'Wife' : 'Husband';
+      DOM.changePasswordTarget.value = target;
+      document.getElementById('change-password-title').innerText = `Reset ${target}'s Password`;
+      DOM.changePasswordModal.classList.add('active');
+    });
+  }
+
+  if (DOM.drawerLogoutBtn) {
+    DOM.drawerLogoutBtn.addEventListener('click', () => {
+      localStorage.removeItem('mm_logged_in_user');
+      closeDrawer();
+      DOM.appContainer.style.display = 'none';
+      DOM.loginOverlay.style.display = 'flex';
+    });
+  }
+
+  if (DOM.changePasswordClose) {
+    DOM.changePasswordClose.addEventListener('click', () => {
+      DOM.changePasswordModal.classList.remove('active');
+    });
+  }
+
+  if (DOM.changePasswordForm) {
+    DOM.changePasswordForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const target = DOM.changePasswordTarget.value;
+      const newPass = DOM.newPasswordInput.value;
+      if (newPass.length < 3) {
+        alert('Password must be at least 3 characters long.');
+        return;
+      }
+      updateUserPassword(target, newPass);
+      alert(`Password for ${target} has been updated successfully!`);
+      DOM.changePasswordModal.classList.remove('active');
+      DOM.changePasswordForm.reset();
+    });
+  }
+
   // Bottom Navigation Bar
   DOM.navItems.forEach(item => {
     item.addEventListener('click', () => {
@@ -679,8 +771,7 @@ function setupEventListeners() {
     });
   }
 
-  // Profile Toggling and Settings Close Buttons
-  DOM.profileBtn.addEventListener('click', toggleActiveProfile);
+  // Settings Close Buttons
   DOM.settingsClose.addEventListener('click', closeSettingsModal);
   DOM.editModalClose.addEventListener('click', closeEditModal);
 
@@ -1085,13 +1176,6 @@ function setupEventListeners() {
     DOM.seriesContainer.addEventListener('click', handleMovieListClick);
   }
 
-  // Profile Modal Chooser Listeners
-  if (DOM.profileModalClose) {
-    DOM.profileModalClose.addEventListener('click', closeProfileModal);
-  }
-  DOM.profileCards.forEach(card => {
-    card.addEventListener('click', handleProfileSelect);
-  });
 
   // Settings Delete History Page Redirection
   if (DOM.btnGoDeleteHistory) {
@@ -1117,54 +1201,6 @@ function updateProfileUI() {
   
   // Set data-profile attribute on documentElement
   document.documentElement.setAttribute('data-profile', profile.toLowerCase());
-}
-
-function toggleActiveProfile() {
-  openProfileModal();
-}
-
-function openProfileModal() {
-  resetViewportScroll();
-  const currentProfile = getCurrentProfile();
-
-  DOM.profileCards.forEach(card => {
-    if (card.dataset.profile === currentProfile) {
-      card.classList.add('active');
-    } else {
-      card.classList.remove('active');
-    }
-  });
-
-  DOM.profileModal.classList.add('active');
-}
-
-function closeProfileModal() {
-  DOM.profileModal.classList.remove('active');
-  resetViewportScroll();
-}
-
-async function handleProfileSelect(e) {
-  const card = e.target.closest('.profile-select-card');
-  if (!card) return;
-
-  const currentProfile = getCurrentProfile();
-  const newProfile = card.dataset.profile;
-
-  if (currentProfile === newProfile) {
-    closeProfileModal();
-    return;
-  }
-
-  playProfileSwitchSound();
-
-  setCurrentProfile(newProfile);
-  updateProfileUI();
-  closeProfileModal();
-
-  // Refresh layout and reload after a short delay so the visual switch is registered
-  setTimeout(() => {
-    window.location.reload(true);
-  }, 350);
 }
 
 function getListForType(type, itemId) {

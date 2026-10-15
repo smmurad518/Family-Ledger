@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/app_state.dart';
 import 'screens/home_screen.dart';
+import 'screens/login_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -82,7 +83,7 @@ class FamilyLedgerApp extends StatelessWidget {
           foregroundColor: textDark,
         ),
       ),
-      home: const HomeScreen(),
+      home: appState.loggedInUser == null ? const LoginScreen() : const HomeScreen(),
     );
   }
 }

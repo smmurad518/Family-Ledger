@@ -54,18 +54,21 @@ class SyncService {
           final localDues = dbService.getDues();
           final localSuggestions = dbService.getSuggestions();
           final localImportantDates = dbService.getImportantDates();
+          final localUsers = dbService.getUsers();
 
           final List remoteShoppingJson = serverData['shopping'] ?? [];
           final List remoteExpensesJson = serverData['expenses'] ?? [];
           final List remoteDuesJson = serverData['dues'] ?? [];
           final List remoteSuggestionsJson = serverData['suggestions'] ?? [];
           final List remoteImportantDatesJson = serverData['importantDates'] ?? [];
+          final Map<String, dynamic> remoteUsersJson = serverData['users'] ?? {'Husband': '12345', 'Wife': '12345'};
 
           final remoteShopping = remoteShoppingJson.map((item) => ShoppingItem.fromJson(Map<String, dynamic>.from(item))).toList();
           final remoteExpenses = remoteExpensesJson.map((item) => ExpenseItem.fromJson(Map<String, dynamic>.from(item))).toList();
           final remoteDues = remoteDuesJson.map((item) => DueItem.fromJson(Map<String, dynamic>.from(item))).toList();
           final remoteSuggestions = remoteSuggestionsJson.map((item) => SuggestionItem.fromJson(Map<String, dynamic>.from(item))).toList();
           final remoteImportantDates = remoteImportantDatesJson.map((item) => ImportantDateItem.fromJson(Map<String, dynamic>.from(item))).toList();
+          final remoteUsers = Map<String, String>.from(remoteUsersJson);
 
           bool updated = false;
 
@@ -87,6 +90,10 @@ class SyncService {
           }
           if (jsonEncode(localImportantDates) != jsonEncode(remoteImportantDates)) {
             await dbService.setImportantDates(remoteImportantDates);
+            updated = true;
+          }
+          if (jsonEncode(localUsers) != jsonEncode(remoteUsers)) {
+            await dbService.setUsers(remoteUsers);
             updated = true;
           }
 
@@ -114,6 +121,7 @@ class SyncService {
         'dues': dbService.getDues().map((i) => i.toJson()).toList(),
         'suggestions': dbService.getSuggestions().map((i) => i.toJson()).toList(),
         'importantDates': dbService.getImportantDates().map((i) => i.toJson()).toList(),
+        'users': dbService.getUsers(),
         'updatedAt': DateTime.now().millisecondsSinceEpoch,
       };
 
@@ -197,6 +205,17 @@ class SyncService {
         await dbService.setImportantDates(items);
       });
 
+      if (_firestore != null) {
+        final sub = _firestore!.collection('users').doc('auth').snapshots().listen((snapshot) async {
+          if (snapshot.exists && snapshot.data() != null) {
+            final data = Map<String, String>.from(snapshot.data()!);
+            await dbService.setUsers(data);
+            onUpdate();
+          }
+        });
+        _subscriptions.add(sub);
+      }
+
       onSyncStateChange('connected');
       return true;
     } catch (e) {
@@ -239,6 +258,9 @@ class SyncService {
       }
       await batch.commit();
     }
+    
+    // Upload users
+    await _firestore!.collection('users').doc('auth').set(dbService.getUsers(), SetOptions(merge: true));
   }
 
   // Collection listener helper

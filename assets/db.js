@@ -26,7 +26,8 @@ const KEYS = {
   MOVIES: 'mm_movies',
   BABY_NEEDS: 'mm_baby_needs',
   DELETE_HISTORY: 'mm_delete_history',
-  IMPORTANT_DATES: 'mm_important_dates'
+  IMPORTANT_DATES: 'mm_important_dates',
+  USERS: 'mm_users'
 };
 
 // Global application state for db
@@ -105,6 +106,7 @@ export async function pollServerData() {
         const localBabyNeeds = getLocal(KEYS.BABY_NEEDS, []);
         const localDeleteHistory = getLocal(KEYS.DELETE_HISTORY, []);
         const localImportantDates = getLocal(KEYS.IMPORTANT_DATES, []);
+        const localUsers = getLocal(KEYS.USERS, { Husband: '12345', Wife: '12345' });
 
         const remoteShopping = serverData.shopping || [];
         const remoteExpenses = serverData.expenses || [];
@@ -115,6 +117,7 @@ export async function pollServerData() {
         const remoteBabyNeeds = serverData.babyNeeds || [];
         const remoteDeleteHistory = serverData.deleteHistory || [];
         const remoteImportantDates = serverData.importantDates || [];
+        const remoteUsers = serverData.users || { Husband: '12345', Wife: '12345' };
 
         let updated = false;
 
@@ -154,6 +157,10 @@ export async function pollServerData() {
           setLocal(KEYS.IMPORTANT_DATES, remoteImportantDates);
           updated = true;
         }
+        if (JSON.stringify(localUsers) !== JSON.stringify(remoteUsers)) {
+          setLocal(KEYS.USERS, remoteUsers);
+          updated = true;
+        }
 
         if (updated && onUpdateCallback) {
           onUpdateCallback('update', 'all');
@@ -183,6 +190,7 @@ export async function pushStateToServer() {
     const localBabyNeeds = getLocal(KEYS.BABY_NEEDS, []);
     const localDeleteHistory = getLocal(KEYS.DELETE_HISTORY, []);
     const localImportantDates = getLocal(KEYS.IMPORTANT_DATES, []);
+    const localUsers = getLocal(KEYS.USERS, { Husband: '12345', Wife: '12345' });
 
     const payload = {
       shopping: localShopping,
@@ -194,6 +202,7 @@ export async function pushStateToServer() {
       babyNeeds: localBabyNeeds,
       deleteHistory: localDeleteHistory,
       importantDates: localImportantDates,
+      users: localUsers,
       updatedAt: Date.now()
     };
 
@@ -1440,5 +1449,33 @@ export function getRecentImportantDate() {
     return upcoming[0];
   }
   return past[0];
+}
+
+// ----------------------------------------------------
+// APIS: USERS & AUTHENTICATION
+// ----------------------------------------------------
+export function getUsers() {
+  return getLocal(KEYS.USERS, { Husband: '12345', Wife: '12345' });
+}
+
+export async function updateUserPassword(profile, newPassword) {
+  isWriting = true;
+  if (writeCooldownTimer) clearTimeout(writeCooldownTimer);
+
+  const users = getUsers();
+  if (profile === 'Husband' || profile === 'Wife') {
+    users[profile] = newPassword.trim();
+  }
+
+  setLocal(KEYS.USERS, users);
+
+  if (firestoreDb) {
+    setDoc(doc(firestoreDb, 'users', 'auth'), users, { merge: true }).catch(e => {
+      console.error('Firebase save users failed:', e);
+    });
+  }
+
+  if (onUpdateCallback) onUpdateCallback('update', 'users');
+  pushStateToServer();
 }
 

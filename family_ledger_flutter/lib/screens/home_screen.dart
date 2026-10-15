@@ -268,6 +268,26 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const Divider(),
+            ListTile(
+              leading: Icon(Icons.lock_outline, color: textDark),
+              title: Text('Change My Password', style: TextStyle(color: textDark)),
+              onTap: () {
+                Navigator.of(context).pop();
+                final current = Provider.of<AppState>(context, listen: false).loggedInUser ?? 'Husband';
+                _showChangePasswordDialog(context, current);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.key_outlined, color: Colors.redAccent),
+              title: Text('Reset Partner\'s Password', style: TextStyle(color: textDark)),
+              onTap: () {
+                Navigator.of(context).pop();
+                final current = Provider.of<AppState>(context, listen: false).loggedInUser ?? 'Husband';
+                final target = current == 'Husband' ? 'Wife' : 'Husband';
+                _showChangePasswordDialog(context, target);
+              },
+            ),
+            const Divider(),
             // Settings Button at bottom
             Padding(
               padding: const EdgeInsets.all(16.0),
@@ -333,6 +353,38 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       selected: isSelected,
       onTap: () => _switchScreenFromDrawer(index),
+    );
+  }
+
+  void _showChangePasswordDialog(BuildContext context, String targetProfile) {
+    final passwordController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Change $targetProfile Password'),
+          content: TextField(
+            controller: passwordController,
+            obscureText: true,
+            decoration: const InputDecoration(labelText: 'New Password', border: OutlineInputBorder()),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (passwordController.text.length < 3) return;
+                Provider.of<AppState>(context, listen: false).changeUserPassword(targetProfile, passwordController.text);
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Password updated successfully!')));
+              },
+              child: const Text('Save'),
+            )
+          ],
+        );
+      }
     );
   }
 }

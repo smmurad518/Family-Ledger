@@ -21,6 +21,8 @@ class AppState extends ChangeNotifier {
   bool _editDeleteAll = false;
   bool _wifeCanSwitch = true;
   String _localServerUrl = 'http://localhost:8000';
+  String? _loggedInUser;
+  Map<String, String> _users = {};
 
   List<ShoppingItem> _shoppingItems = [];
   List<ExpenseItem> _expenseItems = [];
@@ -39,6 +41,8 @@ class AppState extends ChangeNotifier {
   bool get editDeleteAll => _editDeleteAll;
   bool get wifeCanSwitch => _wifeCanSwitch;
   String get localServerUrl => _localServerUrl;
+  String? get loggedInUser => _loggedInUser;
+  Map<String, String> get users => _users;
 
   List<ShoppingItem> get shoppingItems => _shoppingItems;
   List<ExpenseItem> get expenseItems => _expenseItems;
@@ -81,6 +85,8 @@ class AppState extends ChangeNotifier {
     _dueItems = _dbService.getDues();
     _suggestionItems = _dbService.getSuggestions();
     _importantDates = _dbService.getImportantDates();
+    _loggedInUser = _dbService.getLoggedInUser();
+    _users = _dbService.getUsers();
     notifyListeners();
   }
 
@@ -107,6 +113,30 @@ class AppState extends ChangeNotifier {
       _syncService.startLocalServerPolling(_localServerUrl, _dbService, () {
         _loadLocalData();
       });
+    }
+  }
+
+  // --- AUTH ACTIONS ---
+
+  Future<bool> login(String profile, String password) async {
+    if (_users[profile] == password) {
+      _loggedInUser = profile;
+      await _dbService.setLoggedInUser(profile);
+      await switchProfile(profile);
+      return true;
+    }
+    return false;
+  }
+
+  Future<void> changeUserPassword(String profile, String newPassword) async {
+    _users[profile] = newPassword;
+    await _dbService.setUsers(_users);
+    notifyListeners();
+    
+    if (_firebaseEnabled) {
+      await _syncService.writeDoc('users', 'auth', _users);
+    } else {
+      await _syncService.pushStateToServer(_localServerUrl, _dbService);
     }
   }
 
