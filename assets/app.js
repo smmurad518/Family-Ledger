@@ -789,6 +789,63 @@ function closeForgotPasswordModal() {
 window.openForgotPasswordModal = openForgotPasswordModal;
 window.closeForgotPasswordModal = closeForgotPasswordModal;
 
+// ----------------------------------------------------
+// CUSTOM BEAUTIFUL NOTIFICATION / ALERT POPUP
+// ----------------------------------------------------
+let customPopupCloseCallback = null;
+
+function showCustomPopup({
+  title = 'Success',
+  message = '',
+  icon = '🎉',
+  type = 'success',
+  btnText = 'Got it 👍',
+  onClose = null
+} = {}) {
+  const overlay = document.getElementById('custom-popup-overlay');
+  const titleEl = document.getElementById('custom-popup-title');
+  const msgEl = document.getElementById('custom-popup-message');
+  const iconEl = document.getElementById('custom-popup-icon');
+  const badgeEl = document.getElementById('custom-popup-badge');
+  const btnEl = document.getElementById('custom-popup-btn');
+
+  if (!overlay) return;
+
+  if (titleEl) titleEl.textContent = title;
+  if (msgEl) msgEl.textContent = message;
+  if (iconEl) iconEl.textContent = icon;
+
+  if (badgeEl) {
+    badgeEl.className = 'custom-popup-icon-badge ' + (type === 'error' ? 'error' : 'success');
+  }
+
+  customPopupCloseCallback = onClose;
+
+  if (btnEl) {
+    btnEl.textContent = btnText;
+    btnEl.onclick = () => {
+      closeCustomPopup();
+    };
+  }
+
+  overlay.style.display = 'flex';
+}
+
+function closeCustomPopup() {
+  const overlay = document.getElementById('custom-popup-overlay');
+  if (overlay) {
+    overlay.style.display = 'none';
+  }
+  if (typeof customPopupCloseCallback === 'function') {
+    const cb = customPopupCloseCallback;
+    customPopupCloseCallback = null;
+    cb();
+  }
+}
+
+window.showCustomPopup = showCustomPopup;
+window.closeCustomPopup = closeCustomPopup;
+
 function selectForgotProfile(profile) {
   const targetInput = document.getElementById('forgot-profile-target');
   if (targetInput) targetInput.value = profile;
@@ -1059,13 +1116,26 @@ function setupEventListeners() {
       const target = DOM.changePasswordTarget.value;
       const newPass = DOM.newPasswordInput.value;
       if (newPass.length < 3) {
-        alert('Password must be at least 3 characters long.');
+        showCustomPopup({
+          title: 'Too Short! ⚠️',
+          message: 'Password must be at least 3 characters long.',
+          icon: '⚠️',
+          type: 'error',
+          btnText: 'OK'
+        });
         return;
       }
       updateUserPassword(target, newPass);
-      alert(`Password for ${target} has been updated successfully!`);
       DOM.changePasswordModal.classList.remove('active');
       DOM.changePasswordForm.reset();
+
+      showCustomPopup({
+        title: 'Password Changed! 🎉',
+        message: `Password for ${target} has been updated successfully!`,
+        icon: '🔒',
+        type: 'success',
+        btnText: 'Awesome ✨'
+      });
     });
   }
 
@@ -1083,6 +1153,14 @@ function setupEventListeners() {
     forgotModal.addEventListener('click', (e) => {
       if (e.target === forgotModal) {
         closeForgotPasswordModal();
+      }
+    });
+  }
+  const popupOverlay = document.getElementById('custom-popup-overlay');
+  if (popupOverlay) {
+    popupOverlay.addEventListener('click', (e) => {
+      if (e.target === popupOverlay) {
+        closeCustomPopup();
       }
     });
   }
@@ -1112,12 +1190,20 @@ function setupEventListeners() {
       if (verifiedData) {
         openStep3ForProfile(verifiedData.profile);
       } else {
-        alert('Invalid or expired approval code! Please check your email (smmurad518@gmail.com) or click Resend.');
-        if (codeInput) {
-          codeInput.style.borderColor = '#ef4444';
-          codeInput.focus();
-          codeInput.select();
-        }
+        showCustomPopup({
+          title: 'Invalid Code ⚠️',
+          message: 'Invalid or expired approval code! Please check your email (smmurad518@gmail.com) or click Resend.',
+          icon: '❌',
+          type: 'error',
+          btnText: 'Check Again',
+          onClose: () => {
+            if (codeInput) {
+              codeInput.style.borderColor = '#ef4444';
+              codeInput.focus();
+              codeInput.select();
+            }
+          }
+        });
       }
     });
   }
@@ -1131,25 +1217,45 @@ function setupEventListeners() {
       const confirmPass = document.getElementById('forgot-confirm-pass').value;
 
       if (newPass.length < 3) {
-        alert('Password must be at least 3 characters long.');
+        showCustomPopup({
+          title: 'Too Short! ⚠️',
+          message: 'Password must be at least 3 characters long.',
+          icon: '⚠️',
+          type: 'error',
+          btnText: 'OK'
+        });
         return;
       }
       if (newPass !== confirmPass) {
-        alert('Passwords do not match! Please check and enter the same password in both fields.');
+        showCustomPopup({
+          title: 'Mismatch! ⚠️',
+          message: 'Passwords do not match! Please check and enter the same password in both fields.',
+          icon: '⚠️',
+          type: 'error',
+          btnText: 'Try Again'
+        });
         return;
       }
 
       updateUserPassword(profile, newPass);
       localStorage.removeItem('mm_active_reset_request');
       closeForgotPasswordModal();
-      alert(`Password for ${profile} has been successfully updated! You can now log in.`);
 
-      // Update login screen
-      selectLoginProfile(profile);
-      if (DOM.loginPassword) {
-        DOM.loginPassword.value = '';
-        DOM.loginPassword.focus();
-      }
+      // Show beautiful popup instead of browser alert!
+      showCustomPopup({
+        title: 'Password Updated! 🎉',
+        message: `Password for ${profile} has been successfully updated! You can now log in.`,
+        icon: '🔑',
+        type: 'success',
+        btnText: 'Login Now 🚀',
+        onClose: () => {
+          selectLoginProfile(profile);
+          if (DOM.loginPassword) {
+            DOM.loginPassword.value = '';
+            DOM.loginPassword.focus();
+          }
+        }
+      });
     });
   }
 

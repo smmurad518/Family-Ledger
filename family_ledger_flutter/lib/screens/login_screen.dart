@@ -335,10 +335,35 @@ class _LoginScreenState extends State<LoginScreen> {
                     final appState = Provider.of<AppState>(context, listen: false);
                     await appState.changeUserPassword(resetProfile, newPass);
                     Navigator.of(dialogCtx).pop();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Password for $resetProfile updated successfully!')),
-                    );
                     setState(() => _selectedProfile = resetProfile);
+                    if (context.mounted) {
+                      showDialog(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          content: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.check_circle_rounded, color: Colors.green, size: 58),
+                              const SizedBox(height: 14),
+                              const Text('Password Updated! 🎉', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 8),
+                              Text('Password for $resetProfile has been successfully updated! You can now log in.', textAlign: TextAlign.center, style: const TextStyle(fontSize: 13, color: Colors.grey)),
+                              const SizedBox(height: 18),
+                              ElevatedButton(
+                                onPressed: () => Navigator.of(ctx).pop(),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.green,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  minimumSize: const Size.fromHeight(42),
+                                ),
+                                child: const Text('Login Now 🚀', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
                   },
                   child: const Text('Save Password'),
                 ),
