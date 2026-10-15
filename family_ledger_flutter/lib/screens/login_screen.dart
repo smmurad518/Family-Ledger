@@ -13,18 +13,61 @@ class _LoginScreenState extends State<LoginScreen> {
   String _selectedProfile = 'Husband';
   final _passwordController = TextEditingController();
   bool _isLoading = false;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _passwordController.addListener(() {
+      if (_errorMessage != null) {
+        setState(() => _errorMessage = null);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   void _login() async {
-    if (_passwordController.text.isEmpty) return;
+    final password = _passwordController.text.trim();
+    if (password.isEmpty) return;
     
     final appState = Provider.of<AppState>(context, listen: false);
-    setState(() => _isLoading = true);
-    bool success = await appState.login(_selectedProfile, _passwordController.text);
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    
+    bool success = await appState.login(_selectedProfile, password);
     setState(() => _isLoading = false);
 
     if (!success) {
+      setState(() {
+        _errorMessage = 'ভুল পাসওয়ার্ড! সঠিক পাসওয়ার্ড দিন।';
+      });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Incorrect password!'), backgroundColor: Colors.red),
+        SnackBar(
+          content: Row(
+            children: const [
+              Icon(Icons.error_outline, color: Colors.white, size: 24),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'ভুল পাসওয়ার্ড! অনুগ্রহ করে সঠিক পাসওয়ার্ড দিন।',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.redAccent.shade700,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.all(16),
+          duration: const Duration(seconds: 4),
+        ),
       );
     }
   }
@@ -40,13 +83,13 @@ class _LoginScreenState extends State<LoginScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Icon(Icons.family_restroom, size: 80, color: Colors.blueGrey),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
               const Text(
                 'Welcome to M&M',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 48),
+              const SizedBox(height: 36),
               DropdownButtonFormField<String>(
                 value: _selectedProfile,
                 decoration: const InputDecoration(
@@ -58,19 +101,56 @@ class _LoginScreenState extends State<LoginScreen> {
                   DropdownMenuItem(value: 'Wife', child: Text('Wife 👩')),
                 ],
                 onChanged: (val) {
-                  if (val != null) setState(() => _selectedProfile = val);
+                  if (val != null) {
+                    setState(() {
+                      _selectedProfile = val;
+                      _errorMessage = null;
+                    });
+                  }
                 },
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
+              if (_errorMessage != null)
+                Container(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.red.shade400, width: 1.5),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.error, color: Colors.red.shade700, size: 22),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          _errorMessage!,
+                          style: TextStyle(
+                            color: Colors.red.shade900,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               TextField(
                 controller: _passwordController,
                 obscureText: true,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Password',
-                  border: OutlineInputBorder(),
+                  border: const OutlineInputBorder(),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(
+                      color: _errorMessage != null ? Colors.red : Theme.of(context).primaryColor,
+                      width: 2,
+                    ),
+                  ),
                 ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 28),
               ElevatedButton(
                 onPressed: _isLoading ? null : _login,
                 style: ElevatedButton.styleFrom(
@@ -78,8 +158,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
                 child: _isLoading 
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('Login', style: TextStyle(fontSize: 18)),
+                    ? const SizedBox(
+                        height: 22,
+                        width: 22,
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                      )
+                    : const Text('Login', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               ),
             ],
           ),

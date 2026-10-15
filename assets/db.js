@@ -244,11 +244,14 @@ export function getFirebaseConfig() {
 }
 
 export function getCurrentProfile() {
+  const loggedIn = localStorage.getItem('mm_logged_in_user');
+  if (loggedIn) return loggedIn;
   return localStorage.getItem(KEYS.PROFILE) || 'Husband';
 }
 
 export function setCurrentProfile(profile) {
   localStorage.setItem(KEYS.PROFILE, profile);
+  localStorage.setItem('mm_logged_in_user', profile);
   if (profile === 'Husband' || profile === 'Wife') {
     localStorage.setItem('mm_parent_profile', profile);
   }

@@ -119,13 +119,20 @@ class AppState extends ChangeNotifier {
   // --- AUTH ACTIONS ---
 
   Future<bool> login(String profile, String password) async {
-    if (_users[profile] == password) {
-      _loggedInUser = profile;
-      await _dbService.setLoggedInUser(profile);
-      await switchProfile(profile);
-      return true;
+    String actualProfile = profile;
+    final trimmedPass = password.trim();
+    if (_users[actualProfile] != trimmedPass) {
+      final alternateProfile = actualProfile == 'Husband' ? 'Wife' : 'Husband';
+      if (_users[alternateProfile] == trimmedPass) {
+        actualProfile = alternateProfile;
+      } else {
+        return false;
+      }
     }
-    return false;
+    _loggedInUser = actualProfile;
+    await _dbService.setLoggedInUser(actualProfile);
+    await switchProfile(actualProfile);
+    return true;
   }
 
   Future<void> changeUserPassword(String profile, String newPassword) async {

@@ -16,71 +16,64 @@
   <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
 
   <!-- Main Styling -->
-  <link rel="stylesheet" href="assets/style.css?v=1792080116213">
+  <link rel="stylesheet" href="assets/style.css?v=1792080743983">
+
+  <style>
+    @keyframes shakeAnim {
+      0%, 100% { transform: translateX(0); }
+      15%, 45%, 75% { transform: translateX(-8px); }
+      30%, 60%, 90% { transform: translateX(8px); }
+    }
+  </style>
 </head>
 
 <body>
 
   <!-- Login Modal (Beautiful Full Page) -->
   <div id="login-overlay" style="z-index: 9999; display: flex; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: linear-gradient(135deg, #1e1e2f, #12121c); justify-content: center; align-items: center; font-family: 'Inter', sans-serif;">
-    <div style="background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; padding: 40px; width: 90%; max-width: 400px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); text-align: center;">
-      <div style="font-size: 64px; margin-bottom: 20px;">👨‍👩‍👧‍👦</div>
-      <h2 style="color: white; margin-bottom: 8px; font-weight: 800; font-size: 28px;">M&M Ledger</h2>
-      <p style="color: #a0a0b0; margin-bottom: 30px; font-size: 14px;">Select your profile to continue</p>
+    <div id="login-box" style="background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; padding: 36px 30px; width: 90%; max-width: 400px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); text-align: center; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+      <div style="font-size: 56px; margin-bottom: 12px; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.3));">👨‍👩‍👧‍👦</div>
+      <h2 style="color: white; margin-bottom: 6px; font-weight: 800; font-size: 26px; letter-spacing: -0.5px;">M&M Ledger</h2>
+      <p style="color: #a0a0b0; margin-bottom: 22px; font-size: 13.5px;">Select your profile to continue</p>
       
       <form id="login-form">
-        <div style="display: flex; gap: 15px; margin-bottom: 25px; justify-content: center;">
-          <label style="cursor: pointer; flex: 1;">
-            <input type="radio" name="profile" value="Husband" checked style="display: none;" id="profile-husband">
-            <div id="card-husband" style="background: rgba(255, 255, 255, 0.1); border: 2px solid #B5F148; border-radius: 16px; padding: 15px; transition: all 0.3s;">
-              <div style="font-size: 32px; margin-bottom: 5px;">🧔</div>
-              <div style="color: white; font-weight: bold;">Husband</div>
-            </div>
-          </label>
-          <label style="cursor: pointer; flex: 1;">
-            <input type="radio" name="profile" value="Wife" style="display: none;" id="profile-wife">
-            <div id="card-wife" style="background: rgba(255, 255, 255, 0.05); border: 2px solid transparent; border-radius: 16px; padding: 15px; transition: all 0.3s;">
-              <div style="font-size: 32px; margin-bottom: 5px;">👩</div>
-              <div style="color: white; font-weight: bold;">Wife</div>
-            </div>
-          </label>
+        <!-- Profile Selection Cards -->
+        <div style="display: flex; gap: 14px; margin-bottom: 20px; justify-content: center;">
+          <div id="card-husband" style="flex: 1; background: rgba(181, 241, 72, 0.15); border: 2.5px solid #B5F148; border-radius: 16px; padding: 14px 10px; cursor: pointer; transition: all 0.25s ease; user-select: none; box-shadow: 0 0 16px rgba(181, 241, 72, 0.25);">
+            <div style="font-size: 32px; margin-bottom: 4px;">🧔</div>
+            <div style="color: white; font-weight: 700; font-size: 14px;">Husband</div>
+          </div>
+          <div id="card-wife" style="flex: 1; background: rgba(255, 255, 255, 0.05); border: 2.5px solid transparent; border-radius: 16px; padding: 14px 10px; cursor: pointer; transition: all 0.25s ease; user-select: none;">
+            <div style="font-size: 32px; margin-bottom: 4px;">👩</div>
+            <div style="color: white; font-weight: 700; font-size: 14px;">Wife</div>
+          </div>
         </div>
         
         <input type="hidden" id="login-profile" value="Husband">
 
-        <div style="text-align: left; margin-bottom: 25px;">
-          <label style="color: #a0a0b0; font-size: 13px; font-weight: 600; margin-bottom: 8px; display: block;">PASSWORD</label>
-          <input type="password" id="login-password" placeholder="Enter your password" required style="width: 100%; padding: 14px 16px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(0, 0, 0, 0.2); color: white; font-size: 16px; outline: none; transition: border-color 0.3s;">
+        <!-- Red Alert Notification (Hidden by default) -->
+        <div id="login-error-alert" style="display: none; align-items: center; gap: 12px; background: rgba(239, 68, 68, 0.18); border: 1.5px solid #ef4444; border-radius: 14px; padding: 12px 14px; margin-bottom: 18px; text-align: left; box-shadow: 0 6px 20px rgba(239, 68, 68, 0.3);">
+          <div style="width: 32px; height: 32px; border-radius: 50%; background: #ef4444; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 8px rgba(239, 68, 68, 0.5);">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+          </div>
+          <div style="flex: 1;">
+            <div style="color: #fca5a5; font-size: 13px; font-weight: 800; line-height: 1.2;">ভুল পাসওয়ার্ড!</div>
+            <div style="color: #fecaca; font-size: 11px; margin-top: 2px;">অনুগ্রহ করে সঠিক পাসওয়ার্ড দিন।</div>
+          </div>
+        </div>
+
+        <!-- Password Input -->
+        <div style="text-align: left; margin-bottom: 22px;">
+          <label for="login-password" style="color: #a0a0b0; font-size: 11.5px; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 7px; display: block;">PASSWORD</label>
+          <input type="password" id="login-password" placeholder="Enter your password" required autocomplete="current-password" style="width: 100%; padding: 14px 16px; border-radius: 12px; border: 1.5px solid rgba(255, 255, 255, 0.2); background: rgba(0, 0, 0, 0.25); color: white; font-size: 16px; outline: none; transition: border-color 0.25s, box-shadow 0.25s;">
         </div>
         
-        <button type="submit" id="login-submit-btn" style="width: 100%; padding: 16px; border-radius: 12px; background: linear-gradient(90deg, #B5F148, #34D399); color: #12121c; font-weight: 800; font-size: 16px; border: none; cursor: pointer; transition: transform 0.2s, background 0.3s, box-shadow 0.3s; box-shadow: 0 4px 15px rgba(181, 241, 72, 0.3);">Login Securely</button>
+        <button type="submit" id="login-submit-btn" style="width: 100%; padding: 15px; border-radius: 12px; background: linear-gradient(90deg, #B5F148, #34D399); color: #12121c; font-weight: 800; font-size: 16px; border: none; cursor: pointer; transition: transform 0.2s, background 0.3s, box-shadow 0.3s; box-shadow: 0 4px 16px rgba(181, 241, 72, 0.35);">Login Securely</button>
       </form>
-      <script>
-        document.getElementById('profile-husband').addEventListener('change', (e) => {
-          if (e.target.checked) {
-            document.getElementById('card-husband').style.borderColor = '#B5F148';
-            document.getElementById('card-husband').style.background = 'rgba(255, 255, 255, 0.1)';
-            document.getElementById('card-wife').style.borderColor = 'transparent';
-            document.getElementById('card-wife').style.background = 'rgba(255, 255, 255, 0.05)';
-            document.getElementById('login-profile').value = 'Husband';
-            document.getElementById('login-submit-btn').style.background = 'linear-gradient(90deg, #B5F148, #34D399)';
-            document.getElementById('login-submit-btn').style.boxShadow = '0 4px 15px rgba(181, 241, 72, 0.3)';
-            document.getElementById('login-submit-btn').style.color = '#12121c';
-          }
-        });
-        document.getElementById('profile-wife').addEventListener('change', (e) => {
-          if (e.target.checked) {
-            document.getElementById('card-wife').style.borderColor = '#FF4B72';
-            document.getElementById('card-wife').style.background = 'rgba(255, 255, 255, 0.1)';
-            document.getElementById('card-husband').style.borderColor = 'transparent';
-            document.getElementById('card-husband').style.background = 'rgba(255, 255, 255, 0.05)';
-            document.getElementById('login-profile').value = 'Wife';
-            document.getElementById('login-submit-btn').style.background = 'linear-gradient(90deg, #FF4B72, #F472B6)';
-            document.getElementById('login-submit-btn').style.boxShadow = '0 4px 15px rgba(255, 75, 114, 0.3)';
-            document.getElementById('login-submit-btn').style.color = 'white';
-          }
-        });
-      </script>
     </div>
   </div>
 
@@ -952,8 +945,8 @@
   </script>
 
     <!-- Core Scripts -->
-    <script type="module" src="assets/db.js?v=1792080116213"></script>
-    <script type="module" src="assets/app.js?v=1792080116213"></script>
+    <script type="module" src="assets/db.js?v=1792080743983"></script>
+    <script type="module" src="assets/app.js?v=1792080743983"></script>
 
 </body>
 
