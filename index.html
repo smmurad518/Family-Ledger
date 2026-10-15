@@ -16,7 +16,7 @@
   <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
 
   <!-- Main Styling -->
-  <link rel="stylesheet" href="assets/style.css?v=1792080743983">
+  <link rel="stylesheet" href="assets/style.css?v=1792082045277">
 
   <style>
     @keyframes shakeAnim {
@@ -31,7 +31,11 @@
 
   <!-- Login Modal (Beautiful Full Page) -->
   <div id="login-overlay" style="z-index: 9999; display: flex; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: linear-gradient(135deg, #1e1e2f, #12121c); justify-content: center; align-items: center; font-family: 'Inter', sans-serif;">
-    <div id="login-box" style="background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; padding: 36px 30px; width: 90%; max-width: 400px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); text-align: center; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+    <div id="login-box" style="position: relative; background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; padding: 36px 30px; width: 90%; max-width: 400px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); text-align: center; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+      <button type="button" id="login-theme-toggle-btn" class="theme-toggle" aria-label="Toggle Theme" title="Toggle Light/Dark Mode" style="position: absolute; top: 16px; right: 16px; background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.2);">
+        <svg viewBox="0 0 24 24" id="login-theme-toggle-icon" style="width: 18px; height: 18px; stroke: currentColor;"></svg>
+      </button>
+
       <div style="font-size: 56px; margin-bottom: 12px; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.3));">👨‍👩‍👧‍👦</div>
       <h2 style="color: white; margin-bottom: 6px; font-weight: 800; font-size: 26px; letter-spacing: -0.5px;">M&M Ledger</h2>
       <p style="color: #a0a0b0; margin-bottom: 22px; font-size: 13.5px;">Select your profile to continue</p>
@@ -61,8 +65,8 @@
             </svg>
           </div>
           <div style="flex: 1;">
-            <div style="color: #fca5a5; font-size: 13px; font-weight: 800; line-height: 1.2;">ভুল পাসওয়ার্ড!</div>
-            <div style="color: #fecaca; font-size: 11px; margin-top: 2px;">অনুগ্রহ করে সঠিক পাসওয়ার্ড দিন।</div>
+            <div style="color: #fca5a5; font-size: 13px; font-weight: 800; line-height: 1.2;">Incorrect password!</div>
+            <div style="color: #fecaca; font-size: 11px; margin-top: 2px;">Please enter the correct password.</div>
           </div>
         </div>
 
@@ -873,6 +877,10 @@
           </svg>
           Reset Partner's Password
         </button>
+        <button id="drawer-theme-toggle-btn" class="btn-drawer-settings" style="justify-content: center; background: var(--bg-card); border: 1px solid var(--border-color);">
+          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" id="drawer-theme-icon"></svg>
+          <span id="drawer-theme-text">Toggle Theme</span>
+        </button>
         <button id="drawer-settings-btn" class="btn-drawer-settings" style="justify-content: center;">
           <svg viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="3" />
@@ -945,8 +953,8 @@
   </script>
 
     <!-- Core Scripts -->
-    <script type="module" src="assets/db.js?v=1792080743983"></script>
-    <script type="module" src="assets/app.js?v=1792080743983"></script>
+    <script type="module" src="assets/db.js?v=1792082045277"></script>
+    <script type="module" src="assets/app.js?v=1792082045277"></script>
 
 </body>
 

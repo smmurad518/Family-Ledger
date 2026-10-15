@@ -25,15 +25,14 @@ class FamilyLedgerApp extends StatelessWidget {
 
     // Theme setup based on profile & theme settings
     final primaryColor = isHusband ? const Color(0xFFB5F148) : const Color(0xFFFF4B72);
-    final scaffoldBg = isDark
-        ? (isHusband ? const Color(0xFF0A0A0C) : const Color(0xFF0C0A0B))
-        : (isHusband ? const Color(0xFFFAF9F6) : const Color(0xFFFFF5F6));
+    final lightScaffoldBg = isHusband ? const Color(0xFFFAF9F6) : const Color(0xFFFFF5F6);
+    final darkScaffoldBg = isHusband ? const Color(0xFF0A0A0C) : const Color(0xFF0C0A0B);
 
-    final cardBg = isDark
-        ? (isHusband ? const Color(0xFF15161A) : const Color(0xFF171415))
-        : Colors.white;
+    final lightCardBg = Colors.white;
+    final darkCardBg = isHusband ? const Color(0xFF15161A) : const Color(0xFF171415);
 
-    final textDark = isDark ? const Color(0xFFF3F4F6) : const Color(0xFF1F2937);
+    const lightTextDark = Color(0xFF1F2937);
+    const darkTextDark = Color(0xFFF3F4F6);
 
     return MaterialApp(
       title: 'M&M Family Ledger',
@@ -42,45 +41,49 @@ class FamilyLedgerApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
         brightness: Brightness.light,
-        scaffoldBackgroundColor: scaffoldBg,
-        cardColor: cardBg,
+        scaffoldBackgroundColor: lightScaffoldBg,
+        cardColor: lightCardBg,
         primaryColor: primaryColor,
-        dialogBackgroundColor: cardBg,
+        dialogBackgroundColor: lightCardBg,
         colorScheme: ColorScheme.light(
           primary: primaryColor,
           secondary: isHusband ? const Color(0xFF0D9488) : const Color(0xFFBE185D),
-          surface: cardBg,
-          background: scaffoldBg,
+          surface: lightCardBg,
+          background: lightScaffoldBg,
         ),
-        textTheme: TextTheme(
-          bodyLarge: TextStyle(color: textDark, fontFamily: 'Nunito'),
-          bodyMedium: TextStyle(color: textDark, fontFamily: 'Nunito'),
+        textTheme: const TextTheme(
+          bodyLarge: TextStyle(color: lightTextDark, fontFamily: 'Nunito'),
+          bodyMedium: TextStyle(color: lightTextDark, fontFamily: 'Nunito'),
+          titleLarge: TextStyle(color: lightTextDark, fontFamily: 'Outfit', fontWeight: FontWeight.bold),
         ),
-        appBarTheme: AppBarTheme(
-          backgroundColor: cardBg,
-          foregroundColor: textDark,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.white,
+          foregroundColor: lightTextDark,
+          elevation: 0.5,
         ),
       ),
       darkTheme: ThemeData(
         useMaterial3: true,
         brightness: Brightness.dark,
-        scaffoldBackgroundColor: scaffoldBg,
-        cardColor: cardBg,
+        scaffoldBackgroundColor: darkScaffoldBg,
+        cardColor: darkCardBg,
         primaryColor: primaryColor,
-        dialogBackgroundColor: cardBg,
+        dialogBackgroundColor: darkCardBg,
         colorScheme: ColorScheme.dark(
           primary: primaryColor,
           secondary: isHusband ? const Color(0xFF34D399) : const Color(0xFFF472B6),
-          surface: cardBg,
-          background: scaffoldBg,
+          surface: darkCardBg,
+          background: darkScaffoldBg,
         ),
-        textTheme: TextTheme(
-          bodyLarge: TextStyle(color: textDark, fontFamily: 'Nunito'),
-          bodyMedium: TextStyle(color: textDark, fontFamily: 'Nunito'),
+        textTheme: const TextTheme(
+          bodyLarge: TextStyle(color: darkTextDark, fontFamily: 'Nunito'),
+          bodyMedium: TextStyle(color: darkTextDark, fontFamily: 'Nunito'),
+          titleLarge: TextStyle(color: darkTextDark, fontFamily: 'Outfit', fontWeight: FontWeight.bold),
         ),
         appBarTheme: AppBarTheme(
-          backgroundColor: cardBg,
-          foregroundColor: textDark,
+          backgroundColor: darkCardBg,
+          foregroundColor: darkTextDark,
+          elevation: 0.5,
         ),
       ),
       home: appState.loggedInUser == null ? const LoginScreen() : const HomeScreen(),

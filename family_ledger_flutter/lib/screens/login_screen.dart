@@ -46,7 +46,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (!success) {
       setState(() {
-        _errorMessage = 'ভুল পাসওয়ার্ড! সঠিক পাসওয়ার্ড দিন।';
+        _errorMessage = 'Incorrect password! Please enter the correct password.';
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -56,7 +56,7 @@ class _LoginScreenState extends State<LoginScreen> {
               SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'ভুল পাসওয়ার্ড! অনুগ্রহ করে সঠিক পাসওয়ার্ড দিন।',
+                  'Incorrect password! Please enter the correct password.',
                   style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
                 ),
               ),
@@ -74,9 +74,26 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final appState = Provider.of<AppState>(context);
+    final isDark = appState.theme == 'dark';
+
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: Icon(
+              isDark ? Icons.light_mode : Icons.dark_mode,
+            ),
+            tooltip: 'Toggle Theme',
+            onPressed: () => appState.toggleTheme(),
+          ),
+        ],
+      ),
       body: Center(
         child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.all(24.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -115,19 +132,19 @@ class _LoginScreenState extends State<LoginScreen> {
                   margin: const EdgeInsets.only(bottom: 16),
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   decoration: BoxDecoration(
-                    color: Colors.red.shade50,
+                    color: isDark ? Colors.red.shade900.withOpacity(0.3) : Colors.red.shade50,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: Colors.red.shade400, width: 1.5),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.error, color: Colors.red.shade700, size: 22),
+                      Icon(Icons.error, color: isDark ? Colors.redAccent : Colors.red.shade700, size: 22),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
                           _errorMessage!,
                           style: TextStyle(
-                            color: Colors.red.shade900,
+                            color: isDark ? Colors.red.shade200 : Colors.red.shade900,
                             fontWeight: FontWeight.bold,
                             fontSize: 13,
                           ),

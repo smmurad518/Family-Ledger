@@ -258,14 +258,23 @@ function toggleTheme() {
 }
 
 function updateThemeToggleIcon(theme) {
-  if (!DOM.themeToggleIcon) return;
-  if (theme === 'light') {
-    DOM.themeToggleIcon.innerHTML = `<circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>`;
-    DOM.themeToggleBtn.setAttribute('title', 'Switch to Dark Mode');
-  } else {
-    DOM.themeToggleIcon.innerHTML = `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>`;
-    DOM.themeToggleBtn.setAttribute('title', 'Switch to Light Mode');
-  }
+  const sunIcon = `<circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>`;
+  const moonIcon = `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>`;
+  const icon = theme === 'light' ? sunIcon : moonIcon;
+  const title = theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode';
+
+  if (DOM.themeToggleIcon) DOM.themeToggleIcon.innerHTML = icon;
+  if (DOM.themeToggleBtn) DOM.themeToggleBtn.setAttribute('title', title);
+
+  const loginThemeIcon = document.getElementById('login-theme-toggle-icon');
+  if (loginThemeIcon) loginThemeIcon.innerHTML = icon;
+  const loginThemeBtn = document.getElementById('login-theme-toggle-btn');
+  if (loginThemeBtn) loginThemeBtn.setAttribute('title', title);
+
+  const drawerThemeIcon = document.getElementById('drawer-theme-icon');
+  if (drawerThemeIcon) drawerThemeIcon.innerHTML = icon;
+  const drawerThemeText = document.getElementById('drawer-theme-text');
+  if (drawerThemeText) drawerThemeText.textContent = title;
 }
 
 // ----------------------------------------------------
@@ -564,18 +573,12 @@ document.addEventListener('touchstart', (e) => {
   const isDrawerActive = DOM.drawer.classList.contains('active');
   
   if (!isDrawerActive) {
-    // Check if touch starts on the right edge of the screen/container
+    // Only check right edge if on mobile and within 20px of edge
     const screenWidth = window.innerWidth;
-    const isTouchFromRight = touchStartX > (screenWidth - 40);
-    
-    // For desktop container (max-width: 480px, centered)
-    const containerWidth = 480;
-    const isTouchFromRightDesktop = (screenWidth >= containerWidth) && 
-      (touchStartX > (screenWidth / 2 + containerWidth / 2 - 40));
+    const isTouchFromRight = touchStartX > (screenWidth - 20);
       
-    if (isTouchFromRight || isTouchFromRightDesktop) {
+    if (isTouchFromRight) {
       isDraggingOpen = true;
-      // Disable transition for tracking finger
       DOM.drawer.style.transition = 'none';
       DOM.drawerOverlay.style.transition = 'none';
     }
@@ -597,10 +600,20 @@ document.addEventListener('touchmove', (e) => {
   const currentX = touch.clientX;
   const currentY = touch.clientY;
   
-  const diffY = touchStartY - currentY;
+  const diffX = Math.abs(touchStartX - currentX);
+  const diffY = Math.abs(touchStartY - currentY);
   
-  // Prevent tracking if vertical scroll is dominant
-  if (Math.abs(diffY) > Math.abs(touchStartX - currentX) && (isDraggingOpen && touchStartX - currentX < 15)) {
+  // If vertical scroll is greater than horizontal, immediately cancel drawer tracking and let page scroll naturally!
+  if (diffY > diffX) {
+    if (isDraggingOpen) {
+      isDraggingOpen = false;
+      DOM.drawer.style.transition = '';
+      DOM.drawer.style.transform = '';
+      DOM.drawerOverlay.style.transition = '';
+      DOM.drawerOverlay.classList.remove('active');
+      DOM.drawerOverlay.style.opacity = '';
+      DOM.drawerOverlay.style.pointerEvents = '';
+    }
     return;
   }
   
@@ -632,6 +645,14 @@ document.addEventListener('touchmove', (e) => {
     const opacityVal = ((drawerWidth - deltaX) / drawerWidth) * 0.4;
     DOM.drawerOverlay.style.opacity = opacityVal;
     DOM.drawerOverlay.style.pointerEvents = 'none';
+  }
+}, { passive: true });
+
+// Delegate window wheel scrolling to main content if cursor is outside main
+window.addEventListener('wheel', (e) => {
+  const main = document.querySelector('main');
+  if (main && !e.target.closest('main, .modal-content, .drawer, #login-overlay')) {
+    main.scrollTop += e.deltaY;
   }
 }, { passive: true });
 
@@ -883,9 +904,20 @@ function setupEventListeners() {
   DOM.settingsClose.addEventListener('click', closeSettingsModal);
   DOM.editModalClose.addEventListener('click', closeEditModal);
 
-  // Theme Toggle Button
+  // Theme Toggle Buttons
   if (DOM.themeToggleBtn) {
     DOM.themeToggleBtn.addEventListener('click', toggleTheme);
+  }
+  const loginThemeBtn = document.getElementById('login-theme-toggle-btn');
+  if (loginThemeBtn) {
+    loginThemeBtn.addEventListener('click', toggleTheme);
+  }
+  const drawerThemeBtn = document.getElementById('drawer-theme-toggle-btn');
+  if (drawerThemeBtn) {
+    drawerThemeBtn.addEventListener('click', () => {
+      toggleTheme();
+      closeDrawer();
+    });
   }
 
 

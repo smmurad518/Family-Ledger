@@ -16,6 +16,7 @@
 
 /* Default Theme & Profile (Husband + Dark Mode) */
 :root,
+[data-theme="dark"],
 [data-profile="husband"][data-theme="dark"],
 :root:not([data-profile]),
 [data-theme="dark"]:not([data-profile]) {
@@ -52,6 +53,8 @@
   --shadow-modal: 0 20px 45px rgba(0, 0, 0, 0.7);
 }
 
+[data-theme="light"],
+[data-theme="light"]:not([data-profile]),
 [data-profile="husband"][data-theme="light"] {
   --bg-primary: #FAF9F6;
   --bg-card: #FFFFFF;
@@ -312,13 +315,32 @@ header h1 span.logo-and {
 /* Main Content Area */
 main {
   flex: 1;
-  padding: 10px 20px;
+  padding: 10px 20px 36px 20px;
   overflow-y: auto;
-  scrollbar-width: none; /* Hide scrollbar in Firefox */
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(150, 150, 150, 0.25) transparent;
 }
 
 main::-webkit-scrollbar {
-  display: none; /* Hide scrollbar in Chrome/Safari */
+  width: 5px;
+  display: block;
+}
+
+main::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+main::-webkit-scrollbar-thumb {
+  background: rgba(150, 150, 150, 0.25);
+  border-radius: 10px;
+}
+
+main::-webkit-scrollbar-thumb:hover {
+  background: rgba(150, 150, 150, 0.5);
 }
 
 /* Screen Wrapper */
@@ -2297,27 +2319,27 @@ button.btn-primary:active {
 /* Important Date Card Design matching the image */
 .important-date-card {
   position: relative;
-  background: linear-gradient(135deg, #1C1D22 0%, #15161A 100%);
+  background: var(--bg-card);
   border-radius: 20px;
   padding: 24px;
   overflow: hidden;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--shadow-card);
   margin-top: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
   transition: all var(--transition-normal);
 }
 
 .important-date-card:hover {
   transform: translateY(-2px);
-  border-color: rgba(251, 191, 36, 0.3);
-  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.5), 0 0 15px rgba(251, 191, 36, 0.05);
+  border-color: rgba(251, 191, 36, 0.4);
+  box-shadow: var(--shadow-card-hover), 0 0 15px rgba(251, 191, 36, 0.1);
 }
 
 .important-date-card-title {
   font-family: var(--font-title);
   font-size: 18px;
   font-weight: 800;
-  color: #FFFFFF;
+  color: var(--text-dark);
   margin: 0 0 16px 0;
   padding-right: 80px; /* Leave space for the floating badge */
 }
@@ -2349,7 +2371,7 @@ button.btn-primary:active {
 
 .important-date-card-desc {
   font-size: 14px;
-  color: #E5E7EB;
+  color: var(--text-dark);
   margin-top: 8px;
   line-height: 1.4;
   opacity: 0.9;

@@ -287,6 +287,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 _showChangePasswordDialog(context, target);
               },
             ),
+            ListTile(
+              leading: Icon(isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined, color: textDark),
+              title: Text(isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode', style: TextStyle(color: textDark)),
+              onTap: () {
+                Navigator.of(context).pop();
+                appState.toggleTheme();
+              },
+            ),
             const Divider(),
             // Settings Button at bottom
             Padding(
