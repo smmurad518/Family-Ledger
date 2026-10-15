@@ -1127,6 +1127,18 @@ button.btn-primary:active {
   visibility: visible;
 }
 
+/* Forgot Password Modal (over login screen) */
+#forgot-password-modal {
+  z-index: 10005 !important;
+}
+
+#forgot-password-modal.active {
+  display: flex !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
+
 .modal-content {
   width: 90%;
   max-width: 400px;

@@ -772,13 +772,22 @@ function openForgotPasswordModal() {
   selectForgotProfile(currentSelected);
   showForgotStep(1);
   const modal = document.getElementById('forgot-password-modal');
-  if (modal) modal.classList.add('active');
+  if (modal) {
+    modal.style.display = 'flex';
+    modal.classList.add('active');
+  }
 }
 
 function closeForgotPasswordModal() {
   const modal = document.getElementById('forgot-password-modal');
-  if (modal) modal.classList.remove('active');
+  if (modal) {
+    modal.classList.remove('active');
+    modal.style.display = 'none';
+  }
 }
+
+window.openForgotPasswordModal = openForgotPasswordModal;
+window.closeForgotPasswordModal = closeForgotPasswordModal;
 
 function selectForgotProfile(profile) {
   const targetInput = document.getElementById('forgot-profile-target');
@@ -849,31 +858,27 @@ async function sendResetApprovalEmail() {
   // Save active reset request locally
   localStorage.setItem('mm_active_reset_request', JSON.stringify(resetData));
 
-  // 1. Dispatch to local server
-  try {
-    await fetch('./api/reset-request', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(resetData)
-    });
-  } catch (err) {}
+  // 1. Dispatch to local server asynchronously
+  fetch('./api/reset-request', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(resetData)
+  }).catch(() => {});
 
-  // 2. Dispatch real email via FormSubmit API to smmurad518@gmail.com
-  try {
-    await fetch(`https://formsubmit.co/ajax/${email}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body: JSON.stringify({
-        _subject: `[M&M Family Ledger] Password Reset Approval for ${profile}`,
-        Profile: profile,
-        Approval_Code: approvalCode,
-        Approval_Link: approvalLink,
-        Message: `A password reset was requested for ${profile}. To approve, click the link above or enter the 6-digit approval code: ${approvalCode}`
-      })
-    });
-  } catch (err) {
+  // 2. Dispatch real email via FormSubmit API to smmurad518@gmail.com asynchronously
+  fetch(`https://formsubmit.co/ajax/${email}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+    body: JSON.stringify({
+      _subject: `[M&M Family Ledger] Password Reset Approval for ${profile}`,
+      Profile: profile,
+      Approval_Code: approvalCode,
+      Approval_Link: approvalLink,
+      Message: `A password reset was requested for ${profile}. To approve, click the link above or enter the 6-digit approval code: ${approvalCode}`
+    })
+  }).catch(err => {
     console.log('Online email dispatch note:', err);
-  }
+  });
 
   // 3. Prepare direct mailto link as fallback
   const mailSubject = encodeURIComponent(`[M&M Ledger] Password Reset Approval: ${profile}`);
@@ -913,7 +918,10 @@ function openStep3ForProfile(profile) {
   if (approvedProfileEl) approvedProfileEl.textContent = profile;
   showForgotStep(3);
   const modal = document.getElementById('forgot-password-modal');
-  if (modal) modal.classList.add('active');
+  if (modal) {
+    modal.style.display = 'flex';
+    modal.classList.add('active');
+  }
   const newPassInput = document.getElementById('forgot-new-pass');
   if (newPassInput) {
     newPassInput.value = '';
@@ -1069,6 +1077,14 @@ function setupEventListeners() {
   const btnCloseForgot = document.getElementById('forgot-password-close');
   if (btnCloseForgot) {
     btnCloseForgot.addEventListener('click', closeForgotPasswordModal);
+  }
+  const forgotModal = document.getElementById('forgot-password-modal');
+  if (forgotModal) {
+    forgotModal.addEventListener('click', (e) => {
+      if (e.target === forgotModal) {
+        closeForgotPasswordModal();
+      }
+    });
   }
   const btnPickHusband = document.getElementById('forgot-pick-husband');
   if (btnPickHusband) {
