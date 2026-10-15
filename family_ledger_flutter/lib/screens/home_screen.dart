@@ -277,24 +277,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 _showChangePasswordDialog(context, current);
               },
             ),
-            ListTile(
-              leading: const Icon(Icons.key_outlined, color: Colors.redAccent),
-              title: Text('Reset Partner\'s Password', style: TextStyle(color: textDark)),
-              onTap: () {
-                Navigator.of(context).pop();
-                final current = Provider.of<AppState>(context, listen: false).loggedInUser ?? 'Husband';
-                final target = current == 'Husband' ? 'Wife' : 'Husband';
-                _showChangePasswordDialog(context, target);
-              },
-            ),
-            ListTile(
-              leading: Icon(isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined, color: textDark),
-              title: Text(isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode', style: TextStyle(color: textDark)),
-              onTap: () {
-                Navigator.of(context).pop();
-                appState.toggleTheme();
-              },
-            ),
             const Divider(),
             // Settings Button at bottom
             Padding(

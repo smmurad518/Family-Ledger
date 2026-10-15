@@ -1,5 +1,6 @@
 # Databases (Contains private ledger data)
 db_store.json
+password_resets.json
 
 # Binaries
 cloudflared.exe

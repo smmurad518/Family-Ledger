@@ -307,6 +307,12 @@ document.addEventListener('DOMContentLoaded', () => {
   // Set up event listeners
   setupEventListeners();
 
+  // Check if opened via password reset approval link
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('action') === 'reset-password') {
+    handleResetPasswordUrl(urlParams);
+  }
+
   // Initialize Collapsible Form Cards
   setupCollapsibleCards();
 
@@ -759,6 +765,189 @@ function hideLoginAlert() {
 }
 
 // ----------------------------------------------------
+// FORGOT PASSWORD VIA EMAIL APPROVAL (smmurad518@gmail.com)
+// ----------------------------------------------------
+function openForgotPasswordModal() {
+  const currentSelected = DOM.loginProfile ? DOM.loginProfile.value : 'Husband';
+  selectForgotProfile(currentSelected);
+  showForgotStep(1);
+  const modal = document.getElementById('forgot-password-modal');
+  if (modal) modal.classList.add('active');
+}
+
+function closeForgotPasswordModal() {
+  const modal = document.getElementById('forgot-password-modal');
+  if (modal) modal.classList.remove('active');
+}
+
+function selectForgotProfile(profile) {
+  const targetInput = document.getElementById('forgot-profile-target');
+  if (targetInput) targetInput.value = profile;
+
+  const btnHusband = document.getElementById('forgot-pick-husband');
+  const btnWife = document.getElementById('forgot-pick-wife');
+
+  if (profile === 'Husband') {
+    if (btnHusband) {
+      btnHusband.style.borderColor = '#B5F148';
+      btnHusband.style.background = 'rgba(181, 241, 72, 0.15)';
+    }
+    if (btnWife) {
+      btnWife.style.borderColor = 'transparent';
+      btnWife.style.background = 'rgba(255, 255, 255, 0.05)';
+    }
+  } else {
+    if (btnWife) {
+      btnWife.style.borderColor = '#FF4B72';
+      btnWife.style.background = 'rgba(255, 75, 114, 0.15)';
+    }
+    if (btnHusband) {
+      btnHusband.style.borderColor = 'transparent';
+      btnHusband.style.background = 'rgba(255, 255, 255, 0.05)';
+    }
+  }
+}
+
+function showForgotStep(stepNumber) {
+  const step1 = document.getElementById('forgot-step-1');
+  const step2 = document.getElementById('forgot-step-2');
+  const step3 = document.getElementById('forgot-step-3');
+
+  if (step1) step1.style.display = stepNumber === 1 ? 'block' : 'none';
+  if (step2) step2.style.display = stepNumber === 2 ? 'block' : 'none';
+  if (step3) step3.style.display = stepNumber === 3 ? 'block' : 'none';
+}
+
+async function sendResetApprovalEmail() {
+  const targetInput = document.getElementById('forgot-profile-target');
+  const profile = targetInput ? targetInput.value : 'Husband';
+  const email = 'smmurad518@gmail.com';
+
+  const btnSend = document.getElementById('btn-send-reset-email');
+  if (btnSend) {
+    btnSend.disabled = true;
+    btnSend.textContent = 'Sending Email...';
+  }
+
+  // Generate 6-digit approval code and unique token
+  const approvalCode = Math.floor(100000 + Math.random() * 900000).toString();
+  const token = 'rst_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 6);
+  const expiresAt = Date.now() + 3600000; // 1 hour
+
+  const approvalLink = window.location.origin + window.location.pathname + `?action=reset-password&profile=${profile}&token=${token}&code=${approvalCode}`;
+
+  const resetData = {
+    profile,
+    email,
+    code: approvalCode,
+    token,
+    approvalLink,
+    createdAt: Date.now(),
+    expiresAt
+  };
+
+  // Save active reset request locally
+  localStorage.setItem('mm_active_reset_request', JSON.stringify(resetData));
+
+  // 1. Dispatch to local server
+  try {
+    await fetch('./api/reset-request', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(resetData)
+    });
+  } catch (err) {}
+
+  // 2. Dispatch real email via FormSubmit API to smmurad518@gmail.com
+  try {
+    await fetch(`https://formsubmit.co/ajax/${email}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({
+        _subject: `[M&M Family Ledger] Password Reset Approval for ${profile}`,
+        Profile: profile,
+        Approval_Code: approvalCode,
+        Approval_Link: approvalLink,
+        Message: `A password reset was requested for ${profile}. To approve, click the link above or enter the 6-digit approval code: ${approvalCode}`
+      })
+    });
+  } catch (err) {
+    console.log('Online email dispatch note:', err);
+  }
+
+  // 3. Prepare direct mailto link as fallback
+  const mailSubject = encodeURIComponent(`[M&M Ledger] Password Reset Approval: ${profile}`);
+  const mailBody = encodeURIComponent(`A password reset was requested for ${profile}.\n\nApproval Code: ${approvalCode}\n\nApproval Link:\n${approvalLink}`);
+  const mailtoLink = `mailto:${email}?subject=${mailSubject}&body=${mailBody}`;
+  const directMailLink = document.getElementById('forgot-direct-mail-link');
+  if (directMailLink) directMailLink.href = mailtoLink;
+
+  if (btnSend) {
+    btnSend.disabled = false;
+    btnSend.textContent = 'Send Approval Email ✉️';
+  }
+
+  // Transition to Step 2
+  showForgotStep(2);
+  const codeInput = document.getElementById('forgot-approval-code');
+  if (codeInput) {
+    codeInput.value = '';
+    codeInput.focus();
+  }
+}
+
+function verifyApprovalCode(enteredCode) {
+  const raw = localStorage.getItem('mm_active_reset_request');
+  if (!raw) return false;
+  try {
+    const data = JSON.parse(raw);
+    if (data.code === enteredCode.trim() && Date.now() < data.expiresAt) {
+      return data;
+    }
+  } catch (e) {}
+  return false;
+}
+
+function openStep3ForProfile(profile) {
+  const approvedProfileEl = document.getElementById('forgot-approved-profile-name');
+  if (approvedProfileEl) approvedProfileEl.textContent = profile;
+  showForgotStep(3);
+  const modal = document.getElementById('forgot-password-modal');
+  if (modal) modal.classList.add('active');
+  const newPassInput = document.getElementById('forgot-new-pass');
+  if (newPassInput) {
+    newPassInput.value = '';
+    newPassInput.focus();
+  }
+  const confirmPassInput = document.getElementById('forgot-confirm-pass');
+  if (confirmPassInput) confirmPassInput.value = '';
+}
+
+function handleResetPasswordUrl(urlParams) {
+  const profile = urlParams.get('profile') || 'Husband';
+  const token = urlParams.get('token');
+  const code = urlParams.get('code');
+
+  const raw = localStorage.getItem('mm_active_reset_request');
+  let isValid = false;
+  if (raw) {
+    try {
+      const data = JSON.parse(raw);
+      if ((data.token === token || data.code === code) && data.profile === profile) {
+        isValid = true;
+      }
+    } catch (e) {}
+  } else if (token) {
+    isValid = true;
+  }
+
+  if (isValid) {
+    window.history.replaceState({}, document.title, window.location.pathname);
+    openStep3ForProfile(profile);
+  }
+}
+
+// ----------------------------------------------------
 // EVENT LISTENERS SETUP
 // ----------------------------------------------------
 function setupEventListeners() {
@@ -837,17 +1026,6 @@ function setupEventListeners() {
     });
   }
 
-  if (DOM.drawerResetPartnerPasswordBtn) {
-    DOM.drawerResetPartnerPasswordBtn.addEventListener('click', () => {
-      closeDrawer();
-      const current = getCurrentProfile();
-      const target = current === 'Husband' ? 'Wife' : 'Husband';
-      DOM.changePasswordTarget.value = target;
-      document.getElementById('change-password-title').innerText = `Reset ${target}'s Password`;
-      DOM.changePasswordModal.classList.add('active');
-    });
-  }
-
   if (DOM.drawerLogoutBtn) {
     DOM.drawerLogoutBtn.addEventListener('click', () => {
       localStorage.removeItem('mm_logged_in_user');
@@ -880,6 +1058,82 @@ function setupEventListeners() {
       alert(`Password for ${target} has been updated successfully!`);
       DOM.changePasswordModal.classList.remove('active');
       DOM.changePasswordForm.reset();
+    });
+  }
+
+  // Forgot Password System Events
+  const btnOpenForgot = document.getElementById('btn-open-forgot-password');
+  if (btnOpenForgot) {
+    btnOpenForgot.addEventListener('click', openForgotPasswordModal);
+  }
+  const btnCloseForgot = document.getElementById('forgot-password-close');
+  if (btnCloseForgot) {
+    btnCloseForgot.addEventListener('click', closeForgotPasswordModal);
+  }
+  const btnPickHusband = document.getElementById('forgot-pick-husband');
+  if (btnPickHusband) {
+    btnPickHusband.addEventListener('click', () => selectForgotProfile('Husband'));
+  }
+  const btnPickWife = document.getElementById('forgot-pick-wife');
+  if (btnPickWife) {
+    btnPickWife.addEventListener('click', () => selectForgotProfile('Wife'));
+  }
+  const btnSendEmail = document.getElementById('btn-send-reset-email');
+  if (btnSendEmail) {
+    btnSendEmail.addEventListener('click', sendResetApprovalEmail);
+  }
+  const btnResendEmail = document.getElementById('btn-resend-reset-email');
+  if (btnResendEmail) {
+    btnResendEmail.addEventListener('click', sendResetApprovalEmail);
+  }
+  const forgotCodeForm = document.getElementById('forgot-code-form');
+  if (forgotCodeForm) {
+    forgotCodeForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const codeInput = document.getElementById('forgot-approval-code');
+      const code = codeInput ? codeInput.value.trim() : '';
+      const verifiedData = verifyApprovalCode(code);
+      if (verifiedData) {
+        openStep3ForProfile(verifiedData.profile);
+      } else {
+        alert('Invalid or expired approval code! Please check your email (smmurad518@gmail.com) or click Resend.');
+        if (codeInput) {
+          codeInput.style.borderColor = '#ef4444';
+          codeInput.focus();
+          codeInput.select();
+        }
+      }
+    });
+  }
+  const forgotSetPassForm = document.getElementById('forgot-set-password-form');
+  if (forgotSetPassForm) {
+    forgotSetPassForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const approvedProfileEl = document.getElementById('forgot-approved-profile-name');
+      const profile = approvedProfileEl ? approvedProfileEl.textContent.trim() : 'Husband';
+      const newPass = document.getElementById('forgot-new-pass').value;
+      const confirmPass = document.getElementById('forgot-confirm-pass').value;
+
+      if (newPass.length < 3) {
+        alert('Password must be at least 3 characters long.');
+        return;
+      }
+      if (newPass !== confirmPass) {
+        alert('Passwords do not match! Please check and enter the same password in both fields.');
+        return;
+      }
+
+      updateUserPassword(profile, newPass);
+      localStorage.removeItem('mm_active_reset_request');
+      closeForgotPasswordModal();
+      alert(`Password for ${profile} has been successfully updated! You can now log in.`);
+
+      // Update login screen
+      selectLoginProfile(profile);
+      if (DOM.loginPassword) {
+        DOM.loginPassword.value = '';
+        DOM.loginPassword.focus();
+      }
     });
   }
 

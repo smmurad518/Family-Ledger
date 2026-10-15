@@ -177,7 +177,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 28),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => _showForgotPasswordDialog(context),
+                  child: const Text('Forgot Password?'),
+                ),
+              ),
+              const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: _isLoading ? null : _login,
                 style: ElevatedButton.styleFrom(
@@ -195,6 +202,149 @@ class _LoginScreenState extends State<LoginScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _showForgotPasswordDialog(BuildContext context) {
+    String resetProfile = _selectedProfile;
+    final codeController = TextEditingController();
+    final newPassController = TextEditingController();
+    String? generatedCode;
+    int currentStep = 1;
+
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (context, setModalState) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Row(
+              children: const [
+                Icon(Icons.lock_reset, color: Colors.blueAccent),
+                SizedBox(width: 8),
+                Text('Forgot Password', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              ],
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (currentStep == 1) ...[
+                    const Text(
+                      'An approval code will be sent to the administrator email:\nsmmurad518@gmail.com',
+                      style: TextStyle(fontSize: 13, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      value: resetProfile,
+                      decoration: const InputDecoration(
+                        labelText: 'Select Profile to Reset',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: 'Husband', child: Text('Husband 🧔')),
+                        DropdownMenuItem(value: 'Wife', child: Text('Wife 👩')),
+                      ],
+                      onChanged: (val) {
+                        if (val != null) setModalState(() => resetProfile = val);
+                      },
+                    ),
+                  ] else if (currentStep == 2) ...[
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.green.shade400),
+                      ),
+                      child: const Text(
+                        'Approval code sent to smmurad518@gmail.com!\nEnter the 6-digit approval code below:',
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: codeController,
+                      keyboardType: TextInputType.number,
+                      textAlign: TextAlign.center,
+                      maxLength: 6,
+                      style: const TextStyle(fontSize: 22, letterSpacing: 6, fontWeight: FontWeight.bold),
+                      decoration: const InputDecoration(
+                        labelText: '6-Digit Code',
+                        counterText: '',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ] else if (currentStep == 3) ...[
+                    Text(
+                      'Approved! Set new password for $resetProfile:',
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: newPassController,
+                      obscureText: true,
+                      decoration: const InputDecoration(
+                        labelText: 'New Password (min 3 chars)',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogCtx).pop(),
+                child: const Text('Cancel'),
+              ),
+              if (currentStep == 1)
+                ElevatedButton(
+                  onPressed: () {
+                    final code = (100000 + (DateTime.now().millisecondsSinceEpoch % 900000)).toString();
+                    generatedCode = code;
+                    setModalState(() => currentStep = 2);
+                  },
+                  child: const Text('Send Email ✉️'),
+                )
+              else if (currentStep == 2)
+                ElevatedButton(
+                  onPressed: () {
+                    if (codeController.text.trim() == generatedCode) {
+                      setModalState(() => currentStep = 3);
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Invalid code! Check smmurad518@gmail.com')),
+                      );
+                    }
+                  },
+                  child: const Text('Verify Code'),
+                )
+              else if (currentStep == 3)
+                ElevatedButton(
+                  onPressed: () async {
+                    final newPass = newPassController.text.trim();
+                    if (newPass.length < 3) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Password must be at least 3 characters.')),
+                      );
+                      return;
+                    }
+                    final appState = Provider.of<AppState>(context, listen: false);
+                    await appState.changeUserPassword(resetProfile, newPass);
+                    Navigator.of(dialogCtx).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Password for $resetProfile updated successfully!')),
+                    );
+                    setState(() => _selectedProfile = resetProfile);
+                  },
+                  child: const Text('Save Password'),
+                ),
+            ],
+          );
+        },
       ),
     );
   }

@@ -87,6 +87,44 @@ try {
                 continue
             }
             
+            # API Password Reset Request Endpoint
+            if ($urlPath -eq "/api/reset-request") {
+                $response.ContentType = "application/json; charset=utf-8"
+                $response.Headers.Add("Access-Control-Allow-Origin", "*")
+                $response.Headers.Add("Access-Control-Allow-Headers", "Content-Type")
+                $response.Headers.Add("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+                
+                if ($request.HttpMethod -eq "OPTIONS") {
+                    $response.StatusCode = 200
+                    $response.Close()
+                    continue
+                }
+
+                $resetFile = Join-Path (Get-Location) "password_resets.json"
+                if ($request.HttpMethod -eq "POST") {
+                    $encoding = if ($request.ContentEncoding) { $request.ContentEncoding } else { [System.Text.Encoding]::UTF8 }
+                    $reader = New-Object System.IO.StreamReader($request.InputStream, $encoding)
+                    $body = $reader.ReadToEnd()
+                    if (![string]::IsNullOrWhiteSpace($body)) {
+                        try {
+                            $parsed = $body | ConvertFrom-Json
+                            [System.IO.File]::WriteAllText($resetFile, $body, [System.Text.Encoding]::UTF8)
+                            Write-Host " [RESET REQUEST] Target: $($parsed.email) | Profile: $($parsed.profile) | Code: $($parsed.code)" -ForegroundColor Magenta
+                        } catch {}
+                    }
+                }
+
+                $resContent = '{"status":"ok"}'
+                if (Test-Path $resetFile) {
+                    $resContent = [System.IO.File]::ReadAllText($resetFile, [System.Text.Encoding]::UTF8)
+                }
+                $bytes = [System.Text.Encoding]::UTF8.GetBytes($resContent)
+                $response.ContentLength64 = $bytes.Length
+                $response.OutputStream.Write($bytes, 0, $bytes.Length)
+                $response.Close()
+                continue
+            }
+            
             # Static File Serving
             if ($urlPath -eq "/" -or $urlPath -eq "") {
                 $urlPath = "/index.html"
