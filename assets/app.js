@@ -778,6 +778,15 @@ function setupEventListeners() {
   if (DOM.loginPassword) {
     DOM.loginPassword.addEventListener('input', () => {
       hideLoginAlert();
+      const val = DOM.loginPassword.value.trim();
+      const users = getUsers();
+      if (val) {
+        if (users['Wife'] === val && users['Husband'] !== val) {
+          selectLoginProfile('Wife');
+        } else if (users['Husband'] === val && users['Wife'] !== val) {
+          selectLoginProfile('Husband');
+        }
+      }
     });
   }
 
@@ -785,15 +794,21 @@ function setupEventListeners() {
   if (DOM.loginForm) {
     DOM.loginForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      const profile = DOM.loginProfile ? DOM.loginProfile.value : 'Husband';
+      const selectedProfile = DOM.loginProfile ? DOM.loginProfile.value : 'Husband';
       const pass = DOM.loginPassword ? DOM.loginPassword.value.trim() : '';
       const users = getUsers();
       
       let authenticatedProfile = null;
-      if (users[profile] === pass) {
-        authenticatedProfile = profile;
+
+      // Unambiguous authentication based on entered password:
+      if (users['Wife'] === pass && users['Husband'] !== pass) {
+        authenticatedProfile = 'Wife';
+      } else if (users['Husband'] === pass && users['Wife'] !== pass) {
+        authenticatedProfile = 'Husband';
+      } else if (users[selectedProfile] === pass) {
+        authenticatedProfile = selectedProfile;
       } else {
-        const altProfile = profile === 'Husband' ? 'Wife' : 'Husband';
+        const altProfile = selectedProfile === 'Husband' ? 'Wife' : 'Husband';
         if (users[altProfile] === pass) {
           authenticatedProfile = altProfile;
         }
@@ -1335,11 +1350,23 @@ function setupEventListeners() {
 // ----------------------------------------------------
 function updateProfileUI() {
   const profile = getCurrentProfile();
-  DOM.profileName.textContent = profile;
-  DOM.profileAvatar.textContent = profile === 'Husband' ? '🧔' : (profile === 'Wife' ? '👩' : '👶');
-  DOM.welcomeUser.textContent = profile;
+  const avatarText = profile === 'Husband' ? '🧔' : (profile === 'Wife' ? '👩' : '👶');
+
+  const profileNameEl = DOM.profileName || document.getElementById('profile-name');
+  if (profileNameEl) profileNameEl.textContent = profile;
   
-  // Set data-profile attribute on documentElement
+  const profileAvatarEl = DOM.profileAvatar || document.getElementById('profile-avatar');
+  if (profileAvatarEl) profileAvatarEl.textContent = avatarText;
+  
+  const welcomeEl = DOM.welcomeUser || document.getElementById('welcome-user');
+  if (welcomeEl) welcomeEl.textContent = profile;
+
+  const drawerAvatar = document.getElementById('drawer-profile-avatar');
+  if (drawerAvatar) drawerAvatar.textContent = avatarText;
+  const drawerName = document.getElementById('drawer-profile-name');
+  if (drawerName) drawerName.textContent = profile;
+
+  // Set data-profile attribute on documentElement for CSS theming
   document.documentElement.setAttribute('data-profile', profile.toLowerCase());
 }
 

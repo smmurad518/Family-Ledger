@@ -61,7 +61,7 @@ class SyncService {
           final List remoteDuesJson = serverData['dues'] ?? [];
           final List remoteSuggestionsJson = serverData['suggestions'] ?? [];
           final List remoteImportantDatesJson = serverData['importantDates'] ?? [];
-          final Map<String, dynamic> remoteUsersJson = serverData['users'] ?? {'Husband': '12345', 'Wife': '12345'};
+          final Map<String, dynamic> remoteUsersJson = serverData['users'] ?? {'Husband': '123456', 'Wife': '12345'};
 
           final remoteShopping = remoteShoppingJson.map((item) => ShoppingItem.fromJson(Map<String, dynamic>.from(item))).toList();
           final remoteExpenses = remoteExpensesJson.map((item) => ExpenseItem.fromJson(Map<String, dynamic>.from(item))).toList();

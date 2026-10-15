@@ -75,8 +75,13 @@ class DbService {
 
   Map<String, String> getUsers() {
     final Map? users = _box.get(keyUsers);
-    if (users == null) return {'Husband': '12345', 'Wife': '12345'};
-    return Map<String, String>.from(users);
+    if (users == null) return {'Husband': '123456', 'Wife': '12345'};
+    final userMap = Map<String, String>.from(users);
+    if (userMap['Husband'] == '12345' && userMap['Wife'] == '12345') {
+      userMap['Husband'] = '123456';
+      _box.put(keyUsers, userMap);
+    }
+    return userMap;
   }
 
   String? getLoggedInUser() => _box.get(keyLoggedIn);

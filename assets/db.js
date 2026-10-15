@@ -106,7 +106,7 @@ export async function pollServerData() {
         const localBabyNeeds = getLocal(KEYS.BABY_NEEDS, []);
         const localDeleteHistory = getLocal(KEYS.DELETE_HISTORY, []);
         const localImportantDates = getLocal(KEYS.IMPORTANT_DATES, []);
-        const localUsers = getLocal(KEYS.USERS, { Husband: '12345', Wife: '12345' });
+        const localUsers = getLocal(KEYS.USERS, { Husband: '123456', Wife: '12345' });
 
         const remoteShopping = serverData.shopping || [];
         const remoteExpenses = serverData.expenses || [];
@@ -117,7 +117,7 @@ export async function pollServerData() {
         const remoteBabyNeeds = serverData.babyNeeds || [];
         const remoteDeleteHistory = serverData.deleteHistory || [];
         const remoteImportantDates = serverData.importantDates || [];
-        const remoteUsers = serverData.users || { Husband: '12345', Wife: '12345' };
+        const remoteUsers = serverData.users || { Husband: '123456', Wife: '12345' };
 
         let updated = false;
 
@@ -190,7 +190,7 @@ export async function pushStateToServer() {
     const localBabyNeeds = getLocal(KEYS.BABY_NEEDS, []);
     const localDeleteHistory = getLocal(KEYS.DELETE_HISTORY, []);
     const localImportantDates = getLocal(KEYS.IMPORTANT_DATES, []);
-    const localUsers = getLocal(KEYS.USERS, { Husband: '12345', Wife: '12345' });
+    const localUsers = getLocal(KEYS.USERS, { Husband: '123456', Wife: '12345' });
 
     const payload = {
       shopping: localShopping,
@@ -1458,7 +1458,12 @@ export function getRecentImportantDate() {
 // APIS: USERS & AUTHENTICATION
 // ----------------------------------------------------
 export function getUsers() {
-  return getLocal(KEYS.USERS, { Husband: '12345', Wife: '12345' });
+  const users = getLocal(KEYS.USERS, { Husband: '123456', Wife: '12345' });
+  if (users && users.Husband === '12345' && users.Wife === '12345') {
+    users.Husband = '123456';
+    setLocal(KEYS.USERS, users);
+  }
+  return users || { Husband: '123456', Wife: '12345' };
 }
 
 export async function updateUserPassword(profile, newPassword) {

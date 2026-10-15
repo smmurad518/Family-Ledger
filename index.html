@@ -16,7 +16,7 @@
   <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
 
   <!-- Main Styling -->
-  <link rel="stylesheet" href="assets/style.css?v=1792082045277">
+  <link rel="stylesheet" href="assets/style.css?v=1792084623439">
 
   <style>
     @keyframes shakeAnim {
@@ -95,6 +95,10 @@
       <div class="syncing-indicator" id="sync-status" title="Sync Status">
         <span class="sync-dot disconnected" id="sync-dot"></span>
         <span id="sync-text">Local Mode</span>
+      </div>
+      <div class="profile-badge" id="header-profile-badge" title="Active Profile">
+        <span id="profile-avatar">🧔</span>
+        <span id="profile-name">Husband</span>
       </div>
       <button id="theme-toggle-btn" class="theme-toggle" aria-label="Toggle Theme" title="Toggle Light/Dark Mode">
         <svg viewBox="0 0 24 24" id="theme-toggle-icon"></svg>
@@ -793,14 +797,20 @@
     <!-- Right-side Navigation Drawer -->
     <div class="drawer-overlay" id="drawer-overlay"></div>
     <div class="drawer" id="app-drawer">
-      <div class="drawer-header">
-        <h3 class="drawer-title">M&M Menu</h3>
-        <button class="drawer-close" id="drawer-close" aria-label="Close menu">
-          <svg viewBox="0 0 24 24">
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
-        </button>
+      <div class="drawer-header" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+          <h3 class="drawer-title">M&M Menu</h3>
+          <button class="drawer-close" id="drawer-close" aria-label="Close menu">
+            <svg viewBox="0 0 24 24">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+        <div style="font-size: 13px; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
+          <span>Active Profile:</span>
+          <span style="font-weight: 700; color: var(--color-primary);"><span id="drawer-profile-avatar">🧔</span> <span id="drawer-profile-name">Husband</span></span>
+        </div>
       </div>
 
       <nav class="drawer-nav">
@@ -953,8 +963,8 @@
   </script>
 
     <!-- Core Scripts -->
-    <script type="module" src="assets/db.js?v=1792082045277"></script>
-    <script type="module" src="assets/app.js?v=1792082045277"></script>
+    <script type="module" src="assets/db.js?v=1792084623439"></script>
+    <script type="module" src="assets/app.js?v=1792084623439"></script>
 
 </body>
 

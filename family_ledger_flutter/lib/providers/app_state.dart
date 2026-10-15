@@ -86,6 +86,9 @@ class AppState extends ChangeNotifier {
     _suggestionItems = _dbService.getSuggestions();
     _importantDates = _dbService.getImportantDates();
     _loggedInUser = _dbService.getLoggedInUser();
+    if (_loggedInUser != null && _loggedInUser!.isNotEmpty) {
+      _currentProfile = _loggedInUser!;
+    }
     _users = _dbService.getUsers();
     notifyListeners();
   }
@@ -119,16 +122,31 @@ class AppState extends ChangeNotifier {
   // --- AUTH ACTIONS ---
 
   Future<bool> login(String profile, String password) async {
-    String actualProfile = profile;
     final trimmedPass = password.trim();
-    if (_users[actualProfile] != trimmedPass) {
-      final alternateProfile = actualProfile == 'Husband' ? 'Wife' : 'Husband';
+    String actualProfile = profile;
+
+    // 1. If password uniquely matches Wife
+    if (_users['Wife'] == trimmedPass && _users['Husband'] != trimmedPass) {
+      actualProfile = 'Wife';
+    }
+    // 2. If password uniquely matches Husband
+    else if (_users['Husband'] == trimmedPass && _users['Wife'] != trimmedPass) {
+      actualProfile = 'Husband';
+    }
+    // 3. If password matches selected profile
+    else if (_users[profile] == trimmedPass) {
+      actualProfile = profile;
+    }
+    // 4. Fallback check for alternate profile
+    else {
+      final alternateProfile = profile == 'Husband' ? 'Wife' : 'Husband';
       if (_users[alternateProfile] == trimmedPass) {
         actualProfile = alternateProfile;
       } else {
         return false;
       }
     }
+
     _loggedInUser = actualProfile;
     await _dbService.setLoggedInUser(actualProfile);
     await switchProfile(actualProfile);

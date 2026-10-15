@@ -22,6 +22,16 @@ class _LoginScreenState extends State<LoginScreen> {
       if (_errorMessage != null) {
         setState(() => _errorMessage = null);
       }
+      final pass = _passwordController.text.trim();
+      final appState = Provider.of<AppState>(context, listen: false);
+      final users = appState.users;
+      if (pass.isNotEmpty) {
+        if (users['Wife'] == pass && users['Husband'] != pass && _selectedProfile != 'Wife') {
+          setState(() => _selectedProfile = 'Wife');
+        } else if (users['Husband'] == pass && users['Wife'] != pass && _selectedProfile != 'Husband') {
+          setState(() => _selectedProfile = 'Husband');
+        }
+      }
     });
   }
 
