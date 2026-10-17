@@ -91,15 +91,6 @@ class _LoginScreenState extends State<LoginScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        actions: [
-          IconButton(
-            icon: Icon(
-              isDark ? Icons.light_mode : Icons.dark_mode,
-            ),
-            tooltip: 'Toggle Theme',
-            onPressed: () => appState.toggleTheme(),
-          ),
-        ],
       ),
       body: Center(
         child: SingleChildScrollView(

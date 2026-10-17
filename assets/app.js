@@ -295,7 +295,7 @@ document.addEventListener('DOMContentLoaded', () => {
   } else {
     setCurrentProfile(loggedIn);
     DOM.loginOverlay.style.display = 'none';
-    DOM.appContainer.style.display = 'block';
+    DOM.appContainer.style.display = 'flex';
   }
 
   // Initialize DB state
@@ -517,6 +517,12 @@ function switchScreen(screenName) {
 
   // Trigger content redraws if necessary
   renderActiveScreen();
+
+  // Reset scroll to top on screen switch
+  const main = document.querySelector('main');
+  if (main) {
+    main.scrollTop = 0;
+  }
 }
 
 function renderActiveScreen() {
@@ -704,35 +710,55 @@ function selectLoginProfile(profile) {
   
   if (profile === 'Husband') {
     if (DOM.cardHusband) {
-      DOM.cardHusband.style.borderColor = '#B5F148';
-      DOM.cardHusband.style.background = 'rgba(181, 241, 72, 0.15)';
-      DOM.cardHusband.style.boxShadow = '0 0 16px rgba(181, 241, 72, 0.25)';
+      DOM.cardHusband.className = 'login-profile-card active-husband';
+      DOM.cardHusband.style.borderColor = '#10b981';
+      DOM.cardHusband.style.background = '#ecfdf5';
+      DOM.cardHusband.style.boxShadow = '0 8px 20px -3px rgba(16, 185, 129, 0.22)';
+      const hText = DOM.cardHusband.querySelector('.profile-card-name');
+      if (hText) hText.style.color = '#065f46';
     }
     if (DOM.cardWife) {
-      DOM.cardWife.style.borderColor = 'transparent';
-      DOM.cardWife.style.background = 'rgba(255, 255, 255, 0.05)';
+      DOM.cardWife.className = 'login-profile-card';
+      DOM.cardWife.style.borderColor = '#e2e8f0';
+      DOM.cardWife.style.background = '#f8fafc';
       DOM.cardWife.style.boxShadow = 'none';
+      const wText = DOM.cardWife.querySelector('.profile-card-name');
+      if (wText) wText.style.color = '#64748b';
     }
     if (DOM.loginSubmitBtn) {
-      DOM.loginSubmitBtn.style.background = 'linear-gradient(90deg, #B5F148, #34D399)';
-      DOM.loginSubmitBtn.style.boxShadow = '0 4px 16px rgba(181, 241, 72, 0.35)';
-      DOM.loginSubmitBtn.style.color = '#12121c';
+      DOM.loginSubmitBtn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+      DOM.loginSubmitBtn.style.boxShadow = '0 8px 24px -4px rgba(16, 185, 129, 0.38)';
+      DOM.loginSubmitBtn.style.color = '#ffffff';
+    }
+    if (DOM.loginPassword) {
+      DOM.loginPassword.style.setProperty('--focus-ring', 'rgba(16, 185, 129, 0.15)');
+      DOM.loginPassword.style.setProperty('--focus-border', '#10b981');
     }
   } else {
     if (DOM.cardWife) {
-      DOM.cardWife.style.borderColor = '#FF4B72';
-      DOM.cardWife.style.background = 'rgba(255, 75, 114, 0.15)';
-      DOM.cardWife.style.boxShadow = '0 0 16px rgba(255, 75, 114, 0.25)';
+      DOM.cardWife.className = 'login-profile-card active-wife';
+      DOM.cardWife.style.borderColor = '#f43f5e';
+      DOM.cardWife.style.background = '#fff1f2';
+      DOM.cardWife.style.boxShadow = '0 8px 20px -3px rgba(244, 63, 94, 0.22)';
+      const wText = DOM.cardWife.querySelector('.profile-card-name');
+      if (wText) wText.style.color = '#9f1239';
     }
     if (DOM.cardHusband) {
-      DOM.cardHusband.style.borderColor = 'transparent';
-      DOM.cardHusband.style.background = 'rgba(255, 255, 255, 0.05)';
+      DOM.cardHusband.className = 'login-profile-card';
+      DOM.cardHusband.style.borderColor = '#e2e8f0';
+      DOM.cardHusband.style.background = '#f8fafc';
       DOM.cardHusband.style.boxShadow = 'none';
+      const hText = DOM.cardHusband.querySelector('.profile-card-name');
+      if (hText) hText.style.color = '#64748b';
     }
     if (DOM.loginSubmitBtn) {
-      DOM.loginSubmitBtn.style.background = 'linear-gradient(90deg, #FF4B72, #F472B6)';
-      DOM.loginSubmitBtn.style.boxShadow = '0 4px 16px rgba(255, 75, 114, 0.35)';
-      DOM.loginSubmitBtn.style.color = 'white';
+      DOM.loginSubmitBtn.style.background = 'linear-gradient(135deg, #f43f5e, #e11d48)';
+      DOM.loginSubmitBtn.style.boxShadow = '0 8px 24px -4px rgba(244, 63, 94, 0.38)';
+      DOM.loginSubmitBtn.style.color = '#ffffff';
+    }
+    if (DOM.loginPassword) {
+      DOM.loginPassword.style.setProperty('--focus-ring', 'rgba(244, 63, 94, 0.15)');
+      DOM.loginPassword.style.setProperty('--focus-border', '#f43f5e');
     }
   }
 }
@@ -743,7 +769,7 @@ function showLoginAlert() {
   }
   if (DOM.loginPassword) {
     DOM.loginPassword.style.borderColor = '#ef4444';
-    DOM.loginPassword.style.boxShadow = '0 0 16px rgba(239, 68, 68, 0.4)';
+    DOM.loginPassword.style.boxShadow = '0 0 0 3.5px rgba(239, 68, 68, 0.18)';
     DOM.loginPassword.focus();
     DOM.loginPassword.select();
   }
@@ -759,7 +785,7 @@ function hideLoginAlert() {
     DOM.loginErrorAlert.style.display = 'none';
   }
   if (DOM.loginPassword) {
-    DOM.loginPassword.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+    DOM.loginPassword.style.borderColor = '#e2e8f0';
     DOM.loginPassword.style.boxShadow = 'none';
   }
 }
@@ -1044,6 +1070,19 @@ function setupEventListeners() {
     });
   }
 
+  // Password Visibility Toggle
+  const toggleLoginPassBtn = document.getElementById('btn-toggle-login-pass');
+  if (toggleLoginPassBtn && DOM.loginPassword) {
+    toggleLoginPassBtn.addEventListener('click', () => {
+      const isPass = DOM.loginPassword.type === 'password';
+      DOM.loginPassword.type = isPass ? 'text' : 'password';
+      toggleLoginPassBtn.setAttribute('title', isPass ? 'Hide Password' : 'Show Password');
+      toggleLoginPassBtn.innerHTML = isPass
+        ? `<svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>`
+        : `<svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
+    });
+  }
+
   // Auth Listeners
   if (DOM.loginForm) {
     DOM.loginForm.addEventListener('submit', (e) => {
@@ -1073,7 +1112,7 @@ function setupEventListeners() {
         localStorage.setItem('mm_logged_in_user', authenticatedProfile);
         setCurrentProfile(authenticatedProfile);
         DOM.loginOverlay.style.display = 'none';
-        DOM.appContainer.style.display = 'block';
+        DOM.appContainer.style.display = 'flex';
         updateProfileUI();
         renderActiveScreen();
       } else {
@@ -2477,107 +2516,112 @@ function renderDashboard() {
 // SCREEN RENDERS: BAJARER TALIKA (SHOPPING LIST)
 // ----------------------------------------------------
 function renderShoppingList() {
-  const items = getShoppingItems();
+  try {
+    const items = getShoppingItems();
 
-  const selectAllBtn = document.getElementById('btn-select-all-shopping');
-  if (selectAllBtn) {
-    const hasPending = items.some(item => !item.bought);
-    if (items.length > 0 && (activeShoppingFilter === 'all' || activeShoppingFilter === 'pending' || activeShoppingFilter === 'bought')) {
-      selectAllBtn.style.display = 'flex';
-      if (hasPending) {
-        selectAllBtn.setAttribute('aria-label', 'Select All');
-        selectAllBtn.innerHTML = `
-          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M7 12l5 5L22 7" />
-            <path d="M2 12l5 5L17 7" opacity="0.5" />
-          </svg>
-        `;
+    const selectAllBtn = document.getElementById('btn-select-all-shopping');
+    if (selectAllBtn) {
+      const hasPending = items.some(item => !item.bought);
+      if (items.length > 0 && (activeShoppingFilter === 'all' || activeShoppingFilter === 'pending' || activeShoppingFilter === 'bought')) {
+        selectAllBtn.style.display = 'flex';
+        if (hasPending) {
+          selectAllBtn.setAttribute('aria-label', 'Select All');
+          selectAllBtn.innerHTML = `
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M7 12l5 5L22 7" />
+              <path d="M2 12l5 5L17 7" opacity="0.5" />
+            </svg>
+          `;
+        } else {
+          selectAllBtn.setAttribute('aria-label', 'Deselect All');
+          selectAllBtn.innerHTML = `
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+              <polyline points="3 3 3 8 8 8" />
+            </svg>
+          `;
+        }
       } else {
-        selectAllBtn.setAttribute('aria-label', 'Deselect All');
-        selectAllBtn.innerHTML = `
-          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-            <polyline points="3 3 3 8 8 8" />
-          </svg>
-        `;
+        selectAllBtn.style.display = 'none';
       }
-    } else {
-      selectAllBtn.style.display = 'none';
     }
-  }
-  
-  // Filter items
-  let filteredItems = items;
-  if (activeShoppingFilter === 'pending') {
-    filteredItems = items.filter(item => !item.bought);
-  } else if (activeShoppingFilter === 'bought') {
-    filteredItems = items.filter(item => item.bought);
-  }
-
-  // Update delete all button visibility: show only if all items in the current view are bought
-  const deleteAllBtn = document.getElementById('btn-delete-all-shopping');
-  if (deleteAllBtn) {
-    const allBought = filteredItems.length > 0 && filteredItems.every(item => item.bought);
-    if (allBought) {
-      deleteAllBtn.style.display = 'flex';
-    } else {
-      deleteAllBtn.style.display = 'none';
+    
+    // Filter items
+    let filteredItems = items;
+    if (activeShoppingFilter === 'pending') {
+      filteredItems = items.filter(item => !item.bought);
+    } else if (activeShoppingFilter === 'bought') {
+      filteredItems = items.filter(item => item.bought);
     }
-  }
 
-  // Sort: newest first
-  filteredItems.sort((a, b) => b.timestamp - a.timestamp);
+    // Update delete all button visibility: show only if all items in the current view are bought
+    const deleteAllBtn = document.getElementById('btn-delete-all-shopping');
+    if (deleteAllBtn) {
+      const allBought = filteredItems.length > 0 && filteredItems.every(item => item.bought);
+      if (allBought) {
+        deleteAllBtn.style.display = 'flex';
+      } else {
+        deleteAllBtn.style.display = 'none';
+      }
+    }
 
-  if (filteredItems.length === 0) {
-    DOM.shoppingContainer.innerHTML = `
-      <div class="empty-state">
-        <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0"/></svg>
-        <p>No shopping items found in this view.</p>
-      </div>
-    `;
-    return;
-  }
+    // Sort: newest first
+    filteredItems.sort((a, b) => b.timestamp - a.timestamp);
 
-  DOM.shoppingContainer.innerHTML = filteredItems.map(item => {
-    const checkedClass = item.bought ? 'bought' : '';
-    const buyerInfo = item.bought ? `bought by ${item.boughtBy || 'someone'}` : `added by ${item.addedBy}`;
-    const canAction = isEditDeleteAllEnabled();
-    const actionButtonsHtml = canAction ? `
-      <button class="btn-icon-edit" data-id="${item.id}" aria-label="Edit shopping item">
-        <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-      </button>
-      <button class="btn-icon-delete" data-id="${item.id}" aria-label="Delete shopping item">
-        <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-      </button>
-    ` : '';
-    
-    const qtyHtml = item.qty ? `<span class="item-qty">${item.qty}</span>` : '';
-    
-    const amountHtml = item.amount && item.amount > 0 ? `
-      <span class="item-amount" style="font-family: var(--font-title); font-weight: 800; font-size: 13px; color: var(--color-primary-interactive); margin-right: 4px;">
-        ৳${item.amount.toLocaleString('en-IN')}
-      </span>
-    ` : '';
-
-    return `
-      <li class="list-item ${checkedClass}" data-id="${item.id}">
-        <div class="item-left">
-          <div class="item-checkbox" data-id="${item.id}">
-            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-          </div>
-          <div class="item-details">
-            <span class="item-name">${item.name}</span>
-            ${qtyHtml}
-            <span class="item-meta">${buyerInfo}</span>
-          </div>
+    if (filteredItems.length === 0) {
+      DOM.shoppingContainer.innerHTML = `
+        <div class="empty-state">
+          <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0"/></svg>
+          <p>No shopping items found in this view.</p>
         </div>
-        <div class="item-right" style="display: flex; align-items: center; gap: 8px;">
-          ${amountHtml}
-          ${actionButtonsHtml}
-        </div>
-      </li>
-    `;
-  }).join('');
+      `;
+      return;
+    }
+
+    DOM.shoppingContainer.innerHTML = filteredItems.map(item => {
+      const checkedClass = item.bought ? 'bought' : '';
+      const buyerInfo = item.bought ? `bought by ${item.boughtBy || 'someone'}` : `added by ${item.addedBy || 'someone'}`;
+      const canAction = isEditDeleteAllEnabled();
+      const actionButtonsHtml = canAction ? `
+        <button class="btn-icon-edit" data-id="${item.id}" aria-label="Edit shopping item">
+          <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </button>
+        <button class="btn-icon-delete" data-id="${item.id}" aria-label="Delete shopping item">
+          <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        </button>
+      ` : '';
+      
+      const qtyHtml = item.qty ? `<span class="item-qty">${item.qty}</span>` : '';
+      
+      const numAmount = parseFloat(item.amount);
+      const amountHtml = !isNaN(numAmount) && numAmount > 0 ? `
+        <span class="item-amount" style="font-family: var(--font-title); font-weight: 800; font-size: 13px; color: var(--color-primary-interactive); margin-right: 4px;">
+          ৳${numAmount.toLocaleString('en-IN')}
+        </span>
+      ` : '';
+
+      return `
+        <li class="list-item ${checkedClass}" data-id="${item.id}">
+          <div class="item-left">
+            <div class="item-checkbox" data-id="${item.id}">
+              <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div class="item-details">
+              <span class="item-name">${item.name}</span>
+              ${qtyHtml}
+              <span class="item-meta">${buyerInfo}</span>
+            </div>
+          </div>
+          <div class="item-right" style="display: flex; align-items: center; gap: 8px;">
+            ${amountHtml}
+            ${actionButtonsHtml}
+          </div>
+        </li>
+      `;
+    }).join('');
+  } catch (err) {
+    console.error('Error in renderShoppingList:', err);
+  }
 }
 
 async function handleAddShoppingItem(e) {

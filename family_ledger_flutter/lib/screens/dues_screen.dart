@@ -294,6 +294,7 @@ class _DuesScreenState extends State<DuesScreen> {
             child: filteredDues.isEmpty
                 ? Center(child: Text('No dues recorded', style: TextStyle(color: textMuted)))
                 : ListView.separated(
+                    padding: const EdgeInsets.only(bottom: 90),
                     itemCount: filteredDues.length,
                     separatorBuilder: (context, index) => const SizedBox(height: 8),
                     itemBuilder: (context, index) {

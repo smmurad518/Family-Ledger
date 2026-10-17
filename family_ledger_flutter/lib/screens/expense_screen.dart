@@ -242,6 +242,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
             child: appState.expenseItems.isEmpty
                 ? Center(child: Text('No needs registered', style: TextStyle(color: textMuted)))
                 : ListView.separated(
+                    padding: const EdgeInsets.only(bottom: 90),
                     itemCount: appState.expenseItems.length,
                     separatorBuilder: (context, index) => const SizedBox(height: 8),
                     itemBuilder: (context, index) {

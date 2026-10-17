@@ -224,6 +224,7 @@ class _ShoppingScreenState extends State<ShoppingScreen> {
             child: filteredItems.isEmpty
                 ? Center(child: Text('No items found', style: TextStyle(color: textMuted)))
                 : ListView.separated(
+                    padding: const EdgeInsets.only(bottom: 90),
                     itemCount: filteredItems.length,
                     separatorBuilder: (context, index) => const SizedBox(height: 8),
                     itemBuilder: (context, index) {
