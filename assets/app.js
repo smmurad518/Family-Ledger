@@ -238,6 +238,8 @@ let lastMoviesList = [];
 let lastImportantDatesList = [];
 let lastKabinerTakaHistory = [];
 let isFirstLoad = true;
+let kabinEventsInitialized = false;
+
 
 // Active Edit Context
 let currentEditType = ''; // 'shopping', 'expense', 'due', 'suggestion'
@@ -1503,11 +1505,19 @@ function setupEventListeners() {
 
   const btnSelectAllShopping = document.getElementById('btn-select-all-shopping');
   if (btnSelectAllShopping) {
-    btnSelectAllShopping.addEventListener('click', handleSelectAllShopping);
+    btnSelectAllShopping.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (typeof handleSelectAllShopping === 'function') handleSelectAllShopping();
+      else if (typeof window.handleSelectAllShopping === 'function') window.handleSelectAllShopping();
+    });
   }
   const btnDeleteAllShopping = document.getElementById('btn-delete-all-shopping');
   if (btnDeleteAllShopping) {
-    btnDeleteAllShopping.addEventListener('click', handleDeleteAllShoppingClick);
+    btnDeleteAllShopping.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (typeof handleDeleteAllShoppingClick === 'function') handleDeleteAllShoppingClick();
+      else if (typeof window.handleDeleteAllShoppingClick === 'function') window.handleDeleteAllShoppingClick();
+    });
   }
 
   const expenseImageInput = document.getElementById('expense-image');
@@ -3229,7 +3239,7 @@ window.handleToggleShopping = async (id) => {
   renderDashboard();
 };
 
-window.handleSelectAllShopping = async () => {
+async function handleSelectAllShopping() {
   const items = getShoppingItems();
   const filteredItems = items.filter(item => {
     if (activeShoppingFilter === 'pending') return !item.bought;
@@ -3250,9 +3260,10 @@ window.handleSelectAllShopping = async () => {
 
   renderShoppingList();
   renderDashboard();
-};
+}
+window.handleSelectAllShopping = handleSelectAllShopping;
 
-window.handleDeleteAllShoppingClick = async () => {
+async function handleDeleteAllShoppingClick() {
   if (!isEditDeleteAllEnabled()) {
     alert("Deletion is disabled! Enable Edit & Delete in Settings.");
     return;
@@ -3275,7 +3286,9 @@ window.handleDeleteAllShoppingClick = async () => {
   await deleteAllShoppingItems(ids);
   renderShoppingList();
   renderDashboard();
-};
+}
+window.handleDeleteAllShoppingClick = handleDeleteAllShoppingClick;
+
 
 window.handleDeleteExpense = async (id) => {
   if (!isEditDeleteAllEnabled()) return;
@@ -4099,34 +4112,46 @@ function renderKabinerTakaHistory(data, currentProfile) {
 }
 
 // Attach Kabiner Taka Event Listeners
-let kabinEventsInitialized = false;
 function initializeKabinerTakaEvents() {
   if (kabinEventsInitialized) return;
   kabinEventsInitialized = true;
 
-  // 1. Initial Kabin Form
+  // 1. Initial Kabin Form & Save Button
   const initialForm = DOM.kabinInitialForm || document.getElementById('kabin-initial-form');
-  if (initialForm) {
-    initialForm.addEventListener('submit', async (e) => {
+  const btnSaveInitial = document.getElementById('btn-save-kabin-initial');
+
+  async function handleInitialKabinSave(e) {
+    if (e) {
       e.preventDefault();
-      const amtInput = document.getElementById('kabin-init-amount');
-      const dateInput = document.getElementById('kabin-init-date');
-      const noteInput = document.getElementById('kabin-init-note');
+      e.stopPropagation();
+    }
+    const amtInput = document.getElementById('kabin-init-amount');
+    const dateInput = document.getElementById('kabin-init-date');
+    const noteInput = document.getElementById('kabin-init-note');
 
-      const amount = amtInput ? amtInput.value : '';
-      const date = dateInput ? dateInput.value : '';
-      const note = noteInput ? noteInput.value : '';
+    const amount = amtInput ? amtInput.value.trim() : '';
+    const date = dateInput ? dateInput.value.trim() : '';
+    const note = noteInput ? noteInput.value.trim() : '';
 
-      if (!amount || parseFloat(amount) <= 0) return;
+    if (!amount || parseFloat(amount) <= 0) {
+      alert('Please enter a valid initial amount.');
+      return;
+    }
 
-      await setInitialKabinerTaka(amount, date, note);
-      if (amtInput) amtInput.value = '';
-      if (dateInput) dateInput.value = '';
-      if (noteInput) noteInput.value = '';
+    await setInitialKabinerTaka(amount, date, note);
+    if (amtInput) amtInput.value = '';
+    if (dateInput) dateInput.value = '';
+    if (noteInput) noteInput.value = '';
 
-      showInAppToast('Kabin Initialized', `Initial Kabin amount ৳${Number(amount).toLocaleString('en-IN')} has been saved.`);
-      renderKabinerTaka();
-    });
+    showInAppToast('Kabin Initialized', `Initial Kabin amount ৳${Number(amount).toLocaleString('en-IN')} has been saved.`);
+    renderKabinerTaka();
+  }
+
+  if (initialForm) {
+    initialForm.addEventListener('submit', handleInitialKabinSave);
+  }
+  if (btnSaveInitial) {
+    btnSaveInitial.addEventListener('click', handleInitialKabinSave);
   }
 
   // 2. Propose Type Buttons (+ / -)
@@ -4136,13 +4161,15 @@ function initializeKabinerTakaEvents() {
   const submitBtn = document.getElementById('btn-submit-kabin-propose');
 
   if (addBtn && deductBtn && typeInput) {
-    addBtn.addEventListener('click', () => {
+    addBtn.addEventListener('click', (e) => {
+      e.preventDefault();
       typeInput.value = 'add';
       addBtn.classList.add('active');
       deductBtn.classList.remove('active');
       if (submitBtn) submitBtn.textContent = "Submit Addition (+) for Approval";
     });
-    deductBtn.addEventListener('click', () => {
+    deductBtn.addEventListener('click', (e) => {
+      e.preventDefault();
       typeInput.value = 'deduct';
       deductBtn.classList.add('active');
       addBtn.classList.remove('active');
@@ -4150,39 +4177,52 @@ function initializeKabinerTakaEvents() {
     });
   }
 
-  // 3. Propose Change Form
+  // 3. Propose Change Form & Submit Button
   const proposeForm = DOM.kabinProposeForm || document.getElementById('kabin-propose-form');
-  if (proposeForm) {
-    proposeForm.addEventListener('submit', async (e) => {
+  const btnSubmitPropose = document.getElementById('btn-submit-kabin-propose');
+
+  async function handleProposeKabinSave(e) {
+    if (e) {
       e.preventDefault();
-      const type = typeInput ? typeInput.value : 'add';
-      const amtInput = document.getElementById('kabin-propose-amount');
-      const dateInput = document.getElementById('kabin-propose-date');
-      const noteInput = document.getElementById('kabin-propose-note');
+      e.stopPropagation();
+    }
+    const type = typeInput ? typeInput.value : 'add';
+    const amtInput = document.getElementById('kabin-propose-amount');
+    const dateInput = document.getElementById('kabin-propose-date');
+    const noteInput = document.getElementById('kabin-propose-note');
 
-      const amount = amtInput ? amtInput.value : '';
-      const date = dateInput ? dateInput.value : '';
-      const note = noteInput ? noteInput.value : '';
+    const amount = amtInput ? amtInput.value.trim() : '';
+    const date = dateInput ? dateInput.value.trim() : '';
+    const note = noteInput ? noteInput.value.trim() : '';
 
-      if (!amount || parseFloat(amount) <= 0) return;
+    if (!amount || parseFloat(amount) <= 0) {
+      alert('Please enter a valid amount.');
+      return;
+    }
 
-      const ok = await proposeKabinerTakaChange(type, amount, date, note);
-      if (ok) {
-        if (amtInput) amtInput.value = '';
-        if (dateInput) dateInput.value = '';
-        if (noteInput) noteInput.value = '';
+    const ok = await proposeKabinerTakaChange(type, amount, date, note);
+    if (ok) {
+      if (amtInput) amtInput.value = '';
+      if (dateInput) dateInput.value = '';
+      if (noteInput) noteInput.value = '';
 
-        // Auto collapse propose card after submit
-        const content = document.getElementById('kabin-propose-content');
-        const chevron = document.querySelector('#kabin-propose-header .btn-toggle-collapse');
-        if (content) content.classList.add('collapsed');
-        if (chevron) chevron.classList.remove('rotated');
+      // Auto collapse propose card after submit
+      const content = document.getElementById('kabin-propose-content');
+      const chevron = document.querySelector('#kabin-propose-header .btn-toggle-collapse');
+      if (content) content.classList.add('collapsed');
+      if (chevron) chevron.classList.remove('rotated');
 
-        const targetPartner = getCurrentProfile() === 'Husband' ? 'Wife' : 'Husband';
-        showInAppToast('Request Sent', `Approval request for ${type === 'add' ? '+৳' : '-৳'}${Number(amount).toLocaleString('en-IN')} sent to ${targetPartner}.`);
-        renderKabinerTaka();
-      }
-    });
+      const targetPartner = getCurrentProfile() === 'Husband' ? 'Wife' : 'Husband';
+      showInAppToast('Request Sent', `Approval request for ${type === 'add' ? '+৳' : '-৳'}${Number(amount).toLocaleString('en-IN')} sent to ${targetPartner}.`);
+      renderKabinerTaka();
+    }
+  }
+
+  if (proposeForm) {
+    proposeForm.addEventListener('submit', handleProposeKabinSave);
+  }
+  if (btnSubmitPropose) {
+    btnSubmitPropose.addEventListener('click', handleProposeKabinSave);
   }
 
   // 4. Pending Actions & Cancellation Delegation

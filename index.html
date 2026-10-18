@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Nunito:wght@300;400;600;700;800&family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
 
   <!-- Main Styling -->
-  <link rel="stylesheet" href="assets/style.css?v=1792347680632">
+  <link rel="stylesheet" href="assets/style.css?v=1792358111735">
 
   <style id="critical-figma-login-styles">
     @keyframes shakeAnim {
@@ -1236,7 +1236,7 @@
               Enter the agreed initial Kabin / Denmohor amount to start your mutual ledger.
             </p>
           </div>
-          <form id="kabin-initial-form">
+          <form id="kabin-initial-form" onsubmit="event.preventDefault(); return false;">
             <div class="form-group" style="margin-bottom: 14px;">
               <label for="kabin-init-amount">Initial Amount (৳) *</label>
               <input type="number" id="kabin-init-amount" placeholder="e.g. 40000" required min="1" step="any"
@@ -1254,7 +1254,7 @@
                   style="width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-dark);">
               </div>
             </div>
-            <button type="submit" id="btn-save-kabin-initial" class="btn-primary" style="width: 100%; font-weight: 800; height: 46px; border-radius: 12px;">
+            <button type="button" id="btn-save-kabin-initial" class="btn-primary" style="width: 100%; font-weight: 800; height: 46px; border-radius: 12px;">
               Save Initial Amount
             </button>
           </form>
@@ -1273,7 +1273,7 @@
           </div>
 
           <div id="kabin-propose-content" style="margin-top: 14px;">
-            <form id="kabin-propose-form">
+            <form id="kabin-propose-form" onsubmit="event.preventDefault(); return false;">
               <!-- Type toggle buttons -->
               <div style="display: flex; gap: 8px; margin-bottom: 14px;">
                 <button type="button" id="kabin-type-add-btn" class="tab-btn active" style="flex: 1; text-align: center; justify-content: center; padding: 10px; border-radius: 10px; font-weight: 800; cursor: pointer;">
@@ -1308,7 +1308,7 @@
                 🛡️ <b>Dual Approval:</b> Balance will only update after your partner approves this request.
               </div>
 
-              <button type="submit" id="btn-submit-kabin-propose" class="btn-primary" style="width: 100%; height: 46px; border-radius: 12px; font-weight: 800;">
+              <button type="button" id="btn-submit-kabin-propose" class="btn-primary" style="width: 100%; height: 46px; border-radius: 12px; font-weight: 800;">
                 Submit for Partner's Approval
               </button>
             </form>
@@ -1717,8 +1717,8 @@
   </script>
 
     <!-- Core Scripts -->
-    <script type="module" src="assets/db.js?v=1792347680632"></script>
-    <script type="module" src="assets/app.js?v=1792347680632"></script>
+    <script type="module" src="assets/db.js?v=1792358111735"></script>
+    <script type="module" src="assets/app.js?v=1792358111735"></script>
 
 </body>
 
