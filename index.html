@@ -15,8 +15,13 @@
   <meta name="theme-color" content="#FAF6F0">
   <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
 
+  <!-- Google Fonts Preconnect & Enhanced Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Nunito:wght@300;400;600;700;800&family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+
   <!-- Main Styling -->
-  <link rel="stylesheet" href="assets/style.css?v=1792342364884">
+  <link rel="stylesheet" href="assets/style.css?v=1792345002788">
 
   <style>
     @keyframes shakeAnim {
@@ -29,73 +34,113 @@
 
 <body>
 
-  <!-- Login Modal (Beautiful Animated Light Mode) -->
+  <!-- Login Modal / Screen (Exact Figma Design Implementation) -->
   <div id="login-overlay">
-    <!-- Animated Light Background Ambient Mesh -->
-    <div class="login-bg-mesh" aria-hidden="true">
-      <div class="login-blob blob-1"></div>
-      <div class="login-blob blob-2"></div>
-      <div class="login-blob blob-3"></div>
-    </div>
-
-    <div id="login-box">
-      <!-- Animated Brand Avatar -->
-      <div class="login-avatar-badge" title="M&M Family Ledger">
-        <span>👨‍👩‍👧‍👦</span>
+    <div id="login-box" class="login-screen-wrapper">
+      <!-- Phone Camera / Notch Bar for Desktop Frame -->
+      <div class="login-phone-notch" aria-hidden="true">
+        <div class="notch-island">
+          <div class="notch-camera"></div>
+        </div>
       </div>
-      <h2 class="login-title">M&M Ledger</h2>
-      <p class="login-subtitle">Select your profile to continue</p>
-      
-      <form id="login-form">
-        <!-- Profile Selection Cards -->
-        <div class="login-profiles-container">
-          <div id="card-husband" class="login-profile-card active-husband" role="button" tabindex="0" aria-label="Select Husband Profile">
-            <div class="profile-card-icon">🧔</div>
-            <div class="profile-card-name">Husband</div>
-          </div>
-          <div id="card-wife" class="login-profile-card" role="button" tabindex="0" aria-label="Select Wife Profile">
-            <div class="profile-card-icon">👩</div>
-            <div class="profile-card-name">Wife</div>
-          </div>
-        </div>
-        
-        <input type="hidden" id="login-profile" value="Husband">
 
-        <!-- Error Notification (Hidden by default) -->
-        <div id="login-error-alert">
-          <div class="login-alert-icon-box">
-            <svg viewBox="0 0 24 24" width="18" height="18" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="12" y1="8" x2="12" y2="12"></line>
-              <line x1="12" y1="16" x2="12.01" y2="16"></line>
-            </svg>
-          </div>
-          <div style="flex: 1;">
-            <div class="login-alert-title">Incorrect password!</div>
-            <div class="login-alert-desc">Please enter the correct password.</div>
-          </div>
-        </div>
+      <!-- Real Couple Background Image & Dark Gradient Overlay -->
+      <div class="login-bg-layer" aria-hidden="true">
+        <div class="login-bg-img"></div>
+        <div class="login-bg-gradient"></div>
+      </div>
 
-        <!-- Password Input -->
-        <div class="login-input-group">
-          <label for="login-password" class="login-input-label">PASSWORD</label>
-          <div class="login-input-wrapper">
-            <input type="password" id="login-password" placeholder="Enter your password" required autocomplete="current-password">
-            <button type="button" id="btn-toggle-login-pass" class="login-password-toggle" aria-label="Toggle password visibility" title="Show/Hide Password">
-              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                <circle cx="12" cy="12" r="3"></circle>
-              </svg>
-            </button>
+      <!-- VIEW 1: WELCOME SCREEN -->
+      <div id="login-view-welcome" class="login-view-panel active">
+        <div class="welcome-content-box">
+          <h1 class="welcome-script-title">Welcome</h1>
+          <div class="welcome-brand-text">
+            <div class="welcome-brand-names">Murad & Mitu</div>
+            <div class="welcome-brand-sub">Family Ledger</div>
           </div>
+          <button type="button" id="btn-goto-login-auth" class="btn-figma-login">Login</button>
+          <div class="login-footer-email">smmurad518@gmail.com</div>
         </div>
+      </div>
 
-        <div class="login-forgot-row">
-          <button type="button" id="btn-open-forgot-password" onclick="if(window.openForgotPasswordModal)window.openForgotPasswordModal()">Forgot Password?</button>
+      <!-- VIEW 2: PROFILE SELECTION & AUTH SCREEN -->
+      <div id="login-view-auth" class="login-view-panel hidden">
+        <button type="button" id="btn-back-to-welcome" class="login-back-btn" aria-label="Back to Welcome screen">
+          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
+
+        <div class="auth-content-box">
+          <div class="auth-header">
+            <div class="auth-sub-title">Murad & Mitu · Family Ledger</div>
+            <h2 class="auth-main-title">Select your profile to continue</h2>
+          </div>
+
+          <form id="login-form">
+            <!-- Profile Selection Cards (Murad & Mitu) -->
+            <div class="figma-profiles-row">
+              <div id="card-husband" class="figma-profile-card active" data-profile="Husband" role="button" tabindex="0" aria-label="Select Murad Profile">
+                <div class="figma-avatar-circle husband-avatar">
+                  <span>M</span>
+                </div>
+                <div class="figma-card-info">
+                  <div class="figma-card-name">Murad</div>
+                  <div class="figma-card-desc">Personal ledger</div>
+                </div>
+              </div>
+
+              <div id="card-wife" class="figma-profile-card" data-profile="Wife" role="button" tabindex="0" aria-label="Select Mitu Profile">
+                <div class="figma-avatar-circle wife-avatar">
+                  <span>M</span>
+                </div>
+                <div class="figma-card-info">
+                  <div class="figma-card-name">Mitu</div>
+                  <div class="figma-card-desc">Personal ledger</div>
+                </div>
+              </div>
+            </div>
+
+            <input type="hidden" id="login-profile" value="Husband">
+
+            <!-- Error Notification Alert -->
+            <div id="login-error-alert" style="display: none;">
+              <div class="login-alert-icon-box">
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="8" x2="12" y2="12"></line>
+                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+              </div>
+              <div style="flex: 1;">
+                <div class="login-alert-title">Incorrect password!</div>
+                <div class="login-alert-desc">Please enter the correct password.</div>
+              </div>
+            </div>
+
+            <!-- Password Input -->
+            <div class="figma-password-wrapper">
+              <input type="password" id="login-password" placeholder="Enter your password" required autocomplete="current-password">
+              <button type="button" id="btn-toggle-login-pass" class="figma-pass-toggle" aria-label="Toggle password visibility" title="Show/Hide Password">
+                <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              </button>
+            </div>
+
+            <!-- Forgot Password Row -->
+            <div class="figma-forgot-row">
+              <button type="button" id="btn-open-forgot-password" class="figma-forgot-btn" onclick="if(window.openForgotPasswordModal)window.openForgotPasswordModal()">Forgot Password ?</button>
+            </div>
+
+            <!-- Login Submit Button -->
+            <button type="submit" id="login-submit-btn" class="btn-figma-login">Login</button>
+          </form>
+
+          <div class="login-footer-email">smmurad518@gmail.com</div>
         </div>
-        
-        <button type="submit" id="login-submit-btn">Login</button>
-      </form>
+      </div>
     </div>
   </div>
 
@@ -1237,8 +1282,8 @@
   </script>
 
     <!-- Core Scripts -->
-    <script type="module" src="assets/db.js?v=1792342364884"></script>
-    <script type="module" src="assets/app.js?v=1792342364884"></script>
+    <script type="module" src="assets/db.js?v=1792345002788"></script>
+    <script type="module" src="assets/app.js?v=1792345002788"></script>
 
 </body>
 

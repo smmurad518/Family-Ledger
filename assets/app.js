@@ -312,6 +312,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!loggedIn) {
     DOM.loginOverlay.style.display = 'flex';
     DOM.appContainer.style.display = 'none';
+    showWelcomeView();
     selectLoginProfile('Husband');
   } else {
     setCurrentProfile(loggedIn);
@@ -727,61 +728,57 @@ document.addEventListener('touchend', (e) => {
   }
 }, { passive: true });
 
-// Auth Helpers
+// Auth Helpers & Figma Screen Controllers
+function showWelcomeView() {
+  const viewWelcome = document.getElementById('login-view-welcome');
+  const viewAuth = document.getElementById('login-view-auth');
+  if (viewWelcome) {
+    viewWelcome.classList.remove('hidden');
+    viewWelcome.classList.add('active');
+  }
+  if (viewAuth) {
+    viewAuth.classList.remove('active');
+    viewAuth.classList.add('hidden');
+  }
+  hideLoginAlert();
+}
+
+function showAuthView() {
+  const viewWelcome = document.getElementById('login-view-welcome');
+  const viewAuth = document.getElementById('login-view-auth');
+  if (viewWelcome) {
+    viewWelcome.classList.remove('active');
+    viewWelcome.classList.add('hidden');
+  }
+  if (viewAuth) {
+    viewAuth.classList.remove('hidden');
+    viewAuth.classList.add('active');
+    if (DOM.loginPassword) {
+      setTimeout(() => DOM.loginPassword.focus(), 320);
+    }
+  }
+}
+
 function selectLoginProfile(profile) {
   if (DOM.loginProfile) DOM.loginProfile.value = profile;
   
   if (profile === 'Husband') {
     if (DOM.cardHusband) {
-      DOM.cardHusband.className = 'login-profile-card active-husband';
-      DOM.cardHusband.style.borderColor = '#10b981';
-      DOM.cardHusband.style.background = '#ecfdf5';
-      DOM.cardHusband.style.boxShadow = '0 8px 20px -3px rgba(16, 185, 129, 0.22)';
-      const hText = DOM.cardHusband.querySelector('.profile-card-name');
-      if (hText) hText.style.color = '#065f46';
+      DOM.cardHusband.classList.add('active');
+      DOM.cardHusband.removeAttribute('style');
     }
     if (DOM.cardWife) {
-      DOM.cardWife.className = 'login-profile-card';
-      DOM.cardWife.style.borderColor = '#e2e8f0';
-      DOM.cardWife.style.background = '#f8fafc';
-      DOM.cardWife.style.boxShadow = 'none';
-      const wText = DOM.cardWife.querySelector('.profile-card-name');
-      if (wText) wText.style.color = '#64748b';
-    }
-    if (DOM.loginSubmitBtn) {
-      DOM.loginSubmitBtn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
-      DOM.loginSubmitBtn.style.boxShadow = '0 8px 24px -4px rgba(16, 185, 129, 0.38)';
-      DOM.loginSubmitBtn.style.color = '#ffffff';
-    }
-    if (DOM.loginPassword) {
-      DOM.loginPassword.style.setProperty('--focus-ring', 'rgba(16, 185, 129, 0.15)');
-      DOM.loginPassword.style.setProperty('--focus-border', '#10b981');
+      DOM.cardWife.classList.remove('active');
+      DOM.cardWife.removeAttribute('style');
     }
   } else {
     if (DOM.cardWife) {
-      DOM.cardWife.className = 'login-profile-card active-wife';
-      DOM.cardWife.style.borderColor = '#f43f5e';
-      DOM.cardWife.style.background = '#fff1f2';
-      DOM.cardWife.style.boxShadow = '0 8px 20px -3px rgba(244, 63, 94, 0.22)';
-      const wText = DOM.cardWife.querySelector('.profile-card-name');
-      if (wText) wText.style.color = '#9f1239';
+      DOM.cardWife.classList.add('active');
+      DOM.cardWife.removeAttribute('style');
     }
     if (DOM.cardHusband) {
-      DOM.cardHusband.className = 'login-profile-card';
-      DOM.cardHusband.style.borderColor = '#e2e8f0';
-      DOM.cardHusband.style.background = '#f8fafc';
-      DOM.cardHusband.style.boxShadow = 'none';
-      const hText = DOM.cardHusband.querySelector('.profile-card-name');
-      if (hText) hText.style.color = '#64748b';
-    }
-    if (DOM.loginSubmitBtn) {
-      DOM.loginSubmitBtn.style.background = 'linear-gradient(135deg, #f43f5e, #e11d48)';
-      DOM.loginSubmitBtn.style.boxShadow = '0 8px 24px -4px rgba(244, 63, 94, 0.38)';
-      DOM.loginSubmitBtn.style.color = '#ffffff';
-    }
-    if (DOM.loginPassword) {
-      DOM.loginPassword.style.setProperty('--focus-ring', 'rgba(244, 63, 94, 0.15)');
-      DOM.loginPassword.style.setProperty('--focus-border', '#f43f5e');
+      DOM.cardHusband.classList.remove('active');
+      DOM.cardHusband.removeAttribute('style');
     }
   }
 }
@@ -791,15 +788,15 @@ function showLoginAlert() {
     DOM.loginErrorAlert.style.display = 'flex';
   }
   if (DOM.loginPassword) {
-    DOM.loginPassword.style.borderColor = '#ef4444';
-    DOM.loginPassword.style.boxShadow = '0 0 0 3.5px rgba(239, 68, 68, 0.18)';
+    DOM.loginPassword.classList.add('input-error');
     DOM.loginPassword.focus();
     DOM.loginPassword.select();
   }
-  if (DOM.loginBox) {
-    DOM.loginBox.style.animation = 'none';
-    void DOM.loginBox.offsetWidth;
-    DOM.loginBox.style.animation = 'shakeAnim 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both';
+  const authBox = document.querySelector('.auth-content-box');
+  if (authBox) {
+    authBox.style.animation = 'none';
+    void authBox.offsetWidth;
+    authBox.style.animation = 'shakeAnim 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both';
   }
 }
 
@@ -808,8 +805,7 @@ function hideLoginAlert() {
     DOM.loginErrorAlert.style.display = 'none';
   }
   if (DOM.loginPassword) {
-    DOM.loginPassword.style.borderColor = '#e2e8f0';
-    DOM.loginPassword.style.boxShadow = 'none';
+    DOM.loginPassword.classList.remove('input-error');
   }
 }
 
@@ -1065,6 +1061,21 @@ function handleResetPasswordUrl(urlParams) {
 // EVENT LISTENERS SETUP
 // ----------------------------------------------------
 function setupEventListeners() {
+  // Figma Welcome <-> Auth Views Toggle
+  const btnGotoLogin = document.getElementById('btn-goto-login-auth');
+  if (btnGotoLogin) {
+    btnGotoLogin.addEventListener('click', () => {
+      showAuthView();
+    });
+  }
+
+  const btnBackWelcome = document.getElementById('btn-back-to-welcome');
+  if (btnBackWelcome) {
+    btnBackWelcome.addEventListener('click', () => {
+      showWelcomeView();
+    });
+  }
+
   // Auth Profile Cards
   if (DOM.cardHusband) {
     DOM.cardHusband.addEventListener('click', () => {
@@ -1160,6 +1171,7 @@ function setupEventListeners() {
       closeDrawer();
       DOM.appContainer.style.display = 'none';
       DOM.loginOverlay.style.display = 'flex';
+      showWelcomeView();
       if (DOM.loginPassword) DOM.loginPassword.value = '';
       hideLoginAlert();
       selectLoginProfile('Husband');
