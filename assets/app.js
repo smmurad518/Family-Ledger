@@ -402,6 +402,16 @@ async function checkCodeUpdate() {
           localStorage.setItem('mm_app_version', serverVer);
           currentVersion = serverVer;
         } else if (currentVersion !== serverVer) {
+          // If on login screen, immediately reload fresh code so login updates instantly
+          if (DOM.loginOverlay && DOM.loginOverlay.style.display !== 'none') {
+            localStorage.setItem('mm_app_version', serverVer);
+            if ('caches' in window) {
+              const keys = await caches.keys();
+              await Promise.all(keys.map(k => caches.delete(k)));
+            }
+            window.location.reload(true);
+            return;
+          }
           showUpdatePopup(serverVer);
         }
       }
@@ -733,10 +743,12 @@ function showWelcomeView() {
   const viewWelcome = document.getElementById('login-view-welcome');
   const viewAuth = document.getElementById('login-view-auth');
   if (viewWelcome) {
+    viewWelcome.style.display = 'flex';
     viewWelcome.classList.remove('hidden');
     viewWelcome.classList.add('active');
   }
   if (viewAuth) {
+    viewAuth.style.display = 'none';
     viewAuth.classList.remove('active');
     viewAuth.classList.add('hidden');
   }
@@ -747,10 +759,12 @@ function showAuthView() {
   const viewWelcome = document.getElementById('login-view-welcome');
   const viewAuth = document.getElementById('login-view-auth');
   if (viewWelcome) {
+    viewWelcome.style.display = 'none';
     viewWelcome.classList.remove('active');
     viewWelcome.classList.add('hidden');
   }
   if (viewAuth) {
+    viewAuth.style.display = 'flex';
     viewAuth.classList.remove('hidden');
     viewAuth.classList.add('active');
     if (DOM.loginPassword) {

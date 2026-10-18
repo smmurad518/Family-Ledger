@@ -1,19 +1,20 @@
-const CACHE_NAME = 'mm-ledger-v1792345002788';
+const CACHE_NAME = 'mm-ledger-v1792345919308';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './manifest.json',
-  './assets/style.css',
+  './assets/style.css?v=1792345919308',
   './assets/login-bg.jpg',
-  './assets/app.js?v=1792345002788',
-  './assets/db.js?v=1792345002788',
+  './assets/app.js?v=1792345919308',
+  './assets/db.js?v=1792345919308',
 ];
 
 self.addEventListener('install', (e) => {
+  self.skipWaiting();
   e.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(ASSETS_TO_CACHE);
-    }).then(() => self.skipWaiting())
+    })
   );
 });
 
@@ -37,22 +38,35 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
-  e.respondWith(
-    caches.match(e.request, { ignoreSearch: true }).then((cachedResponse) => {
-      if (cachedResponse) {
-        // Fetch in background to update cache for next load (Stale-While-Revalidate)
-        fetch(e.request).then((networkResponse) => {
-          if (networkResponse.status === 200) {
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(e.request, networkResponse);
-            });
+  // Network-First for core code assets (HTML, CSS, JS) so updates are immediate
+  if (e.request.destination === 'style' || e.request.destination === 'script' || e.request.destination === 'document' || e.request.mode === 'navigate') {
+    e.respondWith(
+      fetch(e.request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const clone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(e.request, clone));
           }
-        }).catch(() => {/* Ignore network error offline */});
+          return networkResponse;
+        })
+        .catch(() => caches.match(e.request))
+    );
+    return;
+  }
 
+  // Cache-First for static assets (images, icons, fonts)
+  e.respondWith(
+    caches.match(e.request).then((cachedResponse) => {
+      if (cachedResponse) {
         return cachedResponse;
       }
-
-      return fetch(e.request);
+      return fetch(e.request).then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200) {
+          const clone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(e.request, clone));
+        }
+        return networkResponse;
+      });
     })
   );
 });
