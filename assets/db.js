@@ -1625,32 +1625,19 @@ export async function setInitialKabinerTaka(amount, date = '', note = '') {
   const numAmount = Math.abs(parseFloat(amount)) || 0;
   if (numAmount <= 0) { isWriting = false; return; }
 
-  // Check if an initial deposit record already exists
-  const existingInitialIndex = data.history.findIndex(h => h.type === 'initial');
-  let itemToSave;
-
-  if (existingInitialIndex !== -1) {
-    itemToSave = data.history[existingInitialIndex];
-    itemToSave.amount = numAmount;
-    if (date) itemToSave.date = date.trim();
-    if (note) itemToSave.note = note.trim();
-    itemToSave.approvedAt = Date.now();
-    itemToSave.timestamp = Date.now();
-  } else {
-    itemToSave = {
-      id: generateId(),
-      type: 'initial',
-      amount: numAmount,
-      date: (date || '').trim(),
-      note: (note || 'Initial Kabin Amount').trim(),
-      proposedBy: getCurrentProfile(),
-      status: 'approved',
-      approvedBy: 'Both',
-      approvedAt: Date.now(),
-      timestamp: Date.now()
-    };
-    data.history.unshift(itemToSave);
-  }
+  const itemToSave = {
+    id: generateId(),
+    type: 'initial',
+    amount: numAmount,
+    date: (date || '').trim(),
+    note: (note || 'Kabin Set').trim(),
+    proposedBy: getCurrentProfile(),
+    status: 'approved',
+    approvedBy: 'Both',
+    approvedAt: Date.now(),
+    timestamp: Date.now()
+  };
+  data.history.unshift(itemToSave);
 
   // Recalculate totalAmount
   let total = 0;
@@ -1681,6 +1668,12 @@ export async function proposeKabinerTakaChange(type, amount, date = '', note = '
   const data = getKabinerTakaData();
   const numAmount = Math.abs(parseFloat(amount)) || 0;
   if (numAmount <= 0) { isWriting = false; return false; }
+
+  if (type === 'deduct' && numAmount > data.totalAmount) {
+    isWriting = false;
+    alert(`Cannot deduct ৳${numAmount.toLocaleString('en-IN')}. Current Kabiner Taka balance is ৳${data.totalAmount.toLocaleString('en-IN')}.`);
+    return false;
+  }
 
   const currentProfile = getCurrentProfile();
   const targetPartner = currentProfile === 'Husband' ? 'Wife' : 'Husband';

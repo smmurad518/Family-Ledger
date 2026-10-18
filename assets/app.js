@@ -210,9 +210,6 @@ const DOM = {
 
   // Kabiner Taka Selectors
   kabinTotalDisplay: document.getElementById('kabin-total-display'),
-  kabinStatInitial: document.getElementById('kabin-stat-initial'),
-  kabinStatAdded: document.getElementById('kabin-stat-added'),
-  kabinStatDeducted: document.getElementById('kabin-stat-deducted'),
   kabinPendingContainer: document.getElementById('kabin-pending-container'),
   kabinInitialCard: document.getElementById('kabin-initial-card'),
   kabinInitialForm: document.getElementById('kabin-initial-form'),
@@ -2497,11 +2494,11 @@ function handleDataUpdate(type, sourceCollection) {
     const oldItem = lastKabinerTakaHistory.find(o => o.id === newItem.id);
     if (!oldItem) {
       if (newItem.proposedBy !== currentProfile) {
-        const typeWord = newItem.type === 'add' ? 'addition (+)' : (newItem.type === 'deduct' ? 'deduction (-)' : 'initial deposit');
+        const typeSign = newItem.type === 'add' ? '+৳' : (newItem.type === 'deduct' ? '-৳' : '৳');
         newEntriesFound.push({
           type: 'Kabiner Taka',
           title: '💍 Kabiner Taka Request',
-          message: `${newItem.proposedBy} submitted a ${typeWord} of ৳${Number(newItem.amount).toLocaleString('en-IN')} for your approval.`
+          message: `${newItem.proposedBy} submitted a proposal of ${typeSign}${Number(newItem.amount).toLocaleString('en-IN')} for your approval.`
         });
       }
     } else if (oldItem.status !== newItem.status) {
@@ -2659,12 +2656,12 @@ function renderDashboard() {
     kabinData.history.forEach(item => {
       let actionText = '';
       if (item.type === 'initial') {
-        actionText = `set Initial Kabin of ৳${Number(item.amount).toLocaleString('en-IN')}`;
+        actionText = `set Kabin of ৳${Number(item.amount).toLocaleString('en-IN')}`;
       } else {
-        const typeWord = item.type === 'add' ? 'addition' : 'deduction';
+        const typeSign = item.type === 'add' ? '+৳' : '-৳';
         actionText = item.status === 'approved'
-          ? `${typeWord} of ৳${Number(item.amount).toLocaleString('en-IN')} approved`
-          : `requested ${typeWord} of ৳${Number(item.amount).toLocaleString('en-IN')}`;
+          ? `${typeSign}${Number(item.amount).toLocaleString('en-IN')} approved`
+          : `requested ${typeSign}${Number(item.amount).toLocaleString('en-IN')}`;
       }
       logs.push({
         id: item.id,
@@ -3501,7 +3498,8 @@ function setupCollapsibleCards() {
     { headerId: 'baby-form-header', contentId: 'baby-form-content' },
     { headerId: 'baby-needs-form-header', contentId: 'baby-needs-form-content' },
     { headerId: 'important-date-form-header', contentId: 'important-date-form-content' },
-    { headerId: 'kabin-propose-header', contentId: 'kabin-propose-content' }
+    { headerId: 'kabin-propose-header', contentId: 'kabin-propose-content' },
+    { headerId: 'kabin-history-header', contentId: 'kabin-history-content' }
   ];
 
   togglers.forEach(({ headerId, contentId }) => {
@@ -3885,51 +3883,23 @@ function renderKabinerTaka() {
     const data = getKabinerTakaData();
     const currentProfile = getCurrentProfile();
 
-    let initialAmount = 0;
-    let totalAdded = 0;
-    let totalDeducted = 0;
-
-    data.history.forEach(item => {
-      if (item.status === 'approved') {
-        const amt = Number(item.amount) || 0;
-        if (item.type === 'initial') {
-          initialAmount += amt;
-        } else if (item.type === 'add') {
-          totalAdded += amt;
-        } else if (item.type === 'deduct') {
-          totalDeducted += amt;
-        }
-      }
-    });
-
     const currentBalance = data.totalAmount;
 
     // 1. Update Hero Card
     if (DOM.kabinTotalDisplay) {
       DOM.kabinTotalDisplay.textContent = '৳ ' + currentBalance.toLocaleString('en-IN');
     }
-    if (DOM.kabinStatInitial) {
-      DOM.kabinStatInitial.textContent = '৳' + initialAmount.toLocaleString('en-IN');
-    }
-    if (DOM.kabinStatAdded) {
-      DOM.kabinStatAdded.textContent = '+৳' + totalAdded.toLocaleString('en-IN');
-    }
-    if (DOM.kabinStatDeducted) {
-      DOM.kabinStatDeducted.textContent = '-৳' + totalDeducted.toLocaleString('en-IN');
-    }
 
     // 2. Initial Setup vs Propose Card visibility
+    // Initial card shows ONLY when totalAmount is 0 (no balance set or fully depleted)
     const initialCard = DOM.kabinInitialCard || document.getElementById('kabin-initial-card');
     const proposeCard = DOM.kabinProposeCard || document.getElementById('kabin-propose-card');
     if (initialCard && proposeCard) {
-      const hasInitial = data.history.some(h => h.type === 'initial');
-      if (!hasInitial) {
+      if (currentBalance === 0 && !data.history.some(h => h.status === 'pending')) {
         initialCard.style.display = 'block';
         proposeCard.style.display = 'block';
       } else {
-        if (!initialCard.classList.contains('manually-opened')) {
-          initialCard.style.display = 'none';
-        }
+        initialCard.style.display = 'none';
         proposeCard.style.display = 'block';
       }
     }
@@ -3958,7 +3928,6 @@ function renderKabinerTaka() {
         DOM.kabinPendingContainer.innerHTML = pendingRequests.map(item => {
           const isPendingMyApproval = item.proposedBy !== currentProfile;
           const typeSymbol = item.type === 'add' ? '+' : '-';
-          const typeWord = item.type === 'add' ? 'Add' : 'Deduct';
           const typeColor = item.type === 'add' ? 'var(--color-secondary)' : 'var(--color-danger)';
           const formattedDate = formatKabinDate(item.date, item.timestamp);
           const noteText = item.note ? `<div style="font-size: 13px; color: var(--text-dark); margin: 6px 0; font-weight: 600;">"${item.note}"</div>` : '';
@@ -4004,7 +3973,7 @@ function renderKabinerTaka() {
                       <div style="font-weight: 700; font-size: 13px; color: var(--text-dark);">
                         Waiting for ${partnerName}'s approval
                       </div>
-                      <div style="font-size: 11px; color: var(--text-muted);">Proposed: ${typeWord} ${typeSymbol}৳${Number(item.amount).toLocaleString('en-IN')} • Date: ${formattedDate}</div>
+                      <div style="font-size: 11px; color: var(--text-muted);">Proposed: ${typeSymbol}৳${Number(item.amount).toLocaleString('en-IN')} • Date: ${formattedDate}</div>
                     </div>
                   </div>
                   <button type="button" class="btn-kabin-cancel" data-id="${item.id}" title="Cancel your request">
@@ -4052,19 +4021,19 @@ function renderKabinerTakaHistory(data, currentProfile) {
   }
 
   historyList.innerHTML = filtered.map(item => {
-    let typeIcon = '📜';
-    let typeLabel = 'Initial Kabin Deposit';
+    let typeIcon = '💍';
+    let typeLabel = 'Kabin';
     let amountColor = 'var(--text-dark)';
     let prefix = '৳';
 
     if (item.type === 'add') {
       typeIcon = '➕';
-      typeLabel = 'Added to Kabin';
+      typeLabel = 'Deposit (+)';
       amountColor = 'var(--color-secondary)';
       prefix = '+৳';
     } else if (item.type === 'deduct') {
       typeIcon = '➖';
-      typeLabel = 'Deducted from Kabin';
+      typeLabel = 'Payment (-)';
       amountColor = 'var(--color-danger)';
       prefix = '-৳';
     }
@@ -4292,30 +4261,7 @@ function initializeKabinerTakaEvents() {
     });
   }
 
-  // 7. Edit Initial Kabin Amount Toggle
-  const btnEditInitial = document.getElementById('btn-edit-kabin-initial');
-  if (btnEditInitial) {
-    btnEditInitial.addEventListener('click', () => {
-      const initialCard = DOM.kabinInitialCard || document.getElementById('kabin-initial-card');
-      if (!initialCard) return;
-      const isHidden = initialCard.style.display === 'none';
-      if (isHidden) {
-        const data = getKabinerTakaData();
-        const initialItem = data.history.find(h => h.type === 'initial');
-        const amtInput = document.getElementById('kabin-init-amount');
-        const dateInput = document.getElementById('kabin-init-date');
-        const noteInput = document.getElementById('kabin-init-note');
-        if (amtInput && initialItem) amtInput.value = initialItem.amount;
-        if (dateInput && initialItem) dateInput.value = initialItem.date || '';
-        if (noteInput && initialItem) noteInput.value = initialItem.note || '';
-        initialCard.style.display = 'block';
-        initialCard.classList.add('manually-opened');
-      } else {
-        initialCard.style.display = 'none';
-        initialCard.classList.remove('manually-opened');
-      }
-    });
-  }
+  // 7. (Removed - Edit Initial Kabin Amount Toggle no longer needed)
 }
 
 // Call event setup on initialization

@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Nunito:wght@300;400;600;700;800&family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
 
   <!-- Main Styling -->
-  <link rel="stylesheet" href="assets/style.css?v=1792358571074">
+  <link rel="stylesheet" href="assets/style.css?v=1792360286935">
 
   <style id="critical-figma-login-styles">
     @keyframes shakeAnim {
@@ -1199,24 +1199,17 @@
             <span>💍 Kabiner Taka</span>
           </h2>
           <p style="color: rgba(255, 255, 255, 0.95);">
-            Mutual marital security ledger. Any balance addition (+) or deduction (-) requires dual-approval.
+            Mutual marital security ledger. Any balance change requires dual-approval.
           </p>
         </div>
 
         <!-- Hero Balance Card -->
-        <div class="card kabin-hero-card" id="kabin-hero-card" style="margin-bottom: 20px; text-align: center; padding: 24px 20px; position: relative; overflow: hidden; border: 1px solid rgba(251, 191, 36, 0.35); background: linear-gradient(180deg, var(--bg-card) 0%, rgba(251, 191, 36, 0.06) 100%);">
-          <div style="font-size: 11px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: var(--color-accent); margin-bottom: 6px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+        <div class="card kabin-hero-card" id="kabin-hero-card" style="margin-bottom: 20px; text-align: center; padding: 28px 20px; position: relative; overflow: hidden; border: 1px solid rgba(251, 191, 36, 0.35); background: linear-gradient(180deg, var(--bg-card) 0%, rgba(251, 191, 36, 0.06) 100%);">
+          <div style="font-size: 11px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: var(--color-accent); margin-bottom: 8px; display: flex; align-items: center; justify-content: center; gap: 6px;">
             <span>✨ TOTAL KABINER TAKA</span>
           </div>
-          <div id="kabin-total-display" style="font-family: var(--font-title); font-size: 38px; font-weight: 800; color: var(--text-dark); margin: 6px 0; letter-spacing: -0.5px;">
+          <div id="kabin-total-display" style="font-family: var(--font-title); font-size: 42px; font-weight: 800; color: var(--text-dark); margin: 4px 0; letter-spacing: -0.5px;">
             ৳ 0
-          </div>
-          <div id="kabin-stats-row" style="display: flex; justify-content: center; gap: 14px; margin-top: 10px; font-size: 12px; color: var(--text-muted); flex-wrap: wrap;">
-            <span>Initial: <b id="kabin-stat-initial" style="color: var(--text-dark);">৳0</b> <button type="button" id="btn-edit-kabin-initial" style="background: none; border: none; cursor: pointer; font-size: 11px; color: var(--color-primary); padding: 0 4px;" title="Edit Initial Kabin Amount">✏️</button></span>
-            <span>•</span>
-            <span>Added: <b id="kabin-stat-added" style="color: var(--color-secondary);">+৳0</b></span>
-            <span>•</span>
-            <span>Deducted: <b id="kabin-stat-deducted" style="color: var(--color-danger);">-৳0</b></span>
           </div>
         </div>
 
@@ -1225,20 +1218,20 @@
           <!-- Dynamically populated pending cards -->
         </div>
 
-        <!-- Initial Setup Card (Only visible when no transactions exist) -->
+        <!-- Initial Setup Card (Only visible when totalAmount is 0 and no pending initial) -->
         <div class="card" id="kabin-initial-card" style="display: none; margin-bottom: 20px; padding: 22px; border: 2px dashed var(--color-accent);">
           <div style="text-align: center; margin-bottom: 16px;">
             <div style="font-size: 32px; margin-bottom: 6px;">📜</div>
             <h3 style="font-family: var(--font-title); font-size: 18px; font-weight: 800; margin: 0 0 6px; color: var(--text-dark);">
-              Set Initial Kabin Amount
+              Set Kabiner Taka
             </h3>
             <p style="font-size: 13px; color: var(--text-muted); margin: 0;">
-              Enter the agreed initial Kabin / Denmohor amount to start your mutual ledger.
+              Enter the agreed Kabin / Denmohor amount to start your mutual ledger.
             </p>
           </div>
           <form id="kabin-initial-form" onsubmit="event.preventDefault(); return false;">
             <div class="form-group" style="margin-bottom: 14px;">
-              <label for="kabin-init-amount">Initial Amount (৳) *</label>
+              <label for="kabin-init-amount">Amount (৳) *</label>
               <input type="number" id="kabin-init-amount" placeholder="e.g. 40000" required min="1" step="any"
                 style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-dark); font-size: 16px; font-weight: 700;">
             </div>
@@ -1255,32 +1248,36 @@
               </div>
             </div>
             <button type="button" id="btn-save-kabin-initial" class="btn-primary" style="width: 100%; font-weight: 800; height: 46px; border-radius: 12px;">
-              Save Initial Amount
+              Save Amount
             </button>
           </form>
         </div>
 
-        <!-- Propose Change Card (Collapsible) -->
-        <div class="card" id="kabin-propose-card" style="margin-bottom: 20px; padding: 16px;">
-          <div id="kabin-propose-header" style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none;">
-            <h3 style="margin: 0; font-family: var(--font-title); font-weight: 800; font-size: 15px; color: var(--text-dark); display: flex; align-items: center; gap: 8px;">
-              <span style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 8px; background: var(--color-primary-light); color: var(--color-primary-interactive); font-weight: 800; font-size: 16px;">±</span>
-              <span>Propose Change (+ or -)</span>
+        <!-- Propose Change Card (Collapsible Dropdown) -->
+        <div class="card" id="kabin-propose-card" style="margin-bottom: 16px; padding: 0; overflow: hidden;">
+          <div id="kabin-propose-header" style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; padding: 14px 16px;">
+            <h3 style="margin: 0; font-family: var(--font-title); font-weight: 800; font-size: 15px; color: var(--text-dark); display: flex; align-items: center; gap: 10px;">
+              <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 10px; background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.1) 100%); color: #10b981; font-size: 15px;">
+                <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+              </span>
+              <span>Propose Change</span>
             </h3>
-            <button class="btn-toggle-collapse" aria-label="Toggle Form">
-              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            <button class="btn-toggle-collapse" aria-label="Toggle Form" style="background: none; border: none; cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center;">
+              <span style="display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.25); color: #10b981;">
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </span>
             </button>
           </div>
 
-          <div id="kabin-propose-content" style="margin-top: 14px;">
+          <div id="kabin-propose-content" style="padding: 0 16px 16px;">
             <form id="kabin-propose-form" onsubmit="event.preventDefault(); return false;">
               <!-- Type toggle buttons -->
               <div style="display: flex; gap: 8px; margin-bottom: 14px;">
                 <button type="button" id="kabin-type-add-btn" class="tab-btn active" style="flex: 1; text-align: center; justify-content: center; padding: 10px; border-radius: 10px; font-weight: 800; cursor: pointer;">
-                  ➕ Add Money (+)
+                  ➕ Add (+)
                 </button>
                 <button type="button" id="kabin-type-deduct-btn" class="tab-btn" style="flex: 1; text-align: center; justify-content: center; padding: 10px; border-radius: 10px; font-weight: 800; cursor: pointer;">
-                  ➖ Deduct Money (-)
+                  ➖ Deduct (-)
                 </button>
               </div>
               <input type="hidden" id="kabin-propose-type" value="add">
@@ -1298,39 +1295,53 @@
                     style="width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-dark);">
                 </div>
                 <div class="form-group" style="flex: 1;">
-                  <label for="kabin-propose-note">Note / Purpose (Optional)</label>
+                  <label for="kabin-propose-note">Note (Optional)</label>
                   <input type="text" id="kabin-propose-note" placeholder="e.g. Monthly installment" autocomplete="off"
                     style="width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-dark);">
                 </div>
               </div>
 
               <div style="background: rgba(251, 191, 36, 0.08); border-left: 3px solid var(--color-accent); padding: 10px 12px; border-radius: 8px; margin-bottom: 14px; font-size: 11px; color: var(--text-muted); line-height: 1.4;">
-                🛡️ <b>Dual Approval:</b> Balance will only update after your partner approves this request.
+                🛡️ <b>Dual Approval:</b> Balance will only update after your partner approves.
               </div>
 
               <button type="button" id="btn-submit-kabin-propose" class="btn-primary" style="width: 100%; height: 46px; border-radius: 12px; font-weight: 800;">
-                Submit for Partner's Approval
+                Submit for Approval
               </button>
             </form>
           </div>
         </div>
 
-        <!-- History Header & Tabs -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; gap: 8px; flex-wrap: wrap;">
-          <h3 style="margin: 0; font-family: var(--font-title); font-weight: 800; font-size: 16px; color: var(--text-dark); display: flex; align-items: center; gap: 6px;">
-            <span>📜 Transaction History</span>
-          </h3>
-          <div class="tab-row" id="kabin-filter-tabs" style="margin-bottom: 0; padding-bottom: 0;">
-            <button class="tab-btn active" data-filter="all" id="kabin-tab-all">All</button>
-            <button class="tab-btn" data-filter="approved" id="kabin-tab-approved">Approved</button>
-            <button class="tab-btn" data-filter="pending" id="kabin-tab-pending">Pending</button>
+        <!-- Transaction History Card (Collapsible Dropdown) -->
+        <div class="card" id="kabin-history-card" style="margin-bottom: 20px; padding: 0; overflow: hidden;">
+          <div id="kabin-history-header" style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; padding: 14px 16px;">
+            <h3 style="margin: 0; font-family: var(--font-title); font-weight: 800; font-size: 15px; color: var(--text-dark); display: flex; align-items: center; gap: 10px;">
+              <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 10px; background: linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(245, 158, 11, 0.1) 100%); color: #f59e0b; font-size: 15px;">
+                <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              </span>
+              <span>Transaction History</span>
+            </h3>
+            <button class="btn-toggle-collapse" aria-label="Toggle History" style="background: none; border: none; cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center;">
+              <span style="display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.25); color: #f59e0b;">
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </span>
+            </button>
+          </div>
+
+          <div id="kabin-history-content" style="padding: 0 12px 12px;">
+            <!-- Filter Tabs -->
+            <div class="tab-row" id="kabin-filter-tabs" style="margin-bottom: 10px; padding-bottom: 0;">
+              <button class="tab-btn active" data-filter="all" id="kabin-tab-all">All</button>
+              <button class="tab-btn" data-filter="approved" id="kabin-tab-approved">Approved</button>
+              <button class="tab-btn" data-filter="pending" id="kabin-tab-pending">Pending</button>
+            </div>
+
+            <!-- History Items List -->
+            <ul class="item-list" id="kabin-history-list-container" style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px;">
+              <!-- Dynamically populated via JS -->
+            </ul>
           </div>
         </div>
-
-        <!-- History Items List -->
-        <ul class="item-list" id="kabin-history-list-container" style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px;">
-          <!-- Dynamically populated via JS -->
-        </ul>
       </section>
 
 
@@ -1717,8 +1728,8 @@
   </script>
 
     <!-- Core Scripts -->
-    <script type="module" src="assets/db.js?v=1792358571074"></script>
-    <script type="module" src="assets/app.js?v=1792358571074"></script>
+    <script type="module" src="assets/db.js?v=1792360286935"></script>
+    <script type="module" src="assets/app.js?v=1792360286935"></script>
 
 </body>
 

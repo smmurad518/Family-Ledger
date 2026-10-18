@@ -2429,8 +2429,17 @@ button.btn-primary:active {
   transition: transform 0.3s ease;
 }
 
+.btn-toggle-collapse svg {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 .btn-toggle-collapse.rotated svg {
   transform: rotate(180deg);
+}
+
+#kabin-history-content.collapsible-content:not(.collapsed) {
+  max-height: 3500px;
+  overflow: visible;
 }
 
 /* Important Date Card Design matching the image */
