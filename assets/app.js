@@ -2564,20 +2564,19 @@ function renderDashboard() {
     if (pendingForMe.length > 0) {
       dashKabinAlert.style.display = 'block';
       const first = pendingForMe[0];
+      const amountText = `${first.type === 'add' ? '+' : '-'}৳${Number(first.amount).toLocaleString('en-IN')}`;
       dashKabinAlert.innerHTML = `
-        <div style="background: linear-gradient(135deg, rgba(251, 191, 36, 0.16) 0%, rgba(245, 158, 11, 0.24) 100%); border: 1.5px solid #f59e0b; border-radius: 14px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.15);">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="font-size: 24px;">💍</span>
-            <div>
-              <div style="font-weight: 800; font-size: 13.5px; color: var(--text-dark);">
-                Kabiner Taka: ${pendingForMe.length} Request${pendingForMe.length > 1 ? 's' : ''} Awaiting Approval!
-              </div>
-              <div style="font-size: 11.5px; color: var(--text-muted);">
-                ${first.proposedBy} requested ${first.type === 'add' ? '+৳' : '-৳'}${Number(first.amount).toLocaleString('en-IN')}.
-              </div>
+        <div style="background: var(--bg-card); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 12px; padding: 10px 14px; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+          <span style="font-size: 18px; flex-shrink: 0;">💍</span>
+          <div style="flex: 1; min-width: 0; overflow: hidden;">
+            <div style="font-weight: 700; font-size: 12px; color: #f59e0b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+              Kabiner Taka · ${pendingForMe.length} Pending
+            </div>
+            <div style="font-size: 11px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+              ${first.proposedBy} requested ${amountText}
             </div>
           </div>
-          <button type="button" class="btn-primary" onclick="if(window.switchScreen) window.switchScreen('kabiner-taka')" style="padding: 8px 14px; border-radius: 10px; font-size: 12px; font-weight: 800; white-space: nowrap; flex-shrink: 0; box-shadow: none;">
+          <button type="button" onclick="if(window.switchScreen) window.switchScreen('kabiner-taka')" style="background: #f59e0b; color: #000; border: none; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 700; white-space: nowrap; flex-shrink: 0; cursor: pointer;">
             Review ➔
           </button>
         </div>
