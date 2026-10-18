@@ -2927,6 +2927,111 @@ button.btn-primary:active {
   transform: translateY(0);
 }
 
+/* ==================================================== */
+/* KABINER TAKA (MUTUAL SECURITY LEDGER) UI */
+/* ==================================================== */
+.kabin-hero-card {
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.kabin-hero-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(251, 191, 36, 0.15);
+}
+
+.kabin-pending-card {
+  background: var(--bg-card);
+  border: 1.5px solid var(--color-accent);
+  border-radius: var(--border-radius-md);
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 6px 20px rgba(251, 191, 36, 0.15);
+  position: relative;
+  animation: pulseKabinBorder 2.5s infinite;
+}
+
+@keyframes pulseKabinBorder {
+  0% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.35); }
+  70% { box-shadow: 0 0 0 8px rgba(251, 191, 36, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0); }
+}
+
+.btn-kabin-approve {
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-weight: 800;
+  font-size: 13px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: transform var(--transition-fast), filter var(--transition-fast);
+}
+
+.btn-kabin-approve:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.1);
+}
+
+.btn-kabin-reject {
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--color-danger);
+  border: 1px solid var(--color-danger);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-weight: 800;
+  font-size: 13px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: transform var(--transition-fast), background var(--transition-fast);
+}
+
+.btn-kabin-reject:hover {
+  background: var(--color-danger);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.btn-kabin-cancel {
+  background: none;
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-kabin-cancel:hover {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+.kabin-history-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background-color: var(--bg-card);
+  border-radius: var(--border-radius-sm);
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--border-color);
+  transition: var(--transition-fast);
+}
+
+.kabin-history-item:hover {
+  transform: translateX(2px);
+  border-color: var(--border-color);
+}
+
+
 
 
 

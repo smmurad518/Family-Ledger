@@ -52,7 +52,14 @@ import {
   updateImportantDate,
   getRecentImportantDate,
   getUsers,
-  updateUserPassword
+  updateUserPassword,
+  getKabinerTakaData,
+  setInitialKabinerTaka,
+  proposeKabinerTakaChange,
+  approveKabinerTakaChange,
+  rejectKabinerTakaChange,
+  cancelKabinerTakaChange,
+  deleteKabinerTakaHistoryItem
 } from './db.js';
 
 // DOM Element Selectors
@@ -199,12 +206,26 @@ const DOM = {
 
   // Delete History Selectors
   btnGoDeleteHistory: document.getElementById('btn-go-delete-history'),
-  screenDeleteHistoryList: document.getElementById('screen-delete-history-list')
+  screenDeleteHistoryList: document.getElementById('screen-delete-history-list'),
+
+  // Kabiner Taka Selectors
+  kabinTotalDisplay: document.getElementById('kabin-total-display'),
+  kabinStatInitial: document.getElementById('kabin-stat-initial'),
+  kabinStatAdded: document.getElementById('kabin-stat-added'),
+  kabinStatDeducted: document.getElementById('kabin-stat-deducted'),
+  kabinPendingContainer: document.getElementById('kabin-pending-container'),
+  kabinInitialCard: document.getElementById('kabin-initial-card'),
+  kabinInitialForm: document.getElementById('kabin-initial-form'),
+  kabinProposeCard: document.getElementById('kabin-propose-card'),
+  kabinProposeForm: document.getElementById('kabin-propose-form'),
+  kabinHistoryList: document.getElementById('kabin-history-list-container'),
+  drawerKabinerBadge: document.getElementById('drawer-kabiner-badge')
 };
 
 // UI Active State Filters
 let activeShoppingFilter = 'all';
 let activeDuesFilter = 'give';
+let activeKabinFilter = 'all';
 let activeExpenseMonth = ''; // Format: YYYY-MM
 
 // Cache for detecting remote new entries
@@ -548,6 +569,8 @@ function renderActiveScreen() {
     renderImportantDatesList();
   } else if (activeScreen === 'screen-delete-history') {
     renderDeleteHistoryLogs();
+  } else if (activeScreen === 'screen-kabiner-taka') {
+    renderKabinerTaka();
   }
 }
 
@@ -2257,6 +2280,8 @@ function handleDataUpdate(type, sourceCollection) {
   if (!sourceCollection || sourceCollection === 'movies') renderMoviesList();
   if (!sourceCollection || sourceCollection === 'baby_needs') renderBabyNeedsList();
   if (!sourceCollection || sourceCollection === 'delete_history') renderDeleteHistoryLogs();
+  if (!sourceCollection || sourceCollection === 'important_dates') renderImportantDatesList();
+  if (!sourceCollection || sourceCollection === 'kabiner_taka') renderKabinerTaka();
 
   // If this is the initial load, just update cache and return
   if (isFirstLoad) {
@@ -3294,7 +3319,8 @@ function setupCollapsibleCards() {
     { headerId: 'due-form-header', contentId: 'due-form-content' },
     { headerId: 'baby-form-header', contentId: 'baby-form-content' },
     { headerId: 'baby-needs-form-header', contentId: 'baby-needs-form-content' },
-    { headerId: 'important-date-form-header', contentId: 'important-date-form-content' }
+    { headerId: 'important-date-form-header', contentId: 'important-date-form-content' },
+    { headerId: 'kabin-propose-header', contentId: 'kabin-propose-content' }
   ];
 
   togglers.forEach(({ headerId, contentId }) => {
@@ -3652,5 +3678,384 @@ function renderRecentImportantDateCard() {
   `;
   DOM.dashImportantDateContainer.style.display = 'block';
 }
+
+// ----------------------------------------------------
+// SCREEN RENDERS & HANDLERS: KABINER TAKA (MUTUAL SECURITY)
+// ----------------------------------------------------
+function formatKabinDate(dateStr, timestamp) {
+  if (dateStr && dateStr.trim()) {
+    try {
+      const parts = dateStr.trim().split('-');
+      if (parts.length === 3) {
+        const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+        return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+      }
+    } catch (e) {}
+    return dateStr;
+  }
+  if (timestamp) {
+    return new Date(timestamp).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+  return 'No date specified';
+}
+
+function renderKabinerTaka() {
+  try {
+    const data = getKabinerTakaData();
+    const currentProfile = getCurrentProfile();
+
+    let initialAmount = 0;
+    let totalAdded = 0;
+    let totalDeducted = 0;
+
+    data.history.forEach(item => {
+      if (item.status === 'approved') {
+        const amt = Number(item.amount) || 0;
+        if (item.type === 'initial') {
+          initialAmount += amt;
+        } else if (item.type === 'add') {
+          totalAdded += amt;
+        } else if (item.type === 'deduct') {
+          totalDeducted += amt;
+        }
+      }
+    });
+
+    const currentBalance = data.totalAmount;
+
+    // 1. Update Hero Card
+    if (DOM.kabinTotalDisplay) {
+      DOM.kabinTotalDisplay.textContent = '৳ ' + currentBalance.toLocaleString('en-IN');
+    }
+    if (DOM.kabinStatInitial) {
+      DOM.kabinStatInitial.textContent = '৳' + initialAmount.toLocaleString('en-IN');
+    }
+    if (DOM.kabinStatAdded) {
+      DOM.kabinStatAdded.textContent = '+৳' + totalAdded.toLocaleString('en-IN');
+    }
+    if (DOM.kabinStatDeducted) {
+      DOM.kabinStatDeducted.textContent = '-৳' + totalDeducted.toLocaleString('en-IN');
+    }
+
+    // 2. Initial Setup vs Propose Card visibility
+    if (DOM.kabinInitialCard && DOM.kabinProposeCard) {
+      if (data.history.length === 0) {
+        DOM.kabinInitialCard.style.display = 'block';
+        DOM.kabinProposeCard.style.display = 'none';
+      } else {
+        DOM.kabinInitialCard.style.display = 'none';
+        DOM.kabinProposeCard.style.display = 'block';
+      }
+    }
+
+    // 3. Pending Approvals
+    const pendingRequests = data.history.filter(h => h.status === 'pending');
+    const waitingForMe = pendingRequests.filter(h => h.proposedBy !== currentProfile);
+
+    // Update Drawer Badge
+    if (DOM.drawerKabinerBadge) {
+      if (waitingForMe.length > 0) {
+        DOM.drawerKabinerBadge.style.display = 'inline-block';
+        DOM.drawerKabinerBadge.textContent = waitingForMe.length;
+      } else {
+        DOM.drawerKabinerBadge.style.display = 'none';
+      }
+    }
+
+    // Render Pending Container
+    if (DOM.kabinPendingContainer) {
+      if (pendingRequests.length === 0) {
+        DOM.kabinPendingContainer.style.display = 'none';
+        DOM.kabinPendingContainer.innerHTML = '';
+      } else {
+        DOM.kabinPendingContainer.style.display = 'block';
+        DOM.kabinPendingContainer.innerHTML = pendingRequests.map(item => {
+          const isPendingMyApproval = item.proposedBy !== currentProfile;
+          const typeSymbol = item.type === 'add' ? '+' : '-';
+          const typeWord = item.type === 'add' ? 'Add' : 'Deduct';
+          const typeColor = item.type === 'add' ? 'var(--color-secondary)' : 'var(--color-danger)';
+          const formattedDate = formatKabinDate(item.date, item.timestamp);
+          const noteText = item.note ? `<div style="font-size: 13px; color: var(--text-dark); margin: 6px 0; font-weight: 600;">"${item.note}"</div>` : '';
+
+          if (isPendingMyApproval) {
+            return `
+              <div class="kabin-pending-card">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 6px;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 22px;">🔔</span>
+                    <div>
+                      <div style="font-weight: 800; font-size: 14px; color: var(--text-dark);">
+                        Approval Request from ${item.proposedBy}
+                      </div>
+                      <div style="font-size: 11px; color: var(--text-muted);">Date: ${formattedDate}</div>
+                    </div>
+                  </div>
+                  <span style="font-family: var(--font-title); font-size: 18px; font-weight: 800; color: ${typeColor};">
+                    ${typeSymbol}৳${item.amount.toLocaleString('en-IN')}
+                  </span>
+                </div>
+                ${noteText}
+                <div style="display: flex; gap: 10px; margin-top: 14px;">
+                  <button type="button" class="btn-kabin-approve" data-id="${item.id}" style="flex: 2; justify-content: center;">
+                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    Approve (${typeSymbol}৳${item.amount.toLocaleString('en-IN')})
+                  </button>
+                  <button type="button" class="btn-kabin-reject" data-id="${item.id}" style="flex: 1; justify-content: center;">
+                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    Reject
+                  </button>
+                </div>
+              </div>
+            `;
+          } else {
+            const partnerName = currentProfile === 'Husband' ? 'Wife' : 'Husband';
+            return `
+              <div class="card" style="border: 1px solid var(--border-color); background: var(--bg-card); padding: 14px 16px; margin-bottom: 12px; box-shadow: var(--shadow-card);">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 20px;">⏳</span>
+                    <div>
+                      <div style="font-weight: 700; font-size: 13px; color: var(--text-dark);">
+                        Waiting for ${partnerName}'s approval
+                      </div>
+                      <div style="font-size: 11px; color: var(--text-muted);">Proposed: ${typeWord} ${typeSymbol}৳${item.amount.toLocaleString('en-IN')} • Date: ${formattedDate}</div>
+                    </div>
+                  </div>
+                  <button type="button" class="btn-kabin-cancel" data-id="${item.id}" title="Cancel your request">
+                    Cancel
+                  </button>
+                </div>
+                ${noteText}
+              </div>
+            `;
+          }
+        }).join('');
+      }
+    }
+
+    // 4. Render History List
+    renderKabinerTakaHistory(data, currentProfile);
+
+  } catch (err) {
+    console.error('Error in renderKabinerTaka:', err);
+  }
+}
+
+function renderKabinerTakaHistory(data, currentProfile) {
+  if (!DOM.kabinHistoryList) return;
+
+  let filtered = [...data.history];
+  if (activeKabinFilter === 'approved') {
+    filtered = filtered.filter(item => item.status === 'approved');
+  } else if (activeKabinFilter === 'pending') {
+    filtered = filtered.filter(item => item.status === 'pending');
+  }
+
+  // Newest first
+  filtered.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+  if (filtered.length === 0) {
+    DOM.kabinHistoryList.innerHTML = `
+      <div class="empty-state" style="padding: 24px 16px; text-align: center;">
+        <svg viewBox="0 0 24 24" width="28" height="28" stroke="currentColor" stroke-width="2" fill="none" style="margin: 0 auto 8px; opacity: 0.5;"><circle cx="12" cy="12" r="10"/><path d="M12 6v12"/><path d="M17 10h-7a2.5 2.5 0 0 0 0 5h7"/></svg>
+        <p style="font-size: 13px; color: var(--text-muted); margin: 0;">No transactions found in this view.</p>
+      </div>
+    `;
+    return;
+  }
+
+  DOM.kabinHistoryList.innerHTML = filtered.map(item => {
+    let typeIcon = '📜';
+    let typeLabel = 'Initial Kabin Deposit';
+    let amountColor = 'var(--text-dark)';
+    let prefix = '৳';
+
+    if (item.type === 'add') {
+      typeIcon = '➕';
+      typeLabel = 'Added to Kabin';
+      amountColor = 'var(--color-secondary)';
+      prefix = '+৳';
+    } else if (item.type === 'deduct') {
+      typeIcon = '➖';
+      typeLabel = 'Deducted from Kabin';
+      amountColor = 'var(--color-danger)';
+      prefix = '-৳';
+    }
+
+    let statusBadge = '';
+    if (item.status === 'approved') {
+      statusBadge = `<span style="font-size: 10px; font-weight: 800; color: #10b981; background: rgba(16, 185, 129, 0.12); padding: 3px 8px; border-radius: 6px;">✓ Approved by ${item.approvedBy || 'Partner'}</span>`;
+    } else if (item.status === 'pending') {
+      statusBadge = `<span style="font-size: 10px; font-weight: 800; color: #f59e0b; background: rgba(245, 158, 11, 0.12); padding: 3px 8px; border-radius: 6px;">⏳ Pending Approval</span>`;
+    } else if (item.status === 'rejected') {
+      statusBadge = `<span style="font-size: 10px; font-weight: 800; color: #ef4444; background: rgba(239, 68, 68, 0.12); padding: 3px 8px; border-radius: 6px;">✕ Rejected by ${item.approvedBy || 'Partner'}</span>`;
+    }
+
+    const formattedDate = formatKabinDate(item.date, item.timestamp);
+    const noteHtml = item.note ? `<div style="font-size: 12px; color: var(--text-dark); opacity: 0.85; margin-top: 2px;">${item.note}</div>` : '';
+
+    return `
+      <li class="kabin-history-item" data-id="${item.id}">
+        <div style="display: flex; align-items: flex-start; gap: 12px; flex: 1;">
+          <div style="font-size: 20px; width: 34px; height: 34px; border-radius: 10px; background: rgba(251, 191, 36, 0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            ${typeIcon}
+          </div>
+          <div style="flex: 1;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+              <span style="font-weight: 800; font-size: 14px; color: var(--text-dark);">${typeLabel}</span>
+              <span style="font-family: var(--font-title); font-weight: 800; font-size: 15px; color: ${amountColor};">
+                ${prefix}${item.amount.toLocaleString('en-IN')}
+              </span>
+            </div>
+            ${noteHtml}
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; flex-wrap: wrap;">
+              <span style="font-size: 11px; color: var(--text-muted);">
+                📅 ${formattedDate} • proposed by ${item.proposedBy || 'someone'}
+              </span>
+              <div style="display: flex; align-items: center;">
+                ${statusBadge}
+              </div>
+            </div>
+          </div>
+        </div>
+      </li>
+    `;
+  }).join('');
+}
+
+// Attach Kabiner Taka Event Listeners
+function initializeKabinerTakaEvents() {
+  // 1. Initial Kabin Form
+  if (DOM.kabinInitialForm) {
+    DOM.kabinInitialForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const amtInput = document.getElementById('kabin-init-amount');
+      const dateInput = document.getElementById('kabin-init-date');
+      const noteInput = document.getElementById('kabin-init-note');
+
+      const amount = amtInput ? amtInput.value : '';
+      const date = dateInput ? dateInput.value : '';
+      const note = noteInput ? noteInput.value : '';
+
+      if (!amount || parseFloat(amount) <= 0) return;
+
+      await setInitialKabinerTaka(amount, date, note);
+      showInAppToast('Kabin Initialized', `Initial Kabin amount ৳${Number(amount).toLocaleString('en-IN')} has been set.`);
+      renderKabinerTaka();
+    });
+  }
+
+  // 2. Propose Type Buttons (+ / -)
+  const addBtn = document.getElementById('kabin-type-add-btn');
+  const deductBtn = document.getElementById('kabin-type-deduct-btn');
+  const typeInput = document.getElementById('kabin-propose-type');
+  const submitBtn = document.getElementById('btn-submit-kabin-propose');
+
+  if (addBtn && deductBtn && typeInput) {
+    addBtn.addEventListener('click', () => {
+      typeInput.value = 'add';
+      addBtn.classList.add('active');
+      deductBtn.classList.remove('active');
+      if (submitBtn) submitBtn.textContent = "Submit Addition (+) for Approval";
+    });
+    deductBtn.addEventListener('click', () => {
+      typeInput.value = 'deduct';
+      deductBtn.classList.add('active');
+      addBtn.classList.remove('active');
+      if (submitBtn) submitBtn.textContent = "Submit Deduction (-) for Approval";
+    });
+  }
+
+  // 3. Propose Change Form
+  if (DOM.kabinProposeForm) {
+    DOM.kabinProposeForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const type = typeInput ? typeInput.value : 'add';
+      const amtInput = document.getElementById('kabin-propose-amount');
+      const dateInput = document.getElementById('kabin-propose-date');
+      const noteInput = document.getElementById('kabin-propose-note');
+
+      const amount = amtInput ? amtInput.value : '';
+      const date = dateInput ? dateInput.value : '';
+      const note = noteInput ? noteInput.value : '';
+
+      if (!amount || parseFloat(amount) <= 0) return;
+
+      await proposeKabinerTakaChange(type, amount, date, note);
+
+      if (amtInput) amtInput.value = '';
+      if (dateInput) dateInput.value = '';
+      if (noteInput) noteInput.value = '';
+
+      const targetPartner = getCurrentProfile() === 'Husband' ? 'Wife' : 'Husband';
+      showInAppToast('Request Sent', `Approval request for ${type === 'add' ? '+৳' : '-৳'}${Number(amount).toLocaleString('en-IN')} sent to ${targetPartner}.`);
+      renderKabinerTaka();
+    });
+  }
+
+  // 4. Pending Actions & Cancellation Delegation
+  if (DOM.kabinPendingContainer) {
+    DOM.kabinPendingContainer.addEventListener('click', async (e) => {
+      const approveBtn = e.target.closest('.btn-kabin-approve');
+      if (approveBtn) {
+        const id = approveBtn.dataset.id;
+        await approveKabinerTakaChange(id);
+        const data = getKabinerTakaData();
+        showInAppToast('Approved! 🎉', `Transaction approved! Total Kabiner Taka is now ৳${data.totalAmount.toLocaleString('en-IN')}`);
+        renderKabinerTaka();
+        return;
+      }
+
+      const rejectBtn = e.target.closest('.btn-kabin-reject');
+      if (rejectBtn) {
+        const id = rejectBtn.dataset.id;
+        if (confirm('Are you sure you want to reject this request?')) {
+          await rejectKabinerTakaChange(id);
+          showInAppToast('Rejected', 'Request was rejected.');
+          renderKabinerTaka();
+        }
+        return;
+      }
+
+      const cancelBtn = e.target.closest('.btn-kabin-cancel');
+      if (cancelBtn) {
+        const id = cancelBtn.dataset.id;
+        if (confirm('Cancel your pending request?')) {
+          await cancelKabinerTakaChange(id);
+          showInAppToast('Cancelled', 'Your request has been cancelled.');
+          renderKabinerTaka();
+        }
+        return;
+      }
+    });
+  }
+
+  // 5. History List Delete Delegation (Protected - Kabiner Taka transactions are permanent)
+  if (DOM.kabinHistoryList) {
+    DOM.kabinHistoryList.addEventListener('click', (e) => {
+      const deleteBtn = e.target.closest('.btn-kabin-delete');
+      if (deleteBtn) {
+        showInAppToast('Not Allowed', 'Kabiner Taka transaction history is permanent and cannot be deleted.');
+      }
+    });
+  }
+
+  // 6. Filter Tabs
+  const filterTabsContainer = document.getElementById('kabin-filter-tabs');
+  if (filterTabsContainer) {
+    filterTabsContainer.addEventListener('click', (e) => {
+      const tabBtn = e.target.closest('.tab-btn');
+      if (!tabBtn) return;
+      filterTabsContainer.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      tabBtn.classList.add('active');
+      activeKabinFilter = tabBtn.dataset.filter || 'all';
+      renderKabinerTaka();
+    });
+  }
+}
+
+// Call event setup on initialization
+initializeKabinerTakaEvents();
+
 
 

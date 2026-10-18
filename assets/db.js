@@ -27,7 +27,8 @@ const KEYS = {
   BABY_NEEDS: 'mm_baby_needs',
   DELETE_HISTORY: 'mm_delete_history',
   IMPORTANT_DATES: 'mm_important_dates',
-  USERS: 'mm_users'
+  USERS: 'mm_users',
+  KABINER_TAKA: 'mm_kabiner_taka'
 };
 
 // Global application state for db
@@ -107,6 +108,7 @@ export async function pollServerData() {
         const localDeleteHistory = getLocal(KEYS.DELETE_HISTORY, []);
         const localImportantDates = getLocal(KEYS.IMPORTANT_DATES, []);
         const localUsers = getLocal(KEYS.USERS, { Husband: '123456', Wife: '12345' });
+        const localKabinerTaka = getLocal(KEYS.KABINER_TAKA, { totalAmount: 0, history: [] });
 
         const remoteShopping = serverData.shopping || [];
         const remoteExpenses = serverData.expenses || [];
@@ -118,6 +120,7 @@ export async function pollServerData() {
         const remoteDeleteHistory = serverData.deleteHistory || [];
         const remoteImportantDates = serverData.importantDates || [];
         const remoteUsers = serverData.users || { Husband: '123456', Wife: '12345' };
+        const remoteKabinerTaka = serverData.kabinerTaka || { totalAmount: 0, history: [] };
 
         let updated = false;
 
@@ -161,6 +164,10 @@ export async function pollServerData() {
           setLocal(KEYS.USERS, remoteUsers);
           updated = true;
         }
+        if (JSON.stringify(localKabinerTaka) !== JSON.stringify(remoteKabinerTaka)) {
+          setLocal(KEYS.KABINER_TAKA, remoteKabinerTaka);
+          updated = true;
+        }
 
         if (updated && onUpdateCallback) {
           onUpdateCallback('update', 'all');
@@ -191,6 +198,7 @@ export async function pushStateToServer() {
     const localDeleteHistory = getLocal(KEYS.DELETE_HISTORY, []);
     const localImportantDates = getLocal(KEYS.IMPORTANT_DATES, []);
     const localUsers = getLocal(KEYS.USERS, { Husband: '123456', Wife: '12345' });
+    const localKabinerTaka = getLocal(KEYS.KABINER_TAKA, { totalAmount: 0, history: [] });
 
     const payload = {
       shopping: localShopping,
@@ -203,6 +211,7 @@ export async function pushStateToServer() {
       deleteHistory: localDeleteHistory,
       importantDates: localImportantDates,
       users: localUsers,
+      kabinerTaka: localKabinerTaka,
       updatedAt: Date.now()
     };
 
@@ -1486,4 +1495,181 @@ export async function updateUserPassword(profile, newPassword) {
   if (onUpdateCallback) onUpdateCallback('update', 'users');
   pushStateToServer();
 }
+
+// ----------------------------------------------------
+// APIS: KABINER TAKA (MUTUAL FAMILY SECURITY)
+// ----------------------------------------------------
+export function getKabinerTakaData() {
+  const data = getLocal(KEYS.KABINER_TAKA, { totalAmount: 0, history: [] });
+  if (!data || typeof data !== 'object') {
+    return { totalAmount: 0, history: [] };
+  }
+  if (!Array.isArray(data.history)) {
+    data.history = [];
+  }
+  // Calculate totalAmount from approved history entries to ensure mathematical consistency
+  let total = 0;
+  data.history.forEach(item => {
+    if (item.status === 'approved') {
+      const amt = Number(item.amount) || 0;
+      if (item.type === 'initial' || item.type === 'add') {
+        total += amt;
+      } else if (item.type === 'deduct') {
+        total -= amt;
+      }
+    }
+  });
+  data.totalAmount = Math.max(0, total);
+  return data;
+}
+
+export async function setInitialKabinerTaka(amount, date = '', note = '') {
+  isWriting = true;
+  if (writeCooldownTimer) clearTimeout(writeCooldownTimer);
+
+  const data = getKabinerTakaData();
+  const numAmount = Math.abs(parseFloat(amount)) || 0;
+  if (numAmount <= 0) { isWriting = false; return; }
+
+  const newItem = {
+    id: generateId(),
+    type: 'initial',
+    amount: numAmount,
+    date: (date || '').trim(),
+    note: (note || 'Initial Kabin Amount').trim(),
+    proposedBy: getCurrentProfile(),
+    status: 'approved',
+    approvedBy: 'Both',
+    approvedAt: Date.now(),
+    timestamp: Date.now()
+  };
+
+  data.history.unshift(newItem);
+  data.totalAmount = numAmount;
+  setLocal(KEYS.KABINER_TAKA, data);
+
+  if (firestoreDb) {
+    setDoc(doc(firestoreDb, 'kabiner_taka', newItem.id), newItem).catch(e => console.error(e));
+  }
+  if (onUpdateCallback) onUpdateCallback('update', 'kabiner_taka');
+  pushStateToServer();
+}
+
+export async function proposeKabinerTakaChange(type, amount, date = '', note = '') {
+  isWriting = true;
+  if (writeCooldownTimer) clearTimeout(writeCooldownTimer);
+
+  const data = getKabinerTakaData();
+  const numAmount = Math.abs(parseFloat(amount)) || 0;
+  if (numAmount <= 0) { isWriting = false; return; }
+
+  const currentProfile = getCurrentProfile();
+  const targetPartner = currentProfile === 'Husband' ? 'Wife' : 'Husband';
+
+  const newItem = {
+    id: generateId(),
+    type: type === 'deduct' ? 'deduct' : 'add',
+    amount: numAmount,
+    date: (date || '').trim(),
+    note: (note || '').trim(),
+    proposedBy: currentProfile,
+    requiredApprover: targetPartner,
+    status: 'pending',
+    approvedBy: null,
+    approvedAt: null,
+    timestamp: Date.now()
+  };
+
+  data.history.unshift(newItem);
+  setLocal(KEYS.KABINER_TAKA, data);
+
+  if (firestoreDb) {
+    setDoc(doc(firestoreDb, 'kabiner_taka', newItem.id), newItem).catch(e => console.error(e));
+  }
+  if (onUpdateCallback) onUpdateCallback('update', 'kabiner_taka');
+  pushStateToServer();
+}
+
+export async function approveKabinerTakaChange(id) {
+  isWriting = true;
+  if (writeCooldownTimer) clearTimeout(writeCooldownTimer);
+
+  const data = getKabinerTakaData();
+  const item = data.history.find(h => h.id === id);
+  if (!item || item.status !== 'pending') { isWriting = false; return; }
+
+  const currentProfile = getCurrentProfile();
+  if (item.proposedBy === currentProfile) {
+    isWriting = false;
+    alert("You cannot approve your own proposal. Partner's approval is required.");
+    return;
+  }
+
+  item.status = 'approved';
+  item.approvedBy = currentProfile;
+  item.approvedAt = Date.now();
+
+  setLocal(KEYS.KABINER_TAKA, data);
+
+  if (firestoreDb) {
+    setDoc(doc(firestoreDb, 'kabiner_taka', id), item, { merge: true }).catch(e => console.error(e));
+  }
+  if (onUpdateCallback) onUpdateCallback('update', 'kabiner_taka');
+  pushStateToServer();
+}
+
+export async function rejectKabinerTakaChange(id) {
+  isWriting = true;
+  if (writeCooldownTimer) clearTimeout(writeCooldownTimer);
+
+  const data = getKabinerTakaData();
+  const item = data.history.find(h => h.id === id);
+  if (!item || item.status !== 'pending') { isWriting = false; return; }
+
+  const currentProfile = getCurrentProfile();
+  item.status = 'rejected';
+  item.approvedBy = currentProfile;
+  item.approvedAt = Date.now();
+
+  setLocal(KEYS.KABINER_TAKA, data);
+
+  if (firestoreDb) {
+    setDoc(doc(firestoreDb, 'kabiner_taka', id), item, { merge: true }).catch(e => console.error(e));
+  }
+  if (onUpdateCallback) onUpdateCallback('update', 'kabiner_taka');
+  pushStateToServer();
+}
+
+export async function cancelKabinerTakaChange(id) {
+  isWriting = true;
+  if (writeCooldownTimer) clearTimeout(writeCooldownTimer);
+
+  const data = getKabinerTakaData();
+  const index = data.history.findIndex(h => h.id === id);
+  if (index === -1) { isWriting = false; return; }
+
+  const item = data.history[index];
+  const currentProfile = getCurrentProfile();
+  // Only the proposer can cancel their own proposal, and strictly while it is still pending
+  if (item.status !== 'pending' || item.proposedBy !== currentProfile) {
+    isWriting = false;
+    return;
+  }
+
+  data.history.splice(index, 1);
+  setLocal(KEYS.KABINER_TAKA, data);
+
+  if (firestoreDb) {
+    deleteDoc(doc(firestoreDb, 'kabiner_taka', id)).catch(e => console.error(e));
+  }
+  if (onUpdateCallback) onUpdateCallback('update', 'kabiner_taka');
+  pushStateToServer();
+}
+
+export async function deleteKabinerTakaHistoryItem(id) {
+  // Kabiner Taka transaction history is a permanent legal/mutual ledger and cannot be deleted
+  console.warn("Kabiner Taka history items are permanent and cannot be deleted.");
+  return false;
+}
+
 
