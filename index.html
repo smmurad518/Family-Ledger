@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Nunito:wght@300;400;600;700;800&family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
 
   <!-- Main Styling -->
-  <link rel="stylesheet" href="assets/style.css?v=1792346714583">
+  <link rel="stylesheet" href="assets/style.css?v=1792347680632">
 
   <style id="critical-figma-login-styles">
     @keyframes shakeAnim {
@@ -729,6 +729,9 @@
           <p>Welcome back to your family ledger. Let's see what's happening today.</p>
         </div>
 
+        <!-- Kabiner Taka Pending Approvals Alert Banner -->
+        <div id="dash-kabin-pending-alert" style="display: none; margin-bottom: 16px;"></div>
+
         <div class="stats-grid">
           <!-- Bajar List Card -->
           <div class="stat-box is-secondary" id="stat-pending-bajar">
@@ -1209,7 +1212,7 @@
             ৳ 0
           </div>
           <div id="kabin-stats-row" style="display: flex; justify-content: center; gap: 14px; margin-top: 10px; font-size: 12px; color: var(--text-muted); flex-wrap: wrap;">
-            <span>Initial: <b id="kabin-stat-initial" style="color: var(--text-dark);">৳0</b></span>
+            <span>Initial: <b id="kabin-stat-initial" style="color: var(--text-dark);">৳0</b> <button type="button" id="btn-edit-kabin-initial" style="background: none; border: none; cursor: pointer; font-size: 11px; color: var(--color-primary); padding: 0 4px;" title="Edit Initial Kabin Amount">✏️</button></span>
             <span>•</span>
             <span>Added: <b id="kabin-stat-added" style="color: var(--color-secondary);">+৳0</b></span>
             <span>•</span>
@@ -1714,8 +1717,8 @@
   </script>
 
     <!-- Core Scripts -->
-    <script type="module" src="assets/db.js?v=1792346714583"></script>
-    <script type="module" src="assets/app.js?v=1792346714583"></script>
+    <script type="module" src="assets/db.js?v=1792347680632"></script>
+    <script type="module" src="assets/app.js?v=1792347680632"></script>
 
 </body>
 

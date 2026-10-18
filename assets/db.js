@@ -164,9 +164,14 @@ export async function pollServerData() {
           setLocal(KEYS.USERS, remoteUsers);
           updated = true;
         }
-        if (JSON.stringify(localKabinerTaka) !== JSON.stringify(remoteKabinerTaka)) {
-          setLocal(KEYS.KABINER_TAKA, remoteKabinerTaka);
-          updated = true;
+        if (serverData.kabinerTaka !== undefined && serverData.kabinerTaka !== null) {
+          const remoteKabinerTaka = serverData.kabinerTaka;
+          if (JSON.stringify(localKabinerTaka) !== JSON.stringify(remoteKabinerTaka)) {
+            setLocal(KEYS.KABINER_TAKA, remoteKabinerTaka);
+            updated = true;
+          }
+        } else if (localKabinerTaka && Array.isArray(localKabinerTaka.history) && localKabinerTaka.history.length > 0) {
+          pushStateToServer();
         }
 
         if (updated && onUpdateCallback) {
@@ -323,6 +328,7 @@ export async function connectFirebase(config, onSyncStateChange) {
     setupCollectionListener('baby_needs', KEYS.BABY_NEEDS, onSyncStateChange);
     setupCollectionListener('delete_history', KEYS.DELETE_HISTORY, onSyncStateChange);
     setupCollectionListener('important_dates', KEYS.IMPORTANT_DATES, onSyncStateChange);
+    setupKabinerTakaListener(onSyncStateChange);
 
     if (onSyncStateChange) onSyncStateChange('connected');
     return true;
@@ -360,6 +366,83 @@ function setupCollectionListener(collectionName, localKey, onSyncStateChange) {
   unsubscribeCallbacks.push(unsub);
 }
 
+// Set up real-time listener specifically for Kabiner Taka
+function setupKabinerTakaListener(onSyncStateChange) {
+  if (!firestoreDb) return;
+
+  const colRef = collection(firestoreDb, 'kabiner_taka');
+  const q = query(colRef);
+
+  const unsub = onSnapshot(q, (snapshot) => {
+    const history = [];
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      if (data && data.id) {
+        history.push(data);
+      }
+    });
+
+    // Sort newest first
+    history.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+    // Calculate totalAmount accurately from all approved items
+    let total = 0;
+    history.forEach(item => {
+      if (item.status === 'approved') {
+        const amt = Number(item.amount) || 0;
+        if (item.type === 'initial' || item.type === 'add') {
+          total += amt;
+        } else if (item.type === 'deduct') {
+          total -= amt;
+        }
+      }
+    });
+
+    const currentLocal = getLocal(KEYS.KABINER_TAKA, { totalAmount: 0, history: [] });
+    const newKabinData = {
+      totalAmount: Math.max(0, total),
+      history: history
+    };
+
+    // If local has items not yet in Firestore (e.g. offline creations), keep and push them
+    if (Array.isArray(currentLocal.history)) {
+      currentLocal.history.forEach(localItem => {
+        if (!history.some(h => h.id === localItem.id)) {
+          if (firestoreDb && localItem.id) {
+            setDoc(doc(firestoreDb, 'kabiner_taka', localItem.id), localItem, { merge: true }).catch(console.error);
+          }
+          history.push(localItem);
+        }
+      });
+      history.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+      let mergedTotal = 0;
+      history.forEach(item => {
+        if (item.status === 'approved') {
+          const amt = Number(item.amount) || 0;
+          if (item.type === 'initial' || item.type === 'add') {
+            mergedTotal += amt;
+          } else if (item.type === 'deduct') {
+            mergedTotal -= amt;
+          }
+        }
+      });
+      newKabinData.totalAmount = Math.max(0, mergedTotal);
+      newKabinData.history = history;
+    }
+
+    setLocal(KEYS.KABINER_TAKA, newKabinData);
+
+    if (onUpdateCallback) {
+      onUpdateCallback('update', 'kabiner_taka');
+    }
+  }, (err) => {
+    console.error('Firestore listener error on kabiner_taka:', err);
+    if (onSyncStateChange) onSyncStateChange('error', err.message);
+  });
+
+  unsubscribeCallbacks.push(unsub);
+}
+
 // Push local offline records to Firestore when connecting
 async function uploadLocalDataToCloud() {
   if (!firestoreDb) return;
@@ -386,6 +469,17 @@ async function uploadLocalDataToCloud() {
       batch.set(docRef, item, { merge: true });
     });
 
+    await batch.commit();
+  }
+
+  // Upload Kabiner Taka records
+  const kabinData = getKabinerTakaData();
+  if (kabinData && Array.isArray(kabinData.history) && kabinData.history.length > 0) {
+    const batch = writeBatch(firestoreDb);
+    kabinData.history.forEach(item => {
+      const docRef = doc(firestoreDb, 'kabiner_taka', item.id);
+      batch.set(docRef, item, { merge: true });
+    });
     await batch.commit();
   }
 }
@@ -1531,25 +1625,50 @@ export async function setInitialKabinerTaka(amount, date = '', note = '') {
   const numAmount = Math.abs(parseFloat(amount)) || 0;
   if (numAmount <= 0) { isWriting = false; return; }
 
-  const newItem = {
-    id: generateId(),
-    type: 'initial',
-    amount: numAmount,
-    date: (date || '').trim(),
-    note: (note || 'Initial Kabin Amount').trim(),
-    proposedBy: getCurrentProfile(),
-    status: 'approved',
-    approvedBy: 'Both',
-    approvedAt: Date.now(),
-    timestamp: Date.now()
-  };
+  // Check if an initial deposit record already exists
+  const existingInitialIndex = data.history.findIndex(h => h.type === 'initial');
+  let itemToSave;
 
-  data.history.unshift(newItem);
-  data.totalAmount = numAmount;
+  if (existingInitialIndex !== -1) {
+    itemToSave = data.history[existingInitialIndex];
+    itemToSave.amount = numAmount;
+    if (date) itemToSave.date = date.trim();
+    if (note) itemToSave.note = note.trim();
+    itemToSave.approvedAt = Date.now();
+    itemToSave.timestamp = Date.now();
+  } else {
+    itemToSave = {
+      id: generateId(),
+      type: 'initial',
+      amount: numAmount,
+      date: (date || '').trim(),
+      note: (note || 'Initial Kabin Amount').trim(),
+      proposedBy: getCurrentProfile(),
+      status: 'approved',
+      approvedBy: 'Both',
+      approvedAt: Date.now(),
+      timestamp: Date.now()
+    };
+    data.history.unshift(itemToSave);
+  }
+
+  // Recalculate totalAmount
+  let total = 0;
+  data.history.forEach(item => {
+    if (item.status === 'approved') {
+      const amt = Number(item.amount) || 0;
+      if (item.type === 'initial' || item.type === 'add') {
+        total += amt;
+      } else if (item.type === 'deduct') {
+        total -= amt;
+      }
+    }
+  });
+  data.totalAmount = Math.max(0, total);
   setLocal(KEYS.KABINER_TAKA, data);
 
   if (firestoreDb) {
-    setDoc(doc(firestoreDb, 'kabiner_taka', newItem.id), newItem).catch(e => console.error(e));
+    setDoc(doc(firestoreDb, 'kabiner_taka', itemToSave.id), itemToSave, { merge: true }).catch(e => console.error(e));
   }
   if (onUpdateCallback) onUpdateCallback('update', 'kabiner_taka');
   pushStateToServer();
@@ -1561,7 +1680,7 @@ export async function proposeKabinerTakaChange(type, amount, date = '', note = '
 
   const data = getKabinerTakaData();
   const numAmount = Math.abs(parseFloat(amount)) || 0;
-  if (numAmount <= 0) { isWriting = false; return; }
+  if (numAmount <= 0) { isWriting = false; return false; }
 
   const currentProfile = getCurrentProfile();
   const targetPartner = currentProfile === 'Husband' ? 'Wife' : 'Husband';
@@ -1588,6 +1707,7 @@ export async function proposeKabinerTakaChange(type, amount, date = '', note = '
   }
   if (onUpdateCallback) onUpdateCallback('update', 'kabiner_taka');
   pushStateToServer();
+  return true;
 }
 
 export async function approveKabinerTakaChange(id) {
@@ -1596,18 +1716,32 @@ export async function approveKabinerTakaChange(id) {
 
   const data = getKabinerTakaData();
   const item = data.history.find(h => h.id === id);
-  if (!item || item.status !== 'pending') { isWriting = false; return; }
+  if (!item || item.status !== 'pending') { isWriting = false; return false; }
 
   const currentProfile = getCurrentProfile();
   if (item.proposedBy === currentProfile) {
     isWriting = false;
     alert("You cannot approve your own proposal. Partner's approval is required.");
-    return;
+    return false;
   }
 
   item.status = 'approved';
   item.approvedBy = currentProfile;
   item.approvedAt = Date.now();
+
+  // Recalculate totalAmount
+  let total = 0;
+  data.history.forEach(h => {
+    if (h.status === 'approved') {
+      const amt = Number(h.amount) || 0;
+      if (h.type === 'initial' || h.type === 'add') {
+        total += amt;
+      } else if (h.type === 'deduct') {
+        total -= amt;
+      }
+    }
+  });
+  data.totalAmount = Math.max(0, total);
 
   setLocal(KEYS.KABINER_TAKA, data);
 
@@ -1616,6 +1750,7 @@ export async function approveKabinerTakaChange(id) {
   }
   if (onUpdateCallback) onUpdateCallback('update', 'kabiner_taka');
   pushStateToServer();
+  return true;
 }
 
 export async function rejectKabinerTakaChange(id) {
@@ -1624,7 +1759,7 @@ export async function rejectKabinerTakaChange(id) {
 
   const data = getKabinerTakaData();
   const item = data.history.find(h => h.id === id);
-  if (!item || item.status !== 'pending') { isWriting = false; return; }
+  if (!item || item.status !== 'pending') { isWriting = false; return false; }
 
   const currentProfile = getCurrentProfile();
   item.status = 'rejected';
@@ -1638,6 +1773,7 @@ export async function rejectKabinerTakaChange(id) {
   }
   if (onUpdateCallback) onUpdateCallback('update', 'kabiner_taka');
   pushStateToServer();
+  return true;
 }
 
 export async function cancelKabinerTakaChange(id) {
@@ -1646,14 +1782,14 @@ export async function cancelKabinerTakaChange(id) {
 
   const data = getKabinerTakaData();
   const index = data.history.findIndex(h => h.id === id);
-  if (index === -1) { isWriting = false; return; }
+  if (index === -1) { isWriting = false; return false; }
 
   const item = data.history[index];
   const currentProfile = getCurrentProfile();
   // Only the proposer can cancel their own proposal, and strictly while it is still pending
   if (item.status !== 'pending' || item.proposedBy !== currentProfile) {
     isWriting = false;
-    return;
+    return false;
   }
 
   data.history.splice(index, 1);
@@ -1664,6 +1800,7 @@ export async function cancelKabinerTakaChange(id) {
   }
   if (onUpdateCallback) onUpdateCallback('update', 'kabiner_taka');
   pushStateToServer();
+  return true;
 }
 
 export async function deleteKabinerTakaHistoryItem(id) {
