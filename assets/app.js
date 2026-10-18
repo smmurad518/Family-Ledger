@@ -305,19 +305,18 @@ function resetViewportScroll() {
   window.scrollTo(0, 0);
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-
+function initApp() {
   // Check auth
   const loggedIn = localStorage.getItem('mm_logged_in_user');
   if (!loggedIn) {
-    DOM.loginOverlay.style.display = 'flex';
-    DOM.appContainer.style.display = 'none';
+    showLoginOverlay();
+    if (DOM.appContainer) DOM.appContainer.style.setProperty('display', 'none', 'important');
     showWelcomeView();
     selectLoginProfile('Husband');
   } else {
     setCurrentProfile(loggedIn);
-    DOM.loginOverlay.style.display = 'none';
-    DOM.appContainer.style.display = 'flex';
+    hideLoginOverlay();
+    if (DOM.appContainer) DOM.appContainer.style.setProperty('display', 'flex', 'important');
   }
 
   // Initialize DB state
@@ -366,21 +365,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Register Service Worker for PWA
   if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
+    const registerSW = () => {
       navigator.serviceWorker.register('./sw.js')
         .then(reg => {
           console.log('Service Worker registered: ', reg.scope);
           reg.update();
         })
         .catch(err => console.error('Service Worker registration failed: ', err));
-    });
+    };
+
+    if (document.readyState === 'complete') {
+      registerSW();
+    } else {
+      window.addEventListener('load', registerSW);
+    }
   }
 
   // Reset scroll on mobile keyboards blur
   document.querySelectorAll('input[type="text"], input[type="password"], input[type="number"], input[type="tel"]').forEach(input => {
     input.addEventListener('blur', resetViewportScroll);
   });
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initApp);
+} else {
+  initApp();
+}
 
 // Detect network status and update PWA Offline warning
 window.addEventListener('online', updateOfflineBanner);
@@ -403,7 +414,8 @@ async function checkCodeUpdate() {
           currentVersion = serverVer;
         } else if (currentVersion !== serverVer) {
           // If on login screen, immediately reload fresh code so login updates instantly
-          if (DOM.loginOverlay && DOM.loginOverlay.style.display !== 'none') {
+          const overlay = DOM.loginOverlay || document.getElementById('login-overlay');
+          if (overlay && !overlay.classList.contains('hidden') && overlay.style.display !== 'none') {
             localStorage.setItem('mm_app_version', serverVer);
             if ('caches' in window) {
               const keys = await caches.keys();
@@ -739,16 +751,35 @@ document.addEventListener('touchend', (e) => {
 }, { passive: true });
 
 // Auth Helpers & Figma Screen Controllers
+function hideLoginOverlay() {
+  const overlay = DOM.loginOverlay || document.getElementById('login-overlay');
+  if (overlay) {
+    overlay.style.setProperty('display', 'none', 'important');
+    overlay.classList.add('hidden');
+    overlay.setAttribute('aria-hidden', 'true');
+  }
+}
+
+function showLoginOverlay() {
+  const overlay = DOM.loginOverlay || document.getElementById('login-overlay');
+  if (overlay) {
+    overlay.classList.remove('hidden');
+    overlay.removeAttribute('aria-hidden');
+    overlay.style.removeProperty('display');
+    overlay.style.setProperty('display', 'flex', 'important');
+  }
+}
+
 function showWelcomeView() {
   const viewWelcome = document.getElementById('login-view-welcome');
   const viewAuth = document.getElementById('login-view-auth');
   if (viewWelcome) {
-    viewWelcome.style.display = 'flex';
+    viewWelcome.style.setProperty('display', 'flex', 'important');
     viewWelcome.classList.remove('hidden');
     viewWelcome.classList.add('active');
   }
   if (viewAuth) {
-    viewAuth.style.display = 'none';
+    viewAuth.style.setProperty('display', 'none', 'important');
     viewAuth.classList.remove('active');
     viewAuth.classList.add('hidden');
   }
@@ -759,40 +790,45 @@ function showAuthView() {
   const viewWelcome = document.getElementById('login-view-welcome');
   const viewAuth = document.getElementById('login-view-auth');
   if (viewWelcome) {
-    viewWelcome.style.display = 'none';
+    viewWelcome.style.setProperty('display', 'none', 'important');
     viewWelcome.classList.remove('active');
     viewWelcome.classList.add('hidden');
   }
   if (viewAuth) {
-    viewAuth.style.display = 'flex';
+    viewAuth.style.setProperty('display', 'flex', 'important');
     viewAuth.classList.remove('hidden');
     viewAuth.classList.add('active');
-    if (DOM.loginPassword) {
-      setTimeout(() => DOM.loginPassword.focus(), 320);
+    const passInput = DOM.loginPassword || document.getElementById('login-password');
+    if (passInput) {
+      setTimeout(() => passInput.focus(), 320);
     }
   }
 }
 
 function selectLoginProfile(profile) {
-  if (DOM.loginProfile) DOM.loginProfile.value = profile;
+  const profileInput = DOM.loginProfile || document.getElementById('login-profile');
+  if (profileInput) profileInput.value = profile;
   
+  const cardHusband = DOM.cardHusband || document.getElementById('card-husband');
+  const cardWife = DOM.cardWife || document.getElementById('card-wife');
+
   if (profile === 'Husband') {
-    if (DOM.cardHusband) {
-      DOM.cardHusband.classList.add('active');
-      DOM.cardHusband.removeAttribute('style');
+    if (cardHusband) {
+      cardHusband.classList.add('active');
+      cardHusband.removeAttribute('style');
     }
-    if (DOM.cardWife) {
-      DOM.cardWife.classList.remove('active');
-      DOM.cardWife.removeAttribute('style');
+    if (cardWife) {
+      cardWife.classList.remove('active');
+      cardWife.removeAttribute('style');
     }
   } else {
-    if (DOM.cardWife) {
-      DOM.cardWife.classList.add('active');
-      DOM.cardWife.removeAttribute('style');
+    if (cardWife) {
+      cardWife.classList.add('active');
+      cardWife.removeAttribute('style');
     }
-    if (DOM.cardHusband) {
-      DOM.cardHusband.classList.remove('active');
-      DOM.cardHusband.removeAttribute('style');
+    if (cardHusband) {
+      cardHusband.classList.remove('active');
+      cardHusband.removeAttribute('style');
     }
   }
 }
@@ -801,10 +837,11 @@ function showLoginAlert() {
   if (DOM.loginErrorAlert) {
     DOM.loginErrorAlert.style.display = 'flex';
   }
-  if (DOM.loginPassword) {
-    DOM.loginPassword.classList.add('input-error');
-    DOM.loginPassword.focus();
-    DOM.loginPassword.select();
+  const passInput = DOM.loginPassword || document.getElementById('login-password');
+  if (passInput) {
+    passInput.classList.add('input-error');
+    passInput.focus();
+    passInput.select();
   }
   const authBox = document.querySelector('.auth-content-box');
   if (authBox) {
@@ -818,10 +855,56 @@ function hideLoginAlert() {
   if (DOM.loginErrorAlert) {
     DOM.loginErrorAlert.style.display = 'none';
   }
-  if (DOM.loginPassword) {
-    DOM.loginPassword.classList.remove('input-error');
+  const passInput = DOM.loginPassword || document.getElementById('login-password');
+  if (passInput) {
+    passInput.classList.remove('input-error');
   }
 }
+
+function handleLoginSubmit(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  const profileInput = DOM.loginProfile || document.getElementById('login-profile');
+  const passInput = DOM.loginPassword || document.getElementById('login-password');
+  const selectedProfile = profileInput ? profileInput.value : 'Husband';
+  const pass = passInput ? passInput.value.trim() : '';
+  const users = getUsers();
+  
+  let authenticatedProfile = null;
+
+  // Unambiguous authentication based on entered password:
+  if (users['Wife'] === pass && users['Husband'] !== pass) {
+    authenticatedProfile = 'Wife';
+  } else if (users['Husband'] === pass && users['Wife'] !== pass) {
+    authenticatedProfile = 'Husband';
+  } else if (users[selectedProfile] === pass) {
+    authenticatedProfile = selectedProfile;
+  } else {
+    const altProfile = selectedProfile === 'Husband' ? 'Wife' : 'Husband';
+    if (users[altProfile] === pass) {
+      authenticatedProfile = altProfile;
+    }
+  }
+
+  if (authenticatedProfile) {
+    hideLoginAlert();
+    localStorage.setItem('mm_logged_in_user', authenticatedProfile);
+    setCurrentProfile(authenticatedProfile);
+    hideLoginOverlay();
+    if (DOM.appContainer) DOM.appContainer.style.setProperty('display', 'flex', 'important');
+    updateProfileUI();
+    renderActiveScreen();
+  } else {
+    showLoginAlert();
+  }
+}
+
+// Expose immediately to global window
+window.hideLoginOverlay = hideLoginOverlay;
+window.showLoginOverlay = showLoginOverlay;
+window.showWelcomeView = showWelcomeView;
+window.showAuthView = showAuthView;
+window.selectLoginProfile = selectLoginProfile;
+window.handleLoginSubmit = handleLoginSubmit;
 
 // ----------------------------------------------------
 // FORGOT PASSWORD VIA EMAIL APPROVAL (smmurad518@gmail.com)
@@ -1134,38 +1217,7 @@ function setupEventListeners() {
   // Auth Listeners
   if (DOM.loginForm) {
     DOM.loginForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const selectedProfile = DOM.loginProfile ? DOM.loginProfile.value : 'Husband';
-      const pass = DOM.loginPassword ? DOM.loginPassword.value.trim() : '';
-      const users = getUsers();
-      
-      let authenticatedProfile = null;
-
-      // Unambiguous authentication based on entered password:
-      if (users['Wife'] === pass && users['Husband'] !== pass) {
-        authenticatedProfile = 'Wife';
-      } else if (users['Husband'] === pass && users['Wife'] !== pass) {
-        authenticatedProfile = 'Husband';
-      } else if (users[selectedProfile] === pass) {
-        authenticatedProfile = selectedProfile;
-      } else {
-        const altProfile = selectedProfile === 'Husband' ? 'Wife' : 'Husband';
-        if (users[altProfile] === pass) {
-          authenticatedProfile = altProfile;
-        }
-      }
-
-      if (authenticatedProfile) {
-        hideLoginAlert();
-        localStorage.setItem('mm_logged_in_user', authenticatedProfile);
-        setCurrentProfile(authenticatedProfile);
-        DOM.loginOverlay.style.display = 'none';
-        DOM.appContainer.style.display = 'flex';
-        updateProfileUI();
-        renderActiveScreen();
-      } else {
-        showLoginAlert();
-      }
+      handleLoginSubmit(e);
     });
   }
 
@@ -1183,8 +1235,8 @@ function setupEventListeners() {
       localStorage.removeItem('mm_logged_in_user');
       localStorage.removeItem('mm_profile');
       closeDrawer();
-      DOM.appContainer.style.display = 'none';
-      DOM.loginOverlay.style.display = 'flex';
+      if (DOM.appContainer) DOM.appContainer.style.setProperty('display', 'none', 'important');
+      showLoginOverlay();
       showWelcomeView();
       if (DOM.loginPassword) DOM.loginPassword.value = '';
       hideLoginAlert();

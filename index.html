@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Nunito:wght@300;400;600;700;800&family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
 
   <!-- Main Styling -->
-  <link rel="stylesheet" href="assets/style.css?v=1792345919308">
+  <link rel="stylesheet" href="assets/style.css?v=1792346714583">
 
   <style id="critical-figma-login-styles">
     @keyframes shakeAnim {
@@ -38,7 +38,7 @@
       height: 100vh !important;
       height: 100dvh !important;
       background: #09090b !important;
-      display: flex !important;
+      display: flex;
       justify-content: center !important;
       align-items: center !important;
       font-family: 'Plus Jakarta Sans', var(--font-title), -apple-system, BlinkMacSystemFont, sans-serif !important;
@@ -46,6 +46,15 @@
       overflow: hidden !important;
       padding: 0 !important;
       margin: 0 !important;
+    }
+
+    #login-overlay.hidden,
+    #login-overlay[style*="display: none"],
+    #login-overlay[style*="display:none"] {
+      display: none !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+      opacity: 0 !important;
     }
 
     #login-box,
@@ -481,14 +490,14 @@
             <div class="welcome-brand-names">Murad & Mitu</div>
             <div class="welcome-brand-sub">Family Ledger</div>
           </div>
-          <button type="button" id="btn-goto-login-auth" class="btn-figma-login">Login</button>
+          <button type="button" id="btn-goto-login-auth" class="btn-figma-login" onclick="if(window.showAuthView)window.showAuthView()">Login</button>
           <div class="login-footer-email">smmurad518@gmail.com</div>
         </div>
       </div>
 
       <!-- VIEW 2: PROFILE SELECTION & AUTH SCREEN -->
       <div id="login-view-auth" class="login-view-panel hidden" style="display: none;">
-        <button type="button" id="btn-back-to-welcome" class="login-back-btn" aria-label="Back to Welcome screen">
+        <button type="button" id="btn-back-to-welcome" class="login-back-btn" aria-label="Back to Welcome screen" onclick="if(window.showWelcomeView)window.showWelcomeView()">
           <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="15 18 9 12 15 6"></polyline>
           </svg>
@@ -500,10 +509,10 @@
             <h2 class="auth-main-title">Select your profile to continue</h2>
           </div>
 
-          <form id="login-form">
+          <form id="login-form" onsubmit="event.preventDefault(); if(window.handleLoginSubmit) window.handleLoginSubmit(event);">
             <!-- Profile Selection Cards (Murad & Mitu) -->
             <div class="figma-profiles-row">
-              <div id="card-husband" class="figma-profile-card active" data-profile="Husband" role="button" tabindex="0" aria-label="Select Murad Profile">
+              <div id="card-husband" class="figma-profile-card active" data-profile="Husband" role="button" tabindex="0" aria-label="Select Murad Profile" onclick="if(window.selectLoginProfile)window.selectLoginProfile('Husband')">
                 <div class="figma-avatar-circle husband-avatar">
                   <span>M</span>
                 </div>
@@ -513,7 +522,7 @@
                 </div>
               </div>
 
-              <div id="card-wife" class="figma-profile-card" data-profile="Wife" role="button" tabindex="0" aria-label="Select Mitu Profile">
+              <div id="card-wife" class="figma-profile-card" data-profile="Wife" role="button" tabindex="0" aria-label="Select Mitu Profile" onclick="if(window.selectLoginProfile)window.selectLoginProfile('Wife')">
                 <div class="figma-avatar-circle wife-avatar">
                   <span>M</span>
                 </div>
@@ -1705,8 +1714,8 @@
   </script>
 
     <!-- Core Scripts -->
-    <script type="module" src="assets/db.js?v=1792345919308"></script>
-    <script type="module" src="assets/app.js?v=1792345919308"></script>
+    <script type="module" src="assets/db.js?v=1792346714583"></script>
+    <script type="module" src="assets/app.js?v=1792346714583"></script>
 
 </body>
 

@@ -2564,6 +2564,15 @@ button.btn-primary:active {
   box-sizing: border-box;
 }
 
+#login-overlay.hidden,
+#login-overlay[style*="display: none"],
+#login-overlay[style*="display:none"] {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+}
+
 /* Phone Mockup Wrapper (Adaptive for Desktop & Full Native on Mobile) */
 .login-screen-wrapper {
   position: relative;
