@@ -295,37 +295,13 @@ class DashboardScreen extends StatelessWidget {
   ImportantDateItem? _getRecentImportantDate(List<ImportantDateItem> dates) {
     if (dates.isEmpty) return null;
 
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
+    final list = dates.map((d) {
+      final occ = ImportantDateItem.getNextOccurrence(d.date);
+      return {'item': d, 'diff': occ.diffDays, 'nextDate': occ.nextDate};
+    }).toList();
 
-    final List<Map<String, dynamic>> upcoming = [];
-    final List<Map<String, dynamic>> past = [];
-
-    for (final d in dates) {
-      final itemDate = DateTime.tryParse(d.date);
-      if (itemDate == null) continue;
-      final cleanItemDate = DateTime(itemDate.year, itemDate.month, itemDate.day);
-      final diff = cleanItemDate.difference(today).inDays;
-
-      if (diff >= 0) {
-        upcoming.add({'item': d, 'diff': diff});
-      } else {
-        past.add({'item': d, 'diff': diff});
-      }
-    }
-
-    // Sort upcoming ascending (closest upcoming first)
-    upcoming.sort((a, b) => (a['diff'] as int).compareTo(b['diff'] as int));
-
-    // Sort past descending (closest past first, e.g. -1 comes before -5)
-    past.sort((a, b) => (b['diff'] as int).compareTo(a['diff'] as int));
-
-    if (upcoming.isNotEmpty) {
-      return upcoming.first['item'] as ImportantDateItem;
-    } else if (past.isNotEmpty) {
-      return past.first['item'] as ImportantDateItem;
-    }
-    return null;
+    list.sort((a, b) => (a['diff'] as int).compareTo(b['diff'] as int));
+    return list.first['item'] as ImportantDateItem;
   }
 
   String _formatNiceDate(DateTime dt) {
@@ -340,29 +316,23 @@ class DashboardScreen extends StatelessWidget {
   }
 
   Widget _buildImportantDateCard(ImportantDateItem item, Color textMuted) {
-    final today = DateTime.now();
-    final cleanToday = DateTime(today.year, today.month, today.day);
-    final itemDate = DateTime.tryParse(item.date) ?? DateTime.now();
-    final cleanItemDate = DateTime(itemDate.year, itemDate.month, itemDate.day);
-    final diffDays = cleanItemDate.difference(cleanToday).inDays;
+    final occ = ImportantDateItem.getNextOccurrence(item.date);
+    final diffDays = occ.diffDays;
 
     String countdownText = '';
-    String badgeText = 'Important Date';
+    String badgeText = 'Upcoming';
     if (diffDays == 0) {
       countdownText = 'Today!';
       badgeText = 'Today';
     } else if (diffDays == 1) {
       countdownText = 'Tomorrow';
       badgeText = 'Upcoming';
-    } else if (diffDays > 1) {
+    } else {
       countdownText = 'In $diffDays Days';
       badgeText = 'Upcoming';
-    } else {
-      countdownText = '${diffDays.abs()} Days Ago';
-      badgeText = 'Recent';
     }
 
-    final niceDateStr = _formatNiceDate(itemDate);
+    final niceDateStr = _formatNiceDate(occ.nextDate);
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),

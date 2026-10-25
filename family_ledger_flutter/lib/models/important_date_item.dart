@@ -54,4 +54,30 @@ class ImportantDateItem {
       timestamp: timestamp ?? this.timestamp,
     );
   }
+
+  static ({int month, int day}) parseMonthDay(String dateStr) {
+    final parts = dateStr.trim().split('-');
+    int m = 1;
+    int d = 1;
+    if (parts.length >= 3) {
+      m = int.tryParse(parts[1]) ?? 1;
+      d = int.tryParse(parts[2]) ?? 1;
+    } else if (parts.length == 2) {
+      m = int.tryParse(parts[0]) ?? 1;
+      d = int.tryParse(parts[1]) ?? 1;
+    }
+    return (month: m.clamp(1, 12), day: d.clamp(1, 31));
+  }
+
+  static ({DateTime nextDate, int diffDays}) getNextOccurrence(String dateStr) {
+    final md = parseMonthDay(dateStr);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    DateTime target = DateTime(now.year, md.month, md.day);
+    if (target.isBefore(today)) {
+      target = DateTime(now.year + 1, md.month, md.day);
+    }
+    final diffDays = target.difference(today).inDays;
+    return (nextDate: target, diffDays: diffDays);
+  }
 }

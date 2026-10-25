@@ -1517,44 +1517,66 @@ export async function updateImportantDate(id, date, title, description = '') {
   pushStateToServer();
 }
 
+export function parseDateMonthDay(dateStr) {
+  if (!dateStr) return { month: 1, day: 1 };
+  const parts = String(dateStr).trim().split('-');
+  let m = 1;
+  let d = 1;
+  if (parts.length >= 3) {
+    // Format YYYY-MM-DD
+    m = parseInt(parts[1], 10) || 1;
+    d = parseInt(parts[2], 10) || 1;
+  } else if (parts.length === 2) {
+    // Format MM-DD
+    m = parseInt(parts[0], 10) || 1;
+    d = parseInt(parts[1], 10) || 1;
+  }
+  m = Math.max(1, Math.min(12, m));
+  d = Math.max(1, Math.min(31, d));
+  return { month: m, day: d };
+}
+
+export function getNextOccurrenceDate(month, day) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const currentYear = today.getFullYear();
+
+  // Try current year
+  let target = new Date(currentYear, month - 1, day);
+  target.setHours(0, 0, 0, 0);
+
+  // If already strictly passed today, next occurrence is next year
+  if (target.getTime() < today.getTime()) {
+    target = new Date(currentYear + 1, month - 1, day);
+    target.setHours(0, 0, 0, 0);
+  }
+
+  const diffMs = target.getTime() - today.getTime();
+  const daysDiff = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
+  return { targetDate: target, daysDiff };
+}
+
 export function getRecentImportantDate() {
   const dates = getImportantDates();
   if (dates.length === 0) return null;
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const upcoming = [];
-  const past = [];
-
-  dates.forEach(d => {
-    const itemDate = new Date(d.date);
-    itemDate.setHours(0, 0, 0, 0);
-    const diffTime = itemDate.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    const dateObj = {
+  const itemsWithNext = dates.map(d => {
+    const { month, day } = parseDateMonthDay(d.date);
+    const { targetDate, daysDiff } = getNextOccurrenceDate(month, day);
+    return {
       ...d,
-      daysDiff: diffDays
+      month,
+      day,
+      nextDate: targetDate,
+      daysDiff
     };
-
-    if (diffDays >= 0) {
-      upcoming.push(dateObj);
-    } else {
-      past.push(dateObj);
-    }
   });
 
-  // Sort upcoming ascending (closest upcoming first)
-  upcoming.sort((a, b) => a.daysDiff - b.daysDiff);
-  
-  // Sort past descending (closest past first, e.g. -1 comes before -5)
-  past.sort((a, b) => b.daysDiff - a.daysDiff);
+  // Sort ascending by daysDiff (closest upcoming first)
+  itemsWithNext.sort((a, b) => a.daysDiff - b.daysDiff);
 
-  if (upcoming.length > 0) {
-    return upcoming[0];
-  }
-  return past[0];
+  return itemsWithNext[0];
 }
 
 // ----------------------------------------------------

@@ -14,15 +14,14 @@ class _ImportantDatesScreenState extends State<ImportantDatesScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descController = TextEditingController();
-  DateTime? _selectedDate;
+  int? _selectedDay;
+  int? _selectedMonth;
 
-  String _formatYmd(DateTime dt) {
-    return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
-  }
-
-  String _formatDmy(DateTime dt) {
-    return '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
-  }
+  static const _monthNames = [
+    'January (01)', 'February (02)', 'March (03)', 'April (04)',
+    'May (05)', 'June (06)', 'July (07)', 'August (08)',
+    'September (09)', 'October (10)', 'November (11)', 'December (12)'
+  ];
 
   @override
   void dispose() {
@@ -31,29 +30,7 @@ class _ImportantDatesScreenState extends State<ImportantDatesScreen> {
     super.dispose();
   }
 
-  void _pickDate(Color textDark, Color cardBg) async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate ?? DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2100),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: Theme.of(context).colorScheme.copyWith(
-                  primary: Theme.of(context).primaryColor,
-                ),
-          ),
-          child: child!,
-        );
-      },
-    );
-    if (picked != null) {
-      setState(() {
-        _selectedDate = picked;
-      });
-    }
-  }
+
 
   void _showEditDialog(ImportantDateItem item, AppState appState, Color primaryCol, Color textDark, Color cardBg, Color borderCol) {
     if (!appState.editDeleteAll) {
@@ -65,7 +42,9 @@ class _ImportantDatesScreenState extends State<ImportantDatesScreen> {
 
     final editTitleController = TextEditingController(text: item.title);
     final editDescController = TextEditingController(text: item.description ?? '');
-    DateTime editDate = DateTime.tryParse(item.date) ?? DateTime.now();
+    final initialMd = ImportantDateItem.parseMonthDay(item.date);
+    int editDay = initialMd.day;
+    int editMonth = initialMd.month;
 
     showDialog(
       context: context,
@@ -92,27 +71,45 @@ class _ImportantDatesScreenState extends State<ImportantDatesScreen> {
                   ),
                   const SizedBox(height: 16),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        'Date: ${_formatYmd(editDate)}',
-                        style: TextStyle(color: textDark),
+                      Expanded(
+                        flex: 1,
+                        child: DropdownButtonFormField<int>(
+                          value: editDay,
+                          decoration: InputDecoration(
+                            labelText: 'Day',
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: borderCol)),
+                          ),
+                          dropdownColor: cardBg,
+                          style: TextStyle(color: textDark),
+                          items: List.generate(31, (i) => i + 1).map((d) {
+                            return DropdownMenuItem<int>(value: d, child: Text('$d'));
+                          }).toList(),
+                          onChanged: (val) {
+                            if (val != null) setDialogState(() => editDay = val);
+                          },
+                        ),
                       ),
-                      TextButton(
-                        onPressed: () async {
-                          final picked = await showDatePicker(
-                            context: context,
-                            initialDate: editDate,
-                            firstDate: DateTime(2000),
-                            lastDate: DateTime(2100),
-                          );
-                          if (picked != null) {
-                            setDialogState(() {
-                              editDate = picked;
-                            });
-                          }
-                        },
-                        child: const Text('Change Date'),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        flex: 2,
+                        child: DropdownButtonFormField<int>(
+                          value: editMonth,
+                          decoration: InputDecoration(
+                            labelText: 'Month',
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: borderCol)),
+                          ),
+                          dropdownColor: cardBg,
+                          style: TextStyle(color: textDark, fontSize: 13),
+                          items: List.generate(12, (i) => i + 1).map((m) {
+                            return DropdownMenuItem<int>(value: m, child: Text(_monthNames[m - 1]));
+                          }).toList(),
+                          onChanged: (val) {
+                            if (val != null) setDialogState(() => editMonth = val);
+                          },
+                        ),
                       ),
                     ],
                   ),
@@ -126,7 +123,7 @@ class _ImportantDatesScreenState extends State<ImportantDatesScreen> {
                 ElevatedButton(
                   onPressed: () async {
                     if (editTitleController.text.isNotEmpty) {
-                      final dateStr = _formatYmd(editDate);
+                      final dateStr = '${editMonth.toString().padLeft(2, '0')}-${editDay.toString().padLeft(2, '0')}';
                       await appState.updateImportantDate(item.id, dateStr, editTitleController.text.trim(), editDescController.text.trim());
                       Navigator.of(context).pop();
                     }
@@ -166,7 +163,11 @@ class _ImportantDatesScreenState extends State<ImportantDatesScreen> {
         : (appState.currentProfile == 'Husband' ? const Color(0xFF4D7C0F) : const Color(0xFFBE185D));
 
     final sortedItems = List<ImportantDateItem>.from(appState.importantDates);
-    sortedItems.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    sortedItems.sort((a, b) {
+      final occA = ImportantDateItem.getNextOccurrence(a.date);
+      final occB = ImportantDateItem.getNextOccurrence(b.date);
+      return occA.diffDays.compareTo(occB.diffDays);
+    });
 
     return Padding(
       padding: const EdgeInsets.all(16.0),
@@ -245,25 +246,43 @@ class _ImportantDatesScreenState extends State<ImportantDatesScreen> {
                   Row(
                     children: [
                       Expanded(
-                        child: Text(
-                          _selectedDate == null 
-                              ? 'No Date Chosen' 
-                              : 'Date: ${_formatYmd(_selectedDate!)}',
-                          style: TextStyle(color: textDark, fontSize: 14),
+                        flex: 1,
+                        child: DropdownButtonFormField<int>(
+                          value: _selectedDay,
+                          hint: Text('Day', style: TextStyle(color: textMuted)),
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: inputBg,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: borderCol)),
+                          ),
+                          dropdownColor: cardBg,
+                          style: TextStyle(color: textDark),
+                          items: List.generate(31, (i) => i + 1).map((d) {
+                            return DropdownMenuItem<int>(value: d, child: Text('$d'));
+                          }).toList(),
+                          onChanged: (val) => setState(() => _selectedDay = val),
                         ),
                       ),
-                      ElevatedButton(
-                        onPressed: () => _pickDate(textDark, cardBg),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: inputBg,
-                          foregroundColor: textDark,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            side: BorderSide(color: borderCol),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        flex: 2,
+                        child: DropdownButtonFormField<int>(
+                          value: _selectedMonth,
+                          hint: Text('Month', style: TextStyle(color: textMuted)),
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: inputBg,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: borderCol)),
                           ),
+                          dropdownColor: cardBg,
+                          style: TextStyle(color: textDark, fontSize: 13),
+                          items: List.generate(12, (i) => i + 1).map((m) {
+                            return DropdownMenuItem<int>(value: m, child: Text(_monthNames[m - 1]));
+                          }).toList(),
+                          onChanged: (val) => setState(() => _selectedMonth = val),
                         ),
-                        child: const Text('Choose Date'),
                       ),
                     ],
                   ),
@@ -271,18 +290,19 @@ class _ImportantDatesScreenState extends State<ImportantDatesScreen> {
                   ElevatedButton(
                     onPressed: () async {
                       if (_formKey.currentState!.validate()) {
-                        if (_selectedDate == null) {
+                        if (_selectedDay == null || _selectedMonth == null) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Please choose a date.')),
+                            const SnackBar(content: Text('Please select day and month.')),
                           );
                           return;
                         }
-                        final dateStr = _formatYmd(_selectedDate!);
+                        final dateStr = '${_selectedMonth!.toString().padLeft(2, '0')}-${_selectedDay!.toString().padLeft(2, '0')}';
                         await appState.addImportantDate(dateStr, _titleController.text.trim(), _descController.text.trim());
                         _titleController.clear();
                         _descController.clear();
                         setState(() {
-                          _selectedDate = null;
+                          _selectedDay = null;
+                          _selectedMonth = null;
                         });
                         FocusScope.of(context).unfocus();
                       }
@@ -322,15 +342,17 @@ class _ImportantDatesScreenState extends State<ImportantDatesScreen> {
                     itemCount: sortedItems.length,
                     itemBuilder: (context, index) {
                       final item = sortedItems[index];
-                      final parsedDate = DateTime.tryParse(item.date) ?? DateTime.now();
-                      final displayDate = _formatDmy(parsedDate);
+                      final occ = ImportantDateItem.getNextOccurrence(item.date);
 
                       const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-                      final monthShort = months[parsedDate.month - 1];
-                      final dayNum = parsedDate.day.toString();
+                      const monthsLong = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+                      final monthShort = months[occ.nextDate.month - 1];
+                      final monthLong = monthsLong[occ.nextDate.month - 1];
+                      final dayNum = occ.nextDate.day.toString().padLeft(2, '0');
 
                       const weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-                      final dayName = weekdays[parsedDate.weekday - 1];
+                      final dayName = weekdays[occ.nextDate.weekday - 1];
+                      final nextText = occ.diffDays == 0 ? 'Today!' : (occ.diffDays == 1 ? 'Tomorrow' : 'Next in ${occ.diffDays} days');
 
                       return Card(
                         color: cardBg,
@@ -400,7 +422,7 @@ class _ImportantDatesScreenState extends State<ImportantDatesScreen> {
                                     ],
                                     const SizedBox(height: 4),
                                     Text(
-                                      '📅 $dayName, $displayDate • added by ${item.addedBy}',
+                                      '📅 ${occ.nextDate.day} $monthLong ($dayName) • $nextText • added by ${item.addedBy}',
                                       style: TextStyle(
                                         color: textMuted,
                                         fontSize: 11,

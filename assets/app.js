@@ -51,6 +51,8 @@ import {
   deleteImportantDate,
   updateImportantDate,
   getRecentImportantDate,
+  parseDateMonthDay,
+  getNextOccurrenceDate,
   getUsers,
   updateUserPassword,
   getKabinerTakaData,
@@ -159,6 +161,9 @@ const DOM = {
   editInput3: document.getElementById('edit-input-3'),
   editInputSerial: document.getElementById('edit-input-serial'),
   editInputGroup3: document.getElementById('edit-group-3'),
+  editGroupImportantDate: document.getElementById('edit-group-important-date'),
+  editImportantDateDay: document.getElementById('edit-important-date-day'),
+  editImportantDateMonth: document.getElementById('edit-important-date-month'),
   editInputGroupSerial: document.getElementById('edit-group-serial'),
   editSaveBtn: document.getElementById('btn-save-edit'),
 
@@ -198,7 +203,8 @@ const DOM = {
 
   // Important Dates Selectors
   importantDateForm: document.getElementById('important-date-form'),
-  importantDateInput: document.getElementById('important-date-input'),
+  importantDateDay: document.getElementById('important-date-day'),
+  importantDateMonth: document.getElementById('important-date-month'),
   importantDateTitle: document.getElementById('important-date-title'),
   importantDateDesc: document.getElementById('important-date-desc'),
   importantDatesContainer: document.getElementById('important-dates-list-container'),
@@ -1968,7 +1974,7 @@ function openEditModal(type, id, title, label1, val1, label2, val2, label3 = '',
     DOM.editSaveBtn.textContent = 'Update';
   }
   const formGroup2 = DOM.editInput2.closest('.form-group');
-  if (type === 'suggestion' || type === 'baby_name' || type === 'movie' || type === 'baby_need' || type === 'important_date') {
+  if (type === 'suggestion' || type === 'baby_name' || type === 'movie' || type === 'baby_need') {
     if (formGroup2) formGroup2.style.display = 'none';
   } else {
     if (formGroup2) formGroup2.style.display = 'block';
@@ -1994,11 +2000,22 @@ function openEditModal(type, id, title, label1, val1, label2, val2, label3 = '',
     }
   }
 
+  if (DOM.editGroupImportantDate) {
+    if (type === 'important_date') {
+      DOM.editGroupImportantDate.style.display = 'block';
+      const { month, day } = parseDateMonthDay(val3);
+      if (DOM.editImportantDateDay) DOM.editImportantDateDay.value = String(day);
+      if (DOM.editImportantDateMonth) DOM.editImportantDateMonth.value = String(month);
+    } else {
+      DOM.editGroupImportantDate.style.display = 'none';
+    }
+  }
+
   const btnClearEditDate = document.getElementById('btn-clear-edit-date');
-  if (type === 'shopping' || type === 'due' || type === 'important_date') {
+  if (type === 'shopping' || type === 'due') {
     DOM.editLabel3.textContent = label3;
     DOM.editInput3.value = val3;
-    if (type === 'due' || type === 'important_date') {
+    if (type === 'due') {
       DOM.editInput3.type = 'date';
       DOM.editInput3.setAttribute('lang', 'en-GB');
       if (btnClearEditDate) btnClearEditDate.style.display = 'inline-block';
@@ -2070,8 +2087,14 @@ async function handleEditSave() {
   const isOneFieldOnly = currentEditType === 'suggestion' || currentEditType === 'baby_name' || currentEditType === 'movie' || currentEditType === 'baby_need';
 
   if (currentEditType === 'important_date') {
-    if (!val1 || !val3) {
-      alert("Please enter a title and date!");
+    const editDay = DOM.editImportantDateDay ? DOM.editImportantDateDay.value : '';
+    const editMonth = DOM.editImportantDateMonth ? DOM.editImportantDateMonth.value : '';
+    if (!val1) {
+      alert("Please enter a title!");
+      return;
+    }
+    if (!editDay || !editMonth) {
+      alert("Please select both day and month!");
       return;
     }
   } else if (!isOneFieldOnly && currentEditType !== 'shopping' && (!val1 || !val2)) {
@@ -2130,7 +2153,10 @@ async function handleEditSave() {
   } else if (currentEditType === 'baby_need') {
     await updateBabyNeed(currentEditId, val1);
   } else if (currentEditType === 'important_date') {
-    await updateImportantDate(currentEditId, val3, val1, val2);
+    const editDay = DOM.editImportantDateDay ? DOM.editImportantDateDay.value : '1';
+    const editMonth = DOM.editImportantDateMonth ? DOM.editImportantDateMonth.value : '1';
+    const formattedDate = `${String(editMonth).padStart(2, '0')}-${String(editDay).padStart(2, '0')}`;
+    await updateImportantDate(currentEditId, formattedDate, val1, val2);
   }
 
   // Handle Serial reordering if requested and valid
@@ -3684,7 +3710,6 @@ function renderMoviesList() {
 function renderImportantDatesList() {
   if (!DOM.importantDatesContainer) return;
   const items = getImportantDates();
-  items.sort((a, b) => b.timestamp - a.timestamp);
 
   if (items.length === 0) {
     DOM.importantDatesContainer.innerHTML = `
@@ -3696,7 +3721,16 @@ function renderImportantDatesList() {
     return;
   }
 
-  DOM.importantDatesContainer.innerHTML = items.map(item => {
+  // Calculate next occurrence for each item and sort by closest next date
+  const processedItems = items.map(item => {
+    const { month, day } = parseDateMonthDay(item.date);
+    const { targetDate, daysDiff } = getNextOccurrenceDate(month, day);
+    return { ...item, month, day, nextDate: targetDate, daysDiff };
+  });
+
+  processedItems.sort((a, b) => a.daysDiff - b.daysDiff);
+
+  DOM.importantDatesContainer.innerHTML = processedItems.map(item => {
     const canAction = isEditDeleteAllEnabled();
     const actionButtonsHtml = canAction ? `
       <button class="btn-icon-edit" data-id="${item.id}" aria-label="Edit date" style="padding: 2px;">
@@ -3707,14 +3741,23 @@ function renderImportantDatesList() {
       </button>
     ` : '';
 
-    const dateParts = item.date.split('-');
     const monthsShort = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-    const monthShort = dateParts.length === 3 ? monthsShort[parseInt(dateParts[1]) - 1] : 'DATE';
-    const dayNum = dateParts.length === 3 ? dateParts[2] : '??';
+    const monthsLong = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const monthShort = monthsShort[item.month - 1] || 'DATE';
+    const monthLong = monthsLong[item.month - 1] || '';
+    const dayNum = String(item.day).padStart(2, '0');
 
-    const dObj = new Date(item.date);
-    const dayName = dObj.toLocaleDateString('en-US', { weekday: 'short' });
-    const niceDisplayDate = dateParts.length === 3 ? `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}` : item.date;
+    const nextDayName = item.nextDate.toLocaleDateString('en-US', { weekday: 'short' });
+    const niceDisplayDate = `${item.day} ${monthLong}`;
+
+    let nextCountdown = '';
+    if (item.daysDiff === 0) {
+      nextCountdown = '<span style="color: #10B981; font-weight: 800;">• Today!</span>';
+    } else if (item.daysDiff === 1) {
+      nextCountdown = '<span style="color: #F59E0B; font-weight: 800;">• Tomorrow</span>';
+    } else {
+      nextCountdown = `<span style="color: var(--text-muted); font-weight: 600;">• Next in ${item.daysDiff} days</span>`;
+    }
 
     const descHtml = item.description ? `<span style="font-size: 13px; color: var(--text-dark); opacity: 0.8; margin-top: 4px; line-height: 1.3;">${item.description}</span>` : '';
 
@@ -3731,10 +3774,10 @@ function renderImportantDatesList() {
           <div style="display: flex; flex-direction: column; flex-grow: 1; min-width: 0;">
             <span class="item-name" style="font-size: 15px; font-weight: 800; color: var(--text-dark); line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${item.title || item.description}</span>
             ${descHtml}
-            <span style="font-size: 11px; color: var(--text-muted); font-weight: 600; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
-              <span>📅 ${dayName}, ${niceDisplayDate}</span>
-              <span>•</span>
-              <span>added by ${item.addedBy}</span>
+            <span style="font-size: 11px; color: var(--text-muted); font-weight: 600; margin-top: 4px; display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">
+              <span>📅 ${niceDisplayDate} (${nextDayName})</span>
+              ${nextCountdown}
+              <span>• added by ${item.addedBy}</span>
             </span>
           </div>
         </div>
@@ -3749,14 +3792,17 @@ function renderImportantDatesList() {
 async function handleAddImportantDateItem(e) {
   e.preventDefault();
 
-  const date = DOM.importantDateInput.value;
+  const day = DOM.importantDateDay ? DOM.importantDateDay.value : '';
+  const month = DOM.importantDateMonth ? DOM.importantDateMonth.value : '';
   const title = DOM.importantDateTitle.value.trim();
   const desc = DOM.importantDateDesc.value.trim();
-  if (!date || !title) return;
+  if (!day || !month || !title) return;
 
+  const date = `${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
   await addImportantDate(date, title, desc);
 
-  DOM.importantDateInput.value = '';
+  if (DOM.importantDateDay) DOM.importantDateDay.value = '';
+  if (DOM.importantDateMonth) DOM.importantDateMonth.value = '';
   DOM.importantDateTitle.value = '';
   DOM.importantDateDesc.value = '';
   DOM.importantDateTitle.blur();
@@ -3814,31 +3860,24 @@ function renderRecentImportantDateCard() {
     return;
   }
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const itemDate = new Date(item.date);
-  itemDate.setHours(0, 0, 0, 0);
-  const diffTime = itemDate.getTime() - today.getTime();
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  const diffDays = typeof item.daysDiff === 'number' ? item.daysDiff : 0;
 
   let countdownText = '';
-  let badgeText = 'Important Date';
+  let badgeText = 'Upcoming';
   if (diffDays === 0) {
     countdownText = 'Today!';
     badgeText = 'Today';
   } else if (diffDays === 1) {
     countdownText = 'Tomorrow';
     badgeText = 'Upcoming';
-  } else if (diffDays > 1) {
+  } else {
     countdownText = `In ${diffDays} Days`;
     badgeText = 'Upcoming';
-  } else {
-    countdownText = `${Math.abs(diffDays)} Days Ago`;
-    badgeText = 'Recent';
   }
 
+  const nextDate = item.nextDate instanceof Date ? item.nextDate : new Date(item.nextDate);
   const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-  const niceDateStr = itemDate.toLocaleDateString('en-US', options);
+  const niceDateStr = nextDate.toLocaleDateString('en-US', options);
   const descHtml = item.description ? `<span class="important-date-card-desc">${item.description}</span>` : '';
 
   DOM.dashImportantDateContainer.innerHTML = `
